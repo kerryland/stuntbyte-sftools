@@ -1,0 +1,34 @@
+<component name="libraryTable">
+  <library name="Unnamed">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/ant-salesforce.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/junit-4.9b2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.extract/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.parser.commandline/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.partner.test/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.build/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.copyforce/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.sqlforce.test/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.extract.sqlserver/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.copyforce.sqlserver/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.sqlforce/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.extract.sqlserver.test/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.parser.infix/test/unit" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.swing/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.copyforce.oracle/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.sforce.soap.partner/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.extract.test/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.extract.oracle/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.partner.doc/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.parser.infix/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.copyforce.h2/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.extract.oracle.test/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.partner/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.extract.h2.test/src" />
+      <root url="file://$PROJECT_DIR$/../../sqlforce/com.aslan.sfdc.extract.h2/src" />
+    </SOURCES>
+  </library>
+</component>

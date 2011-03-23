@@ -1,0 +1,339 @@
+package com.fidelma.salesforce.jdbc;
+
+import com.fidelma.salesforce.jdbc.sqlforce.LexicalAnalyzer;
+import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
+import com.fidelma.salesforce.misc.LoginHelper;
+import com.sforce.soap.partner.PartnerConnection;
+import com.sforce.soap.partner.QueryResult;
+import com.sforce.ws.ConnectionException;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.Reader;
+import java.math.BigDecimal;
+import java.net.URL;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.Clob;
+import java.sql.Date;
+import java.sql.NClob;
+import java.sql.ParameterMetaData;
+import java.sql.PreparedStatement;
+import java.sql.Ref;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.RowId;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLXML;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ */
+public class SfPreparedStatement extends SfStatement implements PreparedStatement {
+    private List<String> tokenizedSoql = new ArrayList<String>();
+    private Map<Integer, Integer> paramMap = new HashMap<Integer, Integer>();
+
+
+    public SfPreparedStatement(SfConnection sfConnection, LoginHelper helper, String sql) throws ConnectionException, SQLException {
+        super(sfConnection, helper);
+
+        LexicalAnalyzer al = new LexicalAnalyzer(new ByteArrayInputStream(sql.getBytes()), System.out);
+        LexicalToken token = al.getToken();
+
+        int paramCount = 0;
+        int paramPointer = 0;
+        while (token != null) {
+            tokenizedSoql.add(token.getValue());
+            if (token.getValue().equals("?")) {
+                paramMap.put(++paramCount, paramPointer);
+            }
+
+            paramPointer++;
+            token = al.getToken();
+        }
+
+//        pc = helper.getPartnerConnection();
+    }
+
+
+    public ResultSet executeQuery() throws SQLException {
+        checkParametersSet();
+        return super.executeQuery(assembleSoql());
+    }
+
+    public int executeUpdate() throws SQLException {
+        checkParametersSet();
+        return super.executeUpdate(assembleSoql());
+    }
+
+    private void checkParametersSet() throws SQLException {
+        Set<Integer> keys = paramMap.keySet();
+        for (Integer parameterIndex : keys) {
+            Integer soqlIndex = paramMap.get(parameterIndex);
+            String param = tokenizedSoql.get(soqlIndex);
+            if (param.equals("?")) {
+                throw new SQLException("Parameter " + soqlIndex + " not set");
+            }
+        }
+    }
+
+    private String assembleSoql() {
+        StringBuilder soql = new StringBuilder();
+        for (String s : tokenizedSoql) {
+            soql.append(s).append(" ");
+        }
+        return soql.toString();
+    }
+
+
+    public void setNull(int parameterIndex, int sqlType) throws SQLException {
+        setParameter(parameterIndex, "''");
+    }
+
+    public void setBoolean(int parameterIndex, boolean x) throws SQLException {
+        setParameter(parameterIndex, Boolean.toString(x));
+
+    }
+
+    public void setByte(int parameterIndex, byte x) throws SQLException {
+
+    }
+
+    public void setShort(int parameterIndex, short x) throws SQLException {
+        setParameter(parameterIndex, Short.toString(x));
+
+    }
+
+    public void setInt(int parameterIndex, int x) throws SQLException {
+        setParameter(parameterIndex, Integer.toString(x));
+    }
+
+    public void setLong(int parameterIndex, long x) throws SQLException {
+        setParameter(parameterIndex, Long.toString(x));
+    }
+
+    public void setFloat(int parameterIndex, float x) throws SQLException {
+        setParameter(parameterIndex, Float.toString(x));
+    }
+
+    public void setDouble(int parameterIndex, double x) throws SQLException {
+        setParameter(parameterIndex, Double.toString(x));
+    }
+
+    public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException {
+        setParameter(parameterIndex, x.toPlainString());
+    }
+
+    public void setString(int parameterIndex, String x) throws SQLException {
+        setParameter(parameterIndex, "'" + x + "'");
+    }
+
+    private SimpleDateFormat timestampSdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+
+
+    public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {
+        Date d = new Date(x.getTime());
+        setParameter(parameterIndex, timestampSdf.format(d));
+    }
+
+    public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
+        // TODO
+    }
+
+    public void setObject(int parameterIndex, Object x) throws SQLException {
+        if (x instanceof String) {
+            setString(parameterIndex, (String) x);
+        }
+    }
+
+
+
+    private void setParameter(int parameterIndex, String x) throws SQLException {
+        Integer soqlIndex = paramMap.get(parameterIndex);
+        if (soqlIndex == null) {
+            throw new SQLException("Parameter " + parameterIndex + " does not exist");
+        }
+        tokenizedSoql.set(soqlIndex, x);
+    }
+
+    public void setBytes(int parameterIndex, byte[] x) throws SQLException {
+
+    }
+
+    public void setDate(int parameterIndex, Date x) throws SQLException {
+
+    }
+
+    public void setTime(int parameterIndex, Time x) throws SQLException {
+
+    }
+
+
+    public void setAsciiStream(int parameterIndex, InputStream x, int length) throws SQLException {
+
+    }
+
+    public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException {
+
+    }
+
+    public void setBinaryStream(int parameterIndex, InputStream x, int length) throws SQLException {
+
+    }
+
+    public void clearParameters() throws SQLException {
+
+    }
+
+
+    public boolean execute() throws SQLException {
+        if (this.tokenizedSoql.size() > 0) {
+            if (tokenizedSoql.get(0).toUpperCase().startsWith("SELECT")) {
+                executeQuery();
+            } else {
+                executeUpdate();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public void addBatch() throws SQLException {
+
+    }
+
+    public void setCharacterStream(int parameterIndex, Reader reader, int length) throws SQLException {
+
+    }
+
+    public void setRef(int parameterIndex, Ref x) throws SQLException {
+
+    }
+
+    public void setBlob(int parameterIndex, Blob x) throws SQLException {
+
+    }
+
+    public void setClob(int parameterIndex, Clob x) throws SQLException {
+
+    }
+
+    public void setArray(int parameterIndex, Array x) throws SQLException {
+
+    }
+
+    public ResultSetMetaData getMetaData() throws SQLException {
+        return null; // Cannot be implemented
+    }
+
+    public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {
+
+    }
+
+    public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException {
+
+    }
+
+    public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
+
+    }
+
+    public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
+
+    }
+
+    public void setURL(int parameterIndex, URL x) throws SQLException {
+
+    }
+
+    public ParameterMetaData getParameterMetaData() throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+//        return null;
+    }
+
+    public void setRowId(int parameterIndex, RowId x) throws SQLException {
+
+    }
+
+    public void setNString(int parameterIndex, String value) throws SQLException {
+
+    }
+
+    public void setNCharacterStream(int parameterIndex, Reader value, long length) throws SQLException {
+
+    }
+
+    public void setNClob(int parameterIndex, NClob value) throws SQLException {
+
+    }
+
+    public void setClob(int parameterIndex, Reader reader, long length) throws SQLException {
+
+    }
+
+    public void setBlob(int parameterIndex, InputStream inputStream, long length) throws SQLException {
+
+    }
+
+    public void setNClob(int parameterIndex, Reader reader, long length) throws SQLException {
+
+    }
+
+    public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException {
+
+    }
+
+    public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength) throws SQLException {
+
+    }
+
+    public void setAsciiStream(int parameterIndex, InputStream x, long length) throws SQLException {
+
+    }
+
+    public void setBinaryStream(int parameterIndex, InputStream x, long length) throws SQLException {
+
+    }
+
+    public void setCharacterStream(int parameterIndex, Reader reader, long length) throws SQLException {
+
+    }
+
+    public void setAsciiStream(int parameterIndex, InputStream x) throws SQLException {
+
+    }
+
+    public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
+
+    }
+
+    public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
+
+    }
+
+    public void setNCharacterStream(int parameterIndex, Reader value) throws SQLException {
+
+    }
+
+    public void setClob(int parameterIndex, Reader reader) throws SQLException {
+
+    }
+
+    public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException {
+
+    }
+
+    public void setNClob(int parameterIndex, Reader reader) throws SQLException {
+
+    }
+
+}

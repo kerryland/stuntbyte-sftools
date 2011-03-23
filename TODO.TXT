@@ -1,0 +1,24 @@
+- Support count(*)
+- Prepared statements
+- SfPreparedStatement.setObject needs lots of work....
+- getDate
+- getTime
+- DELETE
+- Remove "Type" results
+- Add "default" values to Metadata
+
+- CREATE TABLE
+- ALTER TABLE
+- DROP TABLE
+- setMaxRows()
+- SELECT Name, MAX(Amount), MIN(Amount) FROM Opportunity GROUP BY Name
+- Handle commit
+
+- Do a CI server, with associated metrics
+
+
+DONE
+- Handle UPDATE TABLE BLAH\n SET
+
+
+
