@@ -5,6 +5,7 @@
 - getTime
 - DELETE
 - Remove "Type" results
+- Remove "Id" unless it's in the SELECT
 - Add "default" values to Metadata
 
 - CREATE TABLE

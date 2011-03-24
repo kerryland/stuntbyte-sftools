@@ -140,18 +140,19 @@ public class SfResultSet implements java.sql.ResultSet {
     private Object drillToChild(XmlObject parent, String columnLabel) throws SQLException {
         Object result = null;
 
-        int dotPos = columnLabel.lastIndexOf(".");
+        int dotPos = columnLabel.indexOf(".");
         if (dotPos != -1) {
             if (!parent.hasChildren()) {
                 throw new SQLException(columnLabel + " does not have children");
             }
             String parentName = columnLabel.substring(0, dotPos);
+
             String childName = columnLabel.substring(dotPos + 1);
             XmlObject child = (XmlObject) parent.getField(parentName);
 //            XmlObject child = (XmlObject) parent.getField(childName);
             System.out.println("Child " + childName + " of " + parentName + " vs " + parent.getName().getLocalPart() + " is " + child);
             if (child == null) {
-                throw new SQLException("Unknown field " + parentName);
+                throw new SQLException("Unknown child field " + parentName + " of " + parent.getName().getLocalPart() + " cn=" + childName);
             }
 
             String childLabel = columnLabel.substring(dotPos + 1);

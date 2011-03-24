@@ -18,13 +18,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -100,7 +94,7 @@ public class SelectEngineTests {
             assertEquals(surname, rs.getString("LastName"));
             assertEquals("Kerry Sainsbury", rs.getString("CreatedBy.Name"));
 
-            Calendar now = Calendar.getInstance();
+            Calendar now = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
             Timestamp created = rs.getTimestamp("CreatedDate");
 

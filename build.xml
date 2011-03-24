@@ -1,5 +1,6 @@
 <project name="salesfarce IDE" default="compile" basedir="." xmlns:sf="antlib:com.salesforce">
 
+    <property file="local.build.properties"/>
     <property file="build.properties"/>
     <property environment="env"/>
 
@@ -9,7 +10,8 @@
 
             <!--<arg line='-c "set enc=utf-8" -c "set makeprg=ant\ farcemake\ -Dsrcfile=%" -c "set errorformat=%f>%l:%c:%t:%n:%m"'/>-->
 
-            <arg line='-c "set enc=utf-8" -c "set makeprg=java\ -cp\ lib/ant-salesforce.jar;classes\ SalesfarceIDE\ %" -c "set errorformat=%f>%l:%c:%t:%n:%m"'/>
+            <!-- <arg line='-c "set enc=utf-8" -c "set makeprg=java\ -cp\ lib/ant-salesforce.jar;classes\ SalesfarceIDE\ %" -c "set errorformat=%f>%l:%c:%t:%n:%m"'/> -->
+            <arg line='-u vimrc README.TXT'/>
 
         </exec>
     </target>

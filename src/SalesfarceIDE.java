@@ -1,15 +1,5 @@
 import com.fidelma.salesforce.misc.LoginHelper;
-import com.sforce.soap.apex.CompileAndTestRequest;
-import com.sforce.soap.apex.CompileAndTestResult;
-import com.sforce.soap.apex.CompileClassResult;
-import com.sforce.soap.apex.LogCategory;
-import com.sforce.soap.apex.LogCategoryLevel;
-import com.sforce.soap.apex.LogInfo;
-import com.sforce.soap.apex.LogType;
-import com.sforce.soap.apex.RunTestFailure;
-import com.sforce.soap.apex.RunTestsRequest;
-import com.sforce.soap.apex.RunTestsResult;
-import com.sforce.soap.apex.SoapConnection;
+import com.sforce.soap.apex.*;
 import com.sforce.soap.metadata.AsyncRequestState;
 import com.sforce.soap.metadata.AsyncResult;
 import com.sforce.soap.metadata.DeployMessage;
@@ -138,6 +128,12 @@ public class SalesfarceIDE {
             return;
         }
 
+        if (arg.equals("-runtests")) {
+            runTests(src + "/classes");
+            return;
+        }
+
+
         StringBuilder sourceCode = new StringBuilder();
         {
             LineNumberReader read = new LineNumberReader(new FileReader(filename));
@@ -232,8 +228,16 @@ public class SalesfarceIDE {
     }
 
     private String detemineApexType(String filename) {
-        String typeName = new File(filename).getParentFile().getName();
-        typeName = typeName.substring(0, typeName.length() - 2);
+        // Grab the directory name
+        String directoryName = new File(filename).getParentFile().getName();
+
+        // Fix "classes", because it's special
+        if (directoryName.equals("classes")) {
+            return "ApexClass";
+        }
+
+        // Chop off the last letter
+        String typeName = directoryName.substring(0, directoryName.length() - 1);
         typeName = determineTypeName(typeName);
         return typeName;
     }
@@ -690,9 +694,6 @@ public class SalesfarceIDE {
     }
 
 
-
-
-
     private File retrieveZip(RetrieveRequest retrieveRequest) throws RemoteException, Exception {
 //        RetrieveRequest retrieveRequest = new RetrieveRequest();
 //        retrieveRequest.setApiVersion(WSDL_VERSION);
@@ -823,9 +824,9 @@ public class SalesfarceIDE {
 
 
         for (FileProperties propr : proprs) {
-        //    System.out.println("---------------------");
-        //    System.out.println(propr.getFullName());
-        //    System.out.println("---------------------");
+            //    System.out.println("---------------------");
+            //    System.out.println(propr.getFullName());
+            //    System.out.println("---------------------");
 
             try {
                 String[] oname = new String[]{propr.getFullName()};
@@ -834,7 +835,7 @@ public class SalesfarceIDE {
 
                     Field[] fields = describeSObjectResult.getFields();
                     for (Field field : fields) {
-                        System.out.println(describeSObjectResult.getName() + " : " + field.getName()  );
+                        System.out.println(describeSObjectResult.getName() + " : " + field.getName());
                     }
                 }
             } catch (Exception e) {
@@ -848,5 +849,85 @@ public class SalesfarceIDE {
 
     }
 
+
+    private void runTests(String directory) throws Exception {
+        File dir = new File(directory);
+        String[] testClasses = dir.list(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                return (name.endsWith("Test.cls") || (name.endsWith("Tests.cls")));
+//                return (name.equals("AgencyAccountControllerTests.cls"));
+            }
+        });
+
+        for (int i = 0; i < testClasses.length; i++) {
+            testClasses[i] = testClasses[i].substring(0, testClasses[i].indexOf(".cls"));
+            System.out.println(testClasses[i]);
+
+        }
+
+        SoapConnection connection = loginHelper.getApexConnection();
+
+        RunTestsRequest request = new RunTestsRequest();
+        request.setClasses(testClasses);
+
+        RunTestsResult res = connection.runTests(request);
+
+
+        System.out.println("Number of tests: " + res.getNumTestsRun());
+        System.out.println("Number of failures: " + res.getNumFailures());
+        if (res.getNumFailures() > 0) {
+            for (RunTestFailure rtf : res.getFailures()) {
+                System.out.println("Failure: " + (rtf.getNamespace() ==
+                        null ? "" : rtf.getNamespace() + ".")
+                        + rtf.getName() + "." + rtf.getMethodName() + ": "
+                        + rtf.getMessage() + "\n" + rtf.getStackTrace());
+            }
+        }
+        if (res.getCodeCoverage() != null) {
+            for (CodeCoverageResult ccr : res.getCodeCoverage()) {
+                Float not = Float.parseFloat("" + ccr.getNumLocationsNotCovered());
+                Float total = Float.parseFloat("" + ccr.getNumLocations());
+
+                Float percentage = ((total - not) / total) * 100;
+
+                System.out.println("Code coverage for " + ccr.getType() + " " +
+                        (ccr.getNamespace() == null ? "" : ccr.getNamespace() + ".")
+                        + ccr.getName() + ": "
+                        + ccr.getNumLocationsNotCovered()
+                        + " locations not covered out of "
+                        + ccr.getNumLocations() + " " + percentage + "%"
+
+                );
+//                if (ccr.getNumLocationsNotCovered() > 0) {
+//                    for (CodeLocation cl : ccr.getLocationsNotCovered())
+//                        System.out.println("\tLine " + cl.getLine() + ", column "
+//                                + cl.getColumn());
+//                }
+                /*
+                if (ccr.getSoqlInfo() != null) {
+                    System.out.println(" SOQL profiling");
+                    for (CodeLocation cl : ccr.getSoqlInfo())
+                        System.out.println("\tLine " + cl.getLine() + ", column "
+                                + cl.getColumn() + ": " + cl.getNumExecutions()
+                                + " time(s) in " + cl.getTime() + " ms");
+                }
+                if (ccr.getDmlInfo() != null) {
+                    System.out.println(" DML profiling");
+                    for (CodeLocation cl : ccr.getDmlInfo())
+                        System.out.println("\tLine " + cl.getLine() + ", column "
+                                + cl.getColumn() + ": " + cl.getNumExecutions()
+                                + " time(s) in " + cl.getTime() + " ms");
+                }
+                if (ccr.getMethodInfo() != null) {
+                    System.out.println(" Method profiling");
+                    for (CodeLocation cl : ccr.getMethodInfo())
+                        System.out.println("\tLine " + cl.getLine() + ", column "
+                                + cl.getColumn() + ": " + cl.getNumExecutions()
+                                + " time(s) in " + cl.getTime() + " ms");
+                }
+                */
+            }
+        }
+    }
 
 }
