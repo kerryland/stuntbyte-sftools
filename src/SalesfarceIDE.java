@@ -98,6 +98,7 @@ public class SalesfarceIDE {
     private Properties loadConfig() throws Exception {
         Properties prop = new Properties();
         prop.load(new FileReader("build.properties"));
+        prop.load(new FileReader("local.build.properties"));
         String server = prop.getProperty("sf.serverurl");
         String username = prop.getProperty("sf.username");
         String password = prop.getProperty("sf.password");
@@ -669,6 +670,7 @@ public class SalesfarceIDE {
     }
 
     private String findFile(String src, final String searchname, String compileFile) {
+        System.out.println("SRC=" + src);
         File[] files = findDiskFile(src, "classes", searchname);
 
         if (files.length == 0) {
