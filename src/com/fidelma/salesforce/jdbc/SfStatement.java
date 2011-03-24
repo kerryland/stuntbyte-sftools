@@ -24,8 +24,10 @@ import java.sql.SQLWarning;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  */
@@ -46,13 +48,70 @@ public class SfStatement implements java.sql.Statement {
 
     public ResultSet executeQuery(String sql) throws SQLException {
         try {
+            Set<String> columnsInSql = extractColumnsFromSoql(sql);
+            System.out.println("SOQL: " + sql + " found " + columnsInSql.size());
+            for (String s : columnsInSql) {
+                System.out.println("COL IN SQL: " +s);
+            }
+
+            String upper = sql.toUpperCase();
+            if (upper.contains("COUNT(*)")) {
+                sql = patchCountStar(sql);
+            }
+
             QueryResult qr = pc.query(sql);
-            return new SfResultSet(qr);
+            return new SfResultSet(qr, columnsInSql);
 
         } catch (ConnectionException e) {
             throw new SQLException(e);
+        } catch (Exception e) {
+            throw new SQLException(e);
         }
     }
+
+    private Set<String> extractColumnsFromSoql(String sql) throws Exception {
+        Set<String> result = new HashSet<String>();
+
+        LexicalAnalyzer la = new LexicalAnalyzer(new ByteArrayInputStream(sql.getBytes()), null);
+        la.getToken("SELECT");
+        LexicalToken token = la.getToken();
+        System.out.println("SELECT TOKEN=" + token);
+
+        while ((token != null) && (!token.getValue().equalsIgnoreCase("from") )) {
+            result.add(token.getValue().toUpperCase());
+            token = la.getToken();
+        }
+        return result;
+    }
+
+    // Convert the SQL-normal "count(*)" to Salesforce's "count()"
+    private int detectCountStar(String sql, int start) {
+        int countPos = sql.indexOf("count(*)", start);
+        if (countPos == -1) {
+            countPos = sql.indexOf("COUNT(*)", start);
+        }
+        return countPos;
+
+    }
+
+    private String patchCountStar(String sql) {
+        StringBuilder fixed = new StringBuilder();
+
+        int start = 0;
+        int countPos = detectCountStar(sql, start);
+        while (countPos != -1) {
+            System.out.println("FROM " + start + " TO " + countPos);
+
+            fixed.append(sql.substring(start, countPos));
+            fixed.append("count()");
+            start = countPos + 8;
+            countPos = detectCountStar(sql, start);
+        }
+        fixed.append(sql.substring(start));
+        System.out.println(fixed.toString());
+        return fixed.toString();
+    }
+
 
     // TODO: See TYPE_INFO_DATA in ResultSetFactory for all the ones we need to cover
     public static Object dataTypeConvert(String value, Integer dataType) {

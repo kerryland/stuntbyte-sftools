@@ -143,6 +143,16 @@ public class SelectEngineTests {
 
 
     @Test
+    public void testCountStar() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("select count(*) from Lead where lastName = '" + surname + "'");
+        assertEquals(1, rs.getMetaData().getColumnCount());
+        assertTrue(rs.next());
+        assertEquals(1, rs.getInt(1));
+    }
+
+
+    @Test
     public void testPreparedQueryString() throws Exception {
         String soql = "select count() from Lead where lastName = ?";
 

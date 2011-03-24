@@ -32,6 +32,7 @@ import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  */
@@ -58,37 +59,30 @@ public class SfResultSet implements java.sql.ResultSet {
 
     }
 
-    public SfResultSet(QueryResult qr) throws SQLException {
+    public SfResultSet(QueryResult qr, Set<String> columnsInSql) throws SQLException {
         this.qr = qr;
 
         records = qr.getRecords();
 
         resultFields = new ArrayList<String>();
         if (records.length > 0) {
-            generateResultFields(null, records[0], resultFields);
+            generateResultFields(null, records[0], resultFields, columnsInSql);
 
         } else if (qr.getSize() != 0) {  // count()
             resultFields.add("count");
         }
 
         if (records.length > 0) {
-            System.out.println("HERE");
             metaData = new SfResultSetMetaData(records[0], resultFields);
 
         } else if (qr.getSize() != 0) {  // count()
-            System.out.println("THERE");
             SObject count = new SObject();
             count.setName(new QName("records"));
             count.addField("count", qr.getSize());
             records = new SObject[]{count};
-            System.out.println("RF Count :" + resultFields.size());
-            for (String s : resultFields) {
-                System.out.println("SF: " + s);
-            }
             metaData = new SfResultSetMetaData(count, resultFields);
         } else {
             metaData = new SfResultSetMetaData();
-            System.out.println("EVERYWHERE");
         }
 
         batchEnd = records.length - 1;
@@ -105,7 +99,8 @@ public class SfResultSet implements java.sql.ResultSet {
         //return qr.isDone();
     }
 
-    private void generateResultFields(String parentName, XmlObject parent, List<String> columnsInResult) throws SQLException {
+    private void generateResultFields(String parentName, XmlObject parent, List<String> columnsInResult,
+                                      Set<String> columnsInSql) throws SQLException {
         if (parent.hasChildren()) {
             Iterator<XmlObject> children = parent.getChildren();
 
@@ -117,7 +112,7 @@ public class SfResultSet implements java.sql.ResultSet {
 
             while (children.hasNext()) {
                 XmlObject child = children.next();
-                generateResultFields(parentName, child, columnsInResult);
+                generateResultFields(parentName, child, columnsInResult, columnsInSql);
             }
         } else {
 
@@ -134,6 +129,16 @@ public class SfResultSet implements java.sql.ResultSet {
                 System.out.println("COLUMNS IN RESULT: " + columnName);
             }
         }
+
+        List<String> blurg = new ArrayList<String>();
+        for (String col : columnsInResult) {
+            if (columnsInSql.contains(col.toUpperCase())) {
+                blurg.add(col);
+                System.out.println("INCL " + col);
+            }
+        }
+        columnsInResult.clear();
+        columnsInResult.addAll(blurg);
     }
 
 
@@ -222,6 +227,7 @@ public class SfResultSet implements java.sql.ResultSet {
         int col = -1;
 
         for (String fieldName : resultFields) {
+            System.out.println("RF has " + fieldName + "( check for " + columnLabel );
             i++;
             if (fieldName.equalsIgnoreCase(columnLabel)) {
                 col = i;

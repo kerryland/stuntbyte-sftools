@@ -1,11 +1,7 @@
-- Support count(*)
-- Prepared statements
 - SfPreparedStatement.setObject needs lots of work....
 - getDate
 - getTime
 - DELETE
-- Remove "Type" results
-- Remove "Id" unless it's in the SELECT
 - Add "default" values to Metadata
 
 - CREATE TABLE
@@ -19,6 +15,9 @@
 
 
 DONE
+- Remove "Type" results
+- Support count(*)
+- Prepared statements
 - Handle UPDATE TABLE BLAH\n SET
 
 

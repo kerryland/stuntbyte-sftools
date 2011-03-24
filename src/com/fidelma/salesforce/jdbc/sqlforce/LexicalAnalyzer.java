@@ -545,7 +545,7 @@ public class LexicalAnalyzer {
 			throw new Exception("Expected '" + expectedValue + "' but found end of file");
 		}
 
-		if( !token.getValue().equals(expectedValue) ) {
+		if( !token.getValue().equalsIgnoreCase(expectedValue) ) {
 			throw new Exception("Expected '" + expectedValue + "' but found '" + token.getValue() + "'");
 		}
 
