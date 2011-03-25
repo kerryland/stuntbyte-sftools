@@ -36,28 +36,6 @@ public class WscService {
         this.filter = new Filter(info);
     }
 
-    // Here down unchanged by Kerry
-    public WscService(String un, String pw, String url, Filter filter) throws ConnectionException {
-
-        if (true) // KJS
-        throw new RuntimeException("NO NO NO"); // KJS
-        this.filter = filter;
-
-        ConnectorConfig partnerConfig = new ConnectorConfig();
-
-        partnerConfig.setUsername(un);
-        partnerConfig.setPassword(pw);
-        if (url != null && url.length() > 0) {
-            partnerConfig.setAuthEndpoint(url);
-            log("Force.com connection url " + url);
-        }
-        partnerConfig.setConnectionTimeout(60 * 1000);
-
-        log(filter.toString());
-
-        partnerConnection = Connector.newConnection(partnerConfig);
-    }
-
     private void log(String message) {
         System.out.println("ForceMetaDataDriver: " + message);
     }

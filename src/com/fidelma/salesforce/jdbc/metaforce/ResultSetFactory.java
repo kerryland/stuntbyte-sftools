@@ -1,6 +1,7 @@
 package com.fidelma.salesforce.jdbc.metaforce;
 
 
+import java.math.BigDecimal;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -16,6 +17,31 @@ import java.util.Map;
  * specified in the DatabaseMetaData Javadoc.
  */
 public class ResultSetFactory {
+
+    // TODO: See TYPE_INFO_DATA for all the ones we need to cover
+    public Object dataTypeConvert(String value, Integer dataType) {
+
+        if (dataType == null) {
+            return value;
+        }
+        if (dataType == Types.INTEGER) {
+            return Integer.parseInt(value);
+        }
+        if (dataType == Types.DOUBLE) {
+            return Double.parseDouble(value);
+        }
+        if (dataType == Types.BOOLEAN) {
+            return Boolean.parseBoolean(value);
+        }
+
+        if (dataType == Types.DECIMAL) {
+            return new BigDecimal(value);
+        }
+
+        //TODO: DATE, TIME, TIMESTAMP, ARRAY, OTHER, VARBINARY
+
+        return value;
+    }
 
     private static class TypeInfo {
         public TypeInfo(

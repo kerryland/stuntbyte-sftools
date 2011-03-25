@@ -32,6 +32,10 @@ public class SelectEngineTests {
     private static String surname;
     private static List<String> deleteMe = new ArrayList<String>();
 
+    private static SObject aaa;
+    private static SObject bbb;
+    private static SObject ccc;
+    private static SObject ddd;
 
     @BeforeClass
     public static void oneTimeSetUp() throws Exception {
@@ -59,6 +63,34 @@ public class SelectEngineTests {
         lead.addField("FirstName", "Mike");
         lead.addField("LastName", surname);
         String id = checkSaveResult(pc.create(new SObject[]{lead}));
+
+        ddd = new SObject();
+        ddd.setType("ddd__c");
+        ddd.addField("Name", "ddd Name");
+        id = checkSaveResult(pc.create(new SObject[]{ddd}));
+        ddd.setId(id);
+
+        ccc = new SObject();
+        ccc.setType("ccc__c");
+        ccc.addField("Name", "ccc Name");
+        ccc.addField("ddd__c", id);
+        id = checkSaveResult(pc.create(new SObject[]{ccc}));
+        ccc.setId(id);
+
+        bbb = new SObject();
+        bbb.setType("bbb__c");
+        bbb.addField("Name", "bbb Name");
+        bbb.addField("ccc__c", id);
+        id = checkSaveResult(pc.create(new SObject[]{bbb}));
+        bbb.setId(id);
+
+
+        aaa = new SObject();
+        aaa.setType("aaa__c");
+        aaa.addField("Name", "aaa Name");
+        aaa.addField("bbb__c", id);
+        id = checkSaveResult(pc.create(new SObject[]{aaa}));
+        aaa.setId(id);
     }
 
 
@@ -173,39 +205,85 @@ public class SelectEngineTests {
 
     @Test
     public void testResultSetMetaData() throws Exception {
-       DatabaseMetaData meta = conn.getMetaData();
-       ResultSet rs = meta.getPrimaryKeys(null, null, "Lead");
-       while (rs.next()) {
-           	System.out.println(rs.getString("COLUMN_NAME"));
-		    System.out.println(rs.getString("PK_NAME"));
-       }
+        DatabaseMetaData meta = conn.getMetaData();
+        ResultSet rs = meta.getPrimaryKeys(null, null, "Lead");
+        while (rs.next()) {
+            System.out.println(rs.getString("COLUMN_NAME"));
+            System.out.println(rs.getString("PK_NAME"));
+        }
 
     }
 
+
+    /*
+@Test
+    public void testRegression() throws Exception {
+
+    Properties info = new Properties();
+    info.put("user", "kerry.sainsbury@nzpost.co.nz.sandbox");
+    info.put("password", "u9SABqa2dQ8srnC7xytkAKhiKNe8vpazDIy");
+//    info.put("standard", "true");
+//    info.put("includes", "Lead,Account");
+
+    // Get a connection to the database
+    Connection conn = DriverManager.getConnection(
+            "jdbc:sfdc:https://test.salesforce.com"
+            , info);
+
+
+       Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("select Localist_Product__r.name,\n" +
+                "Localist_Product__r.Localist_Service__r.name,\n" +
+                "Localist_Product__r.Localist_Service__r.class__c,\n" +
+                "Localist_Product__r.Localist_Product_Specification__r.Name\n" +
+                "from\n" +
+                "Localist_Product_Category_Member__c\n" +
+                "where Localist_Product__r.Localist_Service__r.class__c = 'Online Listing'\n" +
+                "and Localist_Product__r.Localist_Product_Specification__r.Name != 'Listing Page'\n" +
+                "and Presence_Category__c in\n" +
+                "(select Presence_Category__c from \n" +
+                "Presence_Category_Group_Member__c\n" +
+                "where Presence_Category_Group__r.Category_Group_Tree_ID__c = 'ONL-STD-STANDARDONLINECATEGORIES')");
+        assertTrue(rs.next());
+    }
+    */
+
+    // Given aaa.bbb__r.ccc__r.ddd__r.name
+
     @Test
-    public void testParent() throws Exception {
+    public void testRelationship() throws Exception {
+
+//        SfConnection sfConnection = (SfConnection) conn;
+//        PartnerConnection pc = sfConnection.getHelper().getPartnerConnection();
+
+
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery(
-                "select Name, Description, CreatedBy.name, createdby.id, Id, Parent.Name " +
-                        " from account\n" +
-                        "where parent.id != null " +
-                        "limit 1");
+                "select name, " +
+                        "bbb__r.name, " +
+                        "bbb__r.ccc__r.Name, " +
+                        "bbb__r.ccc__r.ddd__r.Name " +
+                        " from aaa__c " +
+                        "where id = '" + aaa.getId() + "'");
 
-        ResultSetMetaData md =  rs.getMetaData();
+        ResultSetMetaData md = rs.getMetaData();
         int colCount = md.getColumnCount();
         Set<String> colNames = new HashSet<String>();
-        System.out.println("COL COUNT=" +colCount);
-        for (int i=1; i<= colCount; i++) {
-            System.out.println("MD " + i + "=" +md.getColumnName(i));
+        System.out.println("COL COUNT=" + colCount);
+        for (int i = 1; i <= colCount; i++) {
+            System.out.println("MD " + i + "=" + md.getColumnName(i));
             colNames.add(md.getColumnName(i));
         }
 
-        assertTrue(colNames.contains("Parent.Name"));
+//        assertTrue(colNames.contains("Parent.Name"));
 //        assertTrue(colNames.contains("Parent.CreatedBy.LastName"));
         int foundCount = 0;
         while (rs.next()) {
             foundCount++;
-//            System.out.println("Parent Created Lastname=" + rs.getString(13));
+            assertEquals("aaa Name", rs.getString("Name"));
+            assertEquals("bbb Name", rs.getString("bbb__r.Name"));
+            assertEquals("ccc Name", rs.getString("bbb__r.ccc__r.Name"));
+            assertEquals("ddd Name", rs.getString("bbb__r.ccc__r.ddd__r.Name"));
         }
         assertEquals(1, foundCount);
     }
@@ -217,7 +295,7 @@ public class SelectEngineTests {
         int count = stmt.executeUpdate("update Lead\n" +
                 " set FirstName = 'wibbleX', phone='0800xxxx'," +
                 " AnnualRevenue=475000, " +
-                " NumberOfEmployees=6 where LastName = '" + surname + "'") ;
+                " NumberOfEmployees=6 where LastName = '" + surname + "'");
         assertEquals(1, count);
 
         ResultSet rs = stmt.executeQuery("select FirstName, Phone, Lastname, AnnualRevenue, NumberOfEmployees" +
@@ -239,7 +317,7 @@ public class SelectEngineTests {
     @Test
     public void testPreparedUpdate() throws Exception {
 
-        String soql ="update Lead\n" +
+        String soql = "update Lead\n" +
                 " set FirstName = ?, phone=?," +
                 " AnnualRevenue=?, " +
                 " NumberOfEmployees=? where LastName =?";
@@ -275,10 +353,10 @@ public class SelectEngineTests {
     public void testInsert() throws Exception {
         Statement stmt = conn.createStatement();
         String soql = "insert\n into Lead(Company, FirstName, LastName, Phone, AnnualRevenue, NumberOfEmployees)" +
-                "values ('CoCo', 'wibbleXYZ'," + "'" + surname + "', '0800xxxx',475001, 7)" ;
+                "values ('CoCo', 'wibbleXYZ'," + "'" + surname + "', '0800xxxx',475001, 7)";
 
         System.out.println(soql);
-        int count = stmt.executeUpdate(soql) ;
+        int count = stmt.executeUpdate(soql);
         assertEquals(1, count);
 
         ResultSet rs = stmt.executeQuery("select Company, FirstName, Phone, Lastname, AnnualRevenue, NumberOfEmployees" +
@@ -377,6 +455,7 @@ public class SelectEngineTests {
                 throw new Exception(msg);
             } else {
                 id = saveResult.getId();
+
                 deleteMe.add(id);
 
             }
