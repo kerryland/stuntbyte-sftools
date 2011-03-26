@@ -38,13 +38,6 @@ public class Update {
         int count;
         String table = al.getToken().getValue();
 
-//        Map<String, Integer> columnToDatatype = new HashMap<String, Integer>();
-//        ResultSet columnsRs = sfConnection.getMetaData().getColumns(null, null, table, null);
-//        while (columnsRs.next()) {
-//            String column = columnsRs.getString("COLUMN_NAME").toUpperCase();
-//            int dataType = columnsRs.getInt("DATA_TYPE");
-//            columnToDatatype.put(column, dataType);
-//        }
         al.read("SET");
         token = al.getToken();
         String whereClause = "";
@@ -59,7 +52,7 @@ public class Update {
             LexicalToken value = al.getToken();
 
             if (!column.equalsIgnoreCase("Id")) {
-                metaDataFactory.getTable(table).getColumn(column);
+//                metaDataFactory.getTable(table).getColumn(column);
 //                Integer dataType = columnToDatatype.get(column.toUpperCase());
                 Integer dataType = metaDataFactory.lookupJdbcType(tableData.getColumn(column).getType());
                 assert dataType != null;
@@ -111,13 +104,8 @@ public class Update {
 
                 for (String key : values.keySet()) {
 
-                    metaDataFactory.getTable(table).getColumn(key);
-//                Integer dataType = columnToDatatype.get(column.toUpperCase());
+//                    metaDataFactory.getTable(table).getColumn(key);
                     Integer dataType = metaDataFactory.lookupJdbcType(tableData.getColumn(key).getType());
-
-//                    Integer datatype = columnToDatatype.get(key.toUpperCase());
-
-
                     Object value = metaDataFactory.dataTypeConvert((String) values.get(key), dataType);
 
                     sObject.setField(key, value);
@@ -126,11 +114,11 @@ public class Update {
 
             SaveResult[] sr = this.pc.update(update); // TODO: Handle errors
             for (SaveResult saveResult : sr) {
-                System.out.println("UPDATE OK=" + saveResult.isSuccess());
+//                System.out.println("UPDATE OK=" + saveResult.isSuccess());
                 if (!saveResult.isSuccess()) {
                     com.sforce.soap.partner.Error[] errors = saveResult.getErrors();
                     for (Error error : errors) {
-                        System.out.println("ERROR: " + error.getMessage());
+                        System.out.println("UPDATE ERROR: " + error.getMessage());
                     }
                 }
             }

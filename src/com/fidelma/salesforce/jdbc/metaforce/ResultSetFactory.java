@@ -86,7 +86,7 @@ public class ResultSetFactory {
             new TypeInfo("_int", Types.INTEGER, 10, 0, 0, 10),
             new TypeInfo("decimal", Types.DECIMAL, 17, -324, 306, 10),
             new TypeInfo("double", Types.DOUBLE, 17, -324, 306, 10),
-            new TypeInfo("double", Types.DOUBLE, 17, -324, 306, 10),
+            new TypeInfo("_double", Types.DOUBLE, 17, -324, 306, 10),
             new TypeInfo("percent", Types.DOUBLE, 17, -324, 306, 10),
             new TypeInfo("currency", Types.DOUBLE, 17, -324, 306, 10),
             new TypeInfo("date", Types.DATE, 10, 0, 0, 0),
@@ -184,7 +184,7 @@ public class ResultSetFactory {
     /**
      * Provide column (field) detail.
      */
-    public ResultSet getColumns(String tableName) {
+    public ResultSet getColumns(String tableName) throws SQLException {
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
         Table table = tableMap.get(tableName.toUpperCase());
         if (table != null) {
@@ -229,16 +229,17 @@ public class ResultSetFactory {
     }
 
 
-      private TypeInfo lookupTypeInfo(String forceTypeName) {
+      private TypeInfo lookupTypeInfo(String forceTypeName) throws SQLException {
         for (TypeInfo entry : TYPE_INFO_DATA) {
             if (forceTypeName.equals(entry.typeName)) {
                 return entry;
             }
         }
-        return null;
+          throw new SQLException("Unable to identify type for " + forceTypeName);
+//        return null;
     }
 
-    public Integer lookupJdbcType(String forceTypeName) {
+    public Integer lookupJdbcType(String forceTypeName) throws SQLException {
         return lookupTypeInfo(forceTypeName).sqlDataType;
     }
 

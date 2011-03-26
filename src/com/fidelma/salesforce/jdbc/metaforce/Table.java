@@ -1,5 +1,6 @@
 package com.fidelma.salesforce.jdbc.metaforce;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,15 @@ public class Table {
         return columns;
     }
 
-    public Column getColumn(String columnName) {
-        return columnMap.get(columnName.toUpperCase());
+    public Column getColumn(String columnName) throws SQLException {
+        Column result = columnMap.get(columnName.toUpperCase());
+        if (result == null) {
+            String msg = "Unable to find '" + columnName + "' in " + name;
+            if (columnMap.get((columnName + "__c").toUpperCase()) != null) {
+                msg += ". Do you mean '" + columnName + "'__c";
+            }
+            throw new SQLException(msg);
+        }
+        return result;
     }
 }

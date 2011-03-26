@@ -1,23 +1,21 @@
 import com.fidelma.salesforce.jdbc.SfConnection;
-import com.fidelma.salesforce.jdbc.SfDriver;
 import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.sobject.SObject;
-import com.sforce.ws.ConnectionException;
-import junit.framework.TestCase;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -27,7 +25,7 @@ import static org.junit.Assert.*;
 
 public class SelectEngineTests {
 
-    private static Connection conn = null;
+    private static SfConnection conn = null;
 
     private static String surname;
     private static List<String> deleteMe = new ArrayList<String>();
@@ -48,7 +46,7 @@ public class SelectEngineTests {
         info.put("includes", "Lead,Account");
 
         // Get a connection to the database
-        conn = DriverManager.getConnection(
+        conn = (SfConnection) DriverManager.getConnection(
                 "jdbc:sfdc:https://login.salesforce.com"
                 , info);
 
@@ -64,33 +62,6 @@ public class SelectEngineTests {
         lead.addField("LastName", surname);
         String id = checkSaveResult(pc.create(new SObject[]{lead}));
 
-        ddd = new SObject();
-        ddd.setType("ddd__c");
-        ddd.addField("Name", "ddd Name");
-        id = checkSaveResult(pc.create(new SObject[]{ddd}));
-        ddd.setId(id);
-
-        ccc = new SObject();
-        ccc.setType("ccc__c");
-        ccc.addField("Name", "ccc Name");
-        ccc.addField("ddd__c", id);
-        id = checkSaveResult(pc.create(new SObject[]{ccc}));
-        ccc.setId(id);
-
-        bbb = new SObject();
-        bbb.setType("bbb__c");
-        bbb.addField("Name", "bbb Name");
-        bbb.addField("ccc__c", id);
-        id = checkSaveResult(pc.create(new SObject[]{bbb}));
-        bbb.setId(id);
-
-
-        aaa = new SObject();
-        aaa.setType("aaa__c");
-        aaa.addField("Name", "aaa Name");
-        aaa.addField("bbb__c", id);
-        id = checkSaveResult(pc.create(new SObject[]{aaa}));
-        aaa.setId(id);
     }
 
 
@@ -102,15 +73,15 @@ public class SelectEngineTests {
         String[] delete = new String[deleteMe.size()];
         deleteMe.toArray(delete);
         DeleteResult[] drs = pc.delete(delete);
-        String msg = "";
-        for (DeleteResult dr : drs) {
-            if (!dr.isSuccess()) {
-                msg += dr.getErrors()[0].getMessage();
-            }
-        }
-        if (!msg.equals("")) {
-            throw new Exception(msg);
-        }
+//        String msg = "";
+//        for (DeleteResult dr : drs) {
+//            if (!dr.isSuccess()) {
+//                msg += dr.getErrors()[0].getMessage();
+//            }
+//        }
+//        if (!msg.equals("")) {
+//            throw new Exception(msg);
+//        }
     }
 
 
@@ -174,6 +145,19 @@ public class SelectEngineTests {
     }
 
 
+//    TODO: @Test
+    public void testCountNoRows() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("select count() from aaa__c where name = 'does not exist'");
+        assertEquals(1, rs.getMetaData().getColumnCount());
+        assertTrue(rs.next());
+        assertEquals(0, rs.getInt(1));
+    }
+
+    // Test group by
+    // [select Status, count(Id) from CampaignMember where CampaignId = :camp.id group by status]
+
+
     @Test
     public void testCountStar() throws Exception {
         Statement stmt = conn.createStatement();
@@ -196,11 +180,58 @@ public class SelectEngineTests {
         assertEquals(1, rs.getInt(1));
     }
 
+    @Test
+    public void testMaxRowsAndFetchSize() throws Exception {
+        Statement stmt = conn.createStatement();
+        stmt.executeUpdate("delete from aaa__c");
 
-    public void testMaxRows() throws Exception {
-//        Statement stmt = conn.createStatement();
-        // stmt.setMaxRows(1); // TODO
 
+        PartnerConnection pc = conn.getHelper().getPartnerConnection();
+
+        // Add a 300 rows to 'AAA__C' table
+        SObject[] heaps = new SObject[300];
+        NumberFormat mf = new DecimalFormat("0000");
+        for (int i = 0; i < heaps.length; i++) {
+            SObject aaa2 = new SObject();
+            aaa2.setType("aaa__c");
+            aaa2.addField("Name", "aaa " + mf.format(i + 1));
+            heaps[i] = aaa2;
+        }
+
+        // Have to insert the rows in chunks
+        pc.create(Arrays.copyOfRange(heaps, 0, 199));
+        pc.create(Arrays.copyOfRange(heaps, 199, heaps.length));
+
+        String soql = "select count() from aaa__c";
+        ResultSet rs = stmt.executeQuery(soql);
+        rs.next();
+        assertEquals(heaps.length, rs.getInt(1));
+
+        stmt.setMaxRows(1);
+        rs = stmt.executeQuery("select name from aaa__c");
+        assertTrue(rs.next());    // first row should be found
+        assertFalse(rs.next());   // second row should NOT be found
+
+        stmt.setMaxRows(0);
+        rs = stmt.executeQuery("select name from aaa__c order by name asc");
+
+        int count = 0;
+        for (SObject heap : heaps) {
+            count++;
+            assertTrue("Did not find row " + count, rs.next());    // row should be found
+        }
+        assertFalse(rs.next());
+
+
+        // Test fetch size
+        stmt.setFetchSize(1);
+        rs = stmt.executeQuery("select name from aaa__c");
+        count = 0;
+        for (SObject heap : heaps) {
+            count++;
+            assertTrue("Did not find row " + count, rs.next());    // row should be found
+        }
+        assertFalse(rs.next());
     }
 
     @Test
@@ -253,8 +284,36 @@ public class SelectEngineTests {
     @Test
     public void testRelationship() throws Exception {
 
-//        SfConnection sfConnection = (SfConnection) conn;
-//        PartnerConnection pc = sfConnection.getHelper().getPartnerConnection();
+        SfConnection sfConnection = (SfConnection) conn;
+        PartnerConnection pc = sfConnection.getHelper().getPartnerConnection();
+
+        String id;
+        ddd = new SObject();
+        ddd.setType("ddd__c");
+        ddd.addField("Name", "ddd Name");
+        id = checkSaveResult(pc.create(new SObject[]{ddd}));
+        ddd.setId(id);
+
+        ccc = new SObject();
+        ccc.setType("ccc__c");
+        ccc.addField("Name", "ccc Name");
+        ccc.addField("ddd__c", id);
+        id = checkSaveResult(pc.create(new SObject[]{ccc}));
+        ccc.setId(id);
+
+        bbb = new SObject();
+        bbb.setType("bbb__c");
+        bbb.addField("Name", "bbb Name");
+        bbb.addField("ccc__c", id);
+        id = checkSaveResult(pc.create(new SObject[]{bbb}));
+        bbb.setId(id);
+
+        aaa = new SObject();
+        aaa.setType("aaa__c");
+        aaa.addField("Name", "aaa Name");
+        aaa.addField("bbb__c", id);
+        id = checkSaveResult(pc.create(new SObject[]{aaa}));
+        aaa.setId(id);
 
 
         Statement stmt = conn.createStatement();
@@ -373,7 +432,36 @@ public class SelectEngineTests {
             assertEquals("7", rs.getString("NumberOfEmployees"));    // TODO: Support getInteger
         }
         assertEquals(1, foundCount);
+    }
 
+
+    @Test
+    public void testDelete() throws Exception {
+        Statement stmt = conn.createStatement();
+        stmt.executeUpdate("delete from aaa__c");
+
+        // Insert 3 rows
+        int count = stmt.executeUpdate("insert into aaa__c(name, number4dp__c) values ('testDelete', 1)");
+        assertEquals(1, count);
+        count = stmt.executeUpdate("insert into aaa__c(name, number4dp__c) values ('testDelete', 2)");
+        assertEquals(1, count);
+        count = stmt.executeUpdate("insert into aaa__c(name, number4dp__c) values ('testDelete', 3)");
+        assertEquals(1, count);
+
+        // Delete one row
+        count = stmt.executeUpdate("delete from aaa__c where number4dp__c = 1");
+        assertEquals(1, count);
+
+        ResultSet rs = stmt.executeQuery("select count() from aaa__c where name = 'testDelete'");
+        rs.next();
+        assertEquals(2, rs.getInt(1));
+
+        // Delete all rows
+        count = stmt.executeUpdate("delete from aaa__c");
+        assertEquals(2, count);
+
+        rs = stmt.executeQuery("select id from aaa__c limit 1");
+        assertFalse(rs.next());
 
     }
 

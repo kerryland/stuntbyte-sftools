@@ -1,7 +1,9 @@
 package com.fidelma.salesforce.jdbc;
 
+import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.QueryResult;
 import com.sforce.soap.partner.sobject.SObject;
+import com.sforce.ws.ConnectionException;
 import com.sforce.ws.bind.XmlObject;
 
 import javax.xml.namespace.QName;
@@ -41,9 +43,12 @@ import java.util.Set;
 public class SfResultSet implements java.sql.ResultSet {
     private SObject[] records;
     private SfConnection connection;
+    private PartnerConnection pc;
     private QueryResult qr;
+    private int maxRows;
     private List<String> resultFields;
     private int ptr = -1;
+    private int rowCount = 0;
     private int batchEnd = 0;
     private String soqlObjectType;
     private List<String> columns = new ArrayList<String>();
@@ -54,17 +59,16 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
 
-    private void storeFields(SObject parent) {
-
-
-    }
-
-    public SfResultSet(QueryResult qr, Set<String> columnsInSql) throws SQLException {
+    public SfResultSet(PartnerConnection pc, QueryResult qr,
+                       Set<String> columnsInSql, int maxRows) throws SQLException {
+        this.pc = pc;
         this.qr = qr;
+        this.maxRows = maxRows;
 
         records = qr.getRecords();
 
         resultFields = new ArrayList<String>();
+
         if (records.length > 0) {
             generateResultFields(null, records[0], resultFields, columnsInSql);
 
@@ -85,18 +89,39 @@ public class SfResultSet implements java.sql.ResultSet {
             metaData = new SfResultSetMetaData();
         }
 
-        batchEnd = records.length - 1;
+        batchEnd = records.length-1;
     }
 
 
     public boolean next() throws SQLException {
-        //System.out.println(ptr + " vs " + batchEnd);
-        if (ptr++ < batchEnd) {
-            return true;
+//        System.out.println(ptr + " vs " + batchEnd + " vs max " + maxRows);
+        try {
+            if ((maxRows > 0) && (rowCount >= maxRows)) {
+                return false;
+            }
+
+            if (ptr < batchEnd) {
+                rowCount++;
+                return true;
+            }
+
+            if (!qr.isDone()) {
+                qr = pc.queryMore(qr.getQueryLocator());
+                records = qr.getRecords();
+                batchEnd = records.length -1;
+                ptr = -1;
+                return true;
+            }
+            return false;
+
+        } catch (ConnectionException e) {
+            throw new SQLException(e);
+
+        } finally {
+            ptr++;
         }
 
-        return false;
-        //return qr.isDone();
+
     }
 
     private void generateResultFields(String parentName, XmlObject parent, List<String> columnsInResult,
@@ -177,13 +202,17 @@ public class SfResultSet implements java.sql.ResultSet {
         return (String) getObject(columnIndex);
     }
 
+    // What about using "expr0" or "expr1"?
     public Object getObject(int columnIndex) throws SQLException {
         return getObject(findLabelFromIndex(columnIndex));
     }
 
     public Object getObject(String columnLabel) throws SQLException {
+        if (ptr == -1) {
+            throw new SQLException("No data available -- next not called");
+        }
 
-        System.out.println("col label=" + columnLabel);
+//        System.out.println("col label=" + columnLabel);
         SObject obj = records[ptr];
 
         return drillToChild(obj, columnLabel);
@@ -227,7 +256,7 @@ public class SfResultSet implements java.sql.ResultSet {
         int col = -1;
 
         for (String fieldName : resultFields) {
-            System.out.println("RF has " + fieldName + "( check for " + columnLabel );
+            System.out.println("RF has " + fieldName + "( check for " + columnLabel);
             i++;
             if (fieldName.equalsIgnoreCase(columnLabel)) {
                 col = i;
