@@ -155,13 +155,37 @@ public class SelectEngineTests {
         assertEquals(1, rs.getInt(1));
     }
 
+
+    @Test
+    public void testSimpleGroupBy() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("select lastName from Lead where lastName = '" + surname + "' group by lastName");
+        assertEquals(1, rs.getMetaData().getColumnCount());
+        assertTrue(rs.next());
+        assertEquals(surname, rs.getString(1));
+    }
+
+    @Test
+    public void testSimpleAggregate() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("select company, max(lastName), min(lastName) from Lead where lastName = '" + surname + "' group by company");
+        assertEquals(3, rs.getMetaData().getColumnCount());
+        assertTrue(rs.next());
+        assertEquals("MikeCo", rs.getString(1));
+        assertEquals(surname, rs.getString(2));
+        assertEquals(surname, rs.getString(3));
+
+        assertEquals("MikeCo", rs.getString("Company"));
+        assertEquals(surname, rs.getString("expr0"));
+        assertEquals(surname, rs.getString("expr1"));
+    }
+
     /*
 
 http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_select.htm
 
 AggregateResult
 
-select accountId from contact group by accountId
 
      "SELECT Name, " +
                        "MAX(Amount), " +
@@ -170,7 +194,8 @@ select accountId from contact group by accountId
                        "GROUP BY Name";
 
     // TODO: Test group by   (ie: AggregatedResult)
-    // [select Status, count(Id) from CampaignMember where CampaignId = :camp.id group by status]
+    //
+  select company, max(lastName) bigname from Lead where lastName = '" + surname + "' group by company");
 
 
                        SELECT Account.Name, (SELECT Contact.LastName FROM Account.Contacts) FROM Account

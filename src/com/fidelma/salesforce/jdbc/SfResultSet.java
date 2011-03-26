@@ -157,7 +157,7 @@ public class SfResultSet implements java.sql.ResultSet {
 
         List<String> blurg = new ArrayList<String>();
         for (String col : columnsInResult) {
-            if (columnsInSql.contains(col.toUpperCase())) {
+            if (columnsInSql.contains(col.toUpperCase()) || col.startsWith("expr")) {
                 blurg.add(col);
                 System.out.println("INCL " + col);
             }
