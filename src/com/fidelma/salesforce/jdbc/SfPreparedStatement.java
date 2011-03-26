@@ -3,6 +3,7 @@ package com.fidelma.salesforce.jdbc;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalAnalyzer;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
 import com.fidelma.salesforce.misc.LoginHelper;
+import com.fidelma.salesforce.misc.SimpleParser;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.QueryResult;
 import com.sforce.ws.ConnectionException;
@@ -41,12 +42,17 @@ import java.util.Set;
 public class SfPreparedStatement extends SfStatement implements PreparedStatement {
     private List<String> tokenizedSoql = new ArrayList<String>();
     private Map<Integer, Integer> paramMap = new HashMap<Integer, Integer>();
+    private boolean oldTypeCount;
 
 
-    public SfPreparedStatement(SfConnection sfConnection, LoginHelper helper, String sql) throws ConnectionException, SQLException {
+    public SfPreparedStatement(SfConnection sfConnection, LoginHelper helper, String sql) throws
+            Exception {
         super(sfConnection, helper);
 
-        LexicalAnalyzer al = new LexicalAnalyzer(new ByteArrayInputStream(sql.getBytes()), System.out);
+        if (sql.toUpperCase().contains("COUNT()")) {
+            oldTypeCount = true;
+        }
+        SimpleParser al = new SimpleParser(sql);
         LexicalToken token = al.getToken();
 
         int paramCount = 0;
@@ -60,8 +66,6 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
             paramPointer++;
             token = al.getToken();
         }
-
-//        pc = helper.getPartnerConnection();
     }
 
 
@@ -88,9 +92,19 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
 
     private String assembleSoql() {
         StringBuilder soql = new StringBuilder();
-        for (String s : tokenizedSoql) {
-            soql.append(s).append(" ");
+        int ptr = 0;
+
+        while (ptr < tokenizedSoql.size()) {
+            String s= tokenizedSoql.get(ptr);
+            if (oldTypeCount && s.equalsIgnoreCase("COUNT")) {
+                soql.append("count() ");
+                ptr = ptr + 2; // skip the tokenised brackets
+            } else {
+                soql.append(s).append(" ");
+            }
+            ptr++;
         }
+
         return soql.toString();
     }
 
@@ -101,7 +115,6 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
 
     public void setBoolean(int parameterIndex, boolean x) throws SQLException {
         setParameter(parameterIndex, Boolean.toString(x));
-
     }
 
     public void setByte(int parameterIndex, byte x) throws SQLException {

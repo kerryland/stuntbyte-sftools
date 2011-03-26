@@ -60,7 +60,8 @@ public class SfResultSet implements java.sql.ResultSet {
 
 
     public SfResultSet(PartnerConnection pc, QueryResult qr,
-                       Set<String> columnsInSql, int maxRows) throws SQLException {
+                       Set<String> columnsInSql, int maxRows,
+                       boolean oldTypeCount) throws SQLException {
         this.pc = pc;
         this.qr = qr;
         this.maxRows = maxRows;
@@ -69,17 +70,16 @@ public class SfResultSet implements java.sql.ResultSet {
 
         resultFields = new ArrayList<String>();
 
-        if (records.length > 0) {
+        if (oldTypeCount) {
+           resultFields.add("count");
+        } else  if (records.length > 0) {
             generateResultFields(null, records[0], resultFields, columnsInSql);
-
-        } else if (qr.getSize() != 0) {  // count()
-            resultFields.add("count");
         }
 
         if (records.length > 0) {
             metaData = new SfResultSetMetaData(records[0], resultFields);
 
-        } else if (qr.getSize() != 0) {  // count()
+        } else if (oldTypeCount) {  // count()
             SObject count = new SObject();
             count.setName(new QName("records"));
             count.addField("count", qr.getSize());

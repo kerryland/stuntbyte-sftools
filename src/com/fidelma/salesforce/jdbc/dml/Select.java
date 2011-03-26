@@ -35,11 +35,17 @@ public class Select {
                 System.out.println("COL IN SQL: " + s);
             }
 
-            String upper = sql.toUpperCase();
-            if (upper.contains("COUNT(*)")) {
-                sql = patchCountStar(sql);
-            }
+            boolean oldTypeCount = false;
 
+            if ((columnsInSql.size() == 1) && (columnsInSql.contains("COUNT"))) {
+                String upper = sql.toUpperCase();
+                if (upper.contains("COUNT(*)")) {
+                    sql = patchCountStar(sql);
+                    oldTypeCount = true;
+                } else if (upper.contains("COUNT()")) {
+                    oldTypeCount = true;
+                }
+            }
             Integer oldBatchSize = 2000;
             if (pc.getQueryOptions() != null) {
                 oldBatchSize = pc.getQueryOptions().getBatchSize();
@@ -48,7 +54,7 @@ public class Select {
             try {
                 pc.setQueryOptions(statement.getFetchSize());
                 QueryResult qr = pc.query(sql);
-                return new SfResultSet(pc, qr, columnsInSql, statement.getMaxRows());
+                return new SfResultSet(pc, qr, columnsInSql, statement.getMaxRows(), oldTypeCount);
 
             } finally {
                 pc.setQueryOptions(oldBatchSize);
@@ -70,7 +76,8 @@ public class Select {
         LexicalToken token = la.getToken();
 
         // TODO: Handle
-        // COUNT()
+        // COUNT(id)
+        // count( )
         // count_distinct
         // min
         // max
@@ -80,10 +87,30 @@ public class Select {
         System.out.println("SELECT TOKEN=" + token);
 
         while ((token != null) && (!token.getValue().equalsIgnoreCase("from"))) {
-            result.add(token.getValue().toUpperCase());
-            token = la.getToken();
+            if (token.getValue().equals("(")) {
+                token = swallowUntilMatchingBracket(la);
+            } else {
+                result.add(token.getValue().toUpperCase());
+                token = la.getToken();
+            }
         }
         return result;
+    }
+
+    private LexicalToken swallowUntilMatchingBracket(SimpleParser la) throws Exception {
+        LexicalToken token = la.getToken();
+
+        while ((token != null) && (!token.getValue().equals(")"))) {
+            if (token.getValue().equals("(")) {
+                token = swallowUntilMatchingBracket(la);
+            } else {
+                token = la.getToken();
+            }
+        }
+        if (token != null) {
+            token = la.getToken();
+        }
+        return token;
     }
 
     // Convert the SQL-normal "count(*)" to Salesforce's "count()"

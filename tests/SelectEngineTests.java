@@ -114,15 +114,6 @@ public class SelectEngineTests {
         assertEquals(1, foundCount);
     }
 
-    /*
-
-     "SELECT Name, " +
-                       "MAX(Amount), " +
-                       "MIN(Amount) " +
-                       "FROM Opportunity " +
-                       "GROUP BY Name";
-     */
-
 
     @Test
     public void testNoRows() throws Exception {
@@ -145,7 +136,7 @@ public class SelectEngineTests {
     }
 
 
-//    TODO: @Test
+    @Test
     public void testCountNoRows() throws Exception {
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery("select count() from aaa__c where name = 'does not exist'");
@@ -153,9 +144,6 @@ public class SelectEngineTests {
         assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
     }
-
-    // Test group by
-    // [select Status, count(Id) from CampaignMember where CampaignId = :camp.id group by status]
 
 
     @Test
@@ -166,6 +154,28 @@ public class SelectEngineTests {
         assertTrue(rs.next());
         assertEquals(1, rs.getInt(1));
     }
+
+    /*
+
+http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_select.htm
+
+AggregateResult
+
+select accountId from contact group by accountId
+
+     "SELECT Name, " +
+                       "MAX(Amount), " +
+                       "MIN(Amount) " +
+                       "FROM Opportunity " +
+                       "GROUP BY Name";
+
+    // TODO: Test group by   (ie: AggregatedResult)
+    // [select Status, count(Id) from CampaignMember where CampaignId = :camp.id group by status]
+
+
+                       SELECT Account.Name, (SELECT Contact.LastName FROM Account.Contacts) FROM Account
+     */
+
 
 
     @Test
@@ -366,8 +376,8 @@ public class SelectEngineTests {
             assertEquals("wibbleX", rs.getString("FirstName"));
             assertEquals(surname, rs.getString("LastName"));
             assertEquals("0800xxxx", rs.getString("Phone"));
-            assertEquals("475000.0", rs.getString("AnnualRevenue")); // TODO: Support getDouble
-            assertEquals("6", rs.getString("NumberOfEmployees"));    // TODO: Support getInteger
+            assertEquals(475000f, rs.getDouble("AnnualRevenue"), 0.5f);
+            assertEquals(6, rs.getInt("NumberOfEmployees"));
         }
         assertEquals(1, foundCount);
     }
@@ -401,9 +411,8 @@ public class SelectEngineTests {
             assertEquals("Wayne", rs.getString("FirstName"));
             assertEquals(surname, rs.getString("LastName"));
             assertEquals("0800-WAYNE", rs.getString("Phone"));
-            assertEquals(15, rs.getInt("NumberOfEmployees"));    // TODO: Support getInteger
-            assertEquals(76000f, rs.getDouble("AnnualRevenue"), 0.5); // TODO: Support getDouble
-
+            assertEquals(15, rs.getInt("NumberOfEmployees"));
+            assertEquals(76000f, rs.getDouble("AnnualRevenue"), 0.5);
         }
         assertEquals(1, foundCount);
     }
@@ -428,8 +437,8 @@ public class SelectEngineTests {
             assertEquals("wibbleXYZ", rs.getString("FirstName"));
             assertEquals(surname, rs.getString("LastName"));
             assertEquals("0800xxxx", rs.getString("Phone"));
-            assertEquals("475001.0", rs.getString("AnnualRevenue")); // TODO: Support getDouble
-            assertEquals("7", rs.getString("NumberOfEmployees"));    // TODO: Support getInteger
+            assertEquals("475001.0", rs.getString("AnnualRevenue"));
+            assertEquals("7", rs.getString("NumberOfEmployees"));
         }
         assertEquals(1, foundCount);
     }

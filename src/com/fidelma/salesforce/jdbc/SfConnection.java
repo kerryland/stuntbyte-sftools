@@ -64,6 +64,8 @@ public class SfConnection implements java.sql.Connection {
         try {
             return new SfPreparedStatement(this, helper, sql);
         } catch (ConnectionException e) {
+             throw new SQLException(e);
+        } catch (Exception e) {
             throw new SQLException(e);
         }
     }
