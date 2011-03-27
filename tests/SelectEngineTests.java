@@ -86,7 +86,7 @@ public class SelectEngineTests {
 
 
     @Test
-    public void testStatement() throws Exception {
+    public void testSelectStatement() throws Exception {
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery("select FirstName, LastName, CreatedDate, CreatedBy.name from Lead where lastName = '" + surname + "'");
 
@@ -94,6 +94,8 @@ public class SelectEngineTests {
         while (rs.next()) {
             foundCount++;
             assertEquals("Mike", rs.getString("FirstName"));
+            assertEquals("Mike", rs.getString("firstname"));
+            assertEquals("Mike", rs.getString("FIRSTNAME"));
             assertEquals(surname, rs.getString("LastName"));
             assertEquals("Kerry Sainsbury", rs.getString("CreatedBy.Name"));
 
@@ -155,6 +157,16 @@ public class SelectEngineTests {
         assertEquals(1, rs.getInt(1));
     }
 
+    @Test
+    public void testTableAliases() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("select l.lastName from Lead l where l.lastName = '" + surname + "'");
+        assertEquals(1, rs.getMetaData().getColumnCount());
+        assertTrue(rs.next());
+        assertEquals(surname, rs.getString(1));
+        assertEquals(surname, rs.getString("lastName"));
+    }
+
 
     @Test
     public void testSimpleGroupBy() throws Exception {
@@ -168,7 +180,7 @@ public class SelectEngineTests {
     @Test
     public void testSimpleAggregate() throws Exception {
         Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("select company, max(lastName), min(lastName) from Lead where lastName = '" + surname + "' group by company");
+        ResultSet rs = stmt.executeQuery("select company, max(lastName), min(lastName) small from Lead where lastName = '" + surname + "' group by company");
         assertEquals(3, rs.getMetaData().getColumnCount());
         assertTrue(rs.next());
         assertEquals("MikeCo", rs.getString(1));
@@ -177,28 +189,30 @@ public class SelectEngineTests {
 
         assertEquals("MikeCo", rs.getString("Company"));
         assertEquals(surname, rs.getString("expr0"));
-        assertEquals(surname, rs.getString("expr1"));
+        assertEquals(surname, rs.getString("small"));
     }
 
+    /*
+    @Test
+    public void testSubquery() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT Account.Name, " +
+                "(SELECT Contact.LastName FROM Account.Contacts) lname FROM Account limit 1");
+        assertEquals(2, rs.getMetaData().getColumnCount());
+        assertTrue(rs.next());
+
+        assertEquals("MikeCo", rs.getString("Account.Name"));
+        assertEquals(surname, rs.getString("expr0"));
+
+    }
+    */
     /*
 
 http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_select.htm
 
-AggregateResult
-
-
-     "SELECT Name, " +
-                       "MAX(Amount), " +
-                       "MIN(Amount) " +
-                       "FROM Opportunity " +
-                       "GROUP BY Name";
-
-    // TODO: Test group by   (ie: AggregatedResult)
     //
-  select company, max(lastName) bigname from Lead where lastName = '" + surname + "' group by company");
 
 
-                       SELECT Account.Name, (SELECT Contact.LastName FROM Account.Contacts) FROM Account
      */
 
 

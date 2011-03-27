@@ -57,4 +57,12 @@ public class SimpleParser {
     public LexicalToken getToken(String expected) throws Exception {
         return al.getToken(expected);
     }
+
+    public String getValue() throws Exception {
+        LexicalToken token = getToken();
+        if (token == null) {
+            return null;
+        }
+        return token.getValue();
+    }
 }

@@ -4,9 +4,7 @@ import com.fidelma.salesforce.jdbc.SfResultSet;
 import com.fidelma.salesforce.jdbc.SfStatement;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
 import com.fidelma.salesforce.misc.SimpleParser;
-import com.sforce.soap.partner.CallOptions_element;
 import com.sforce.soap.partner.PartnerConnection;
-import com.sforce.soap.partner.QueryOptions_element;
 import com.sforce.soap.partner.QueryResult;
 import com.sforce.ws.ConnectionException;
 
@@ -70,21 +68,9 @@ public class Select {
     private Set<String> extractColumnsFromSoql(String sql) throws Exception {
         Set<String> result = new HashSet<String>();
 
-        // TODO: This is too primitive. COUNT() is one column!
         SimpleParser la = new SimpleParser(sql);
         la.getToken("SELECT");
         LexicalToken token = la.getToken();
-
-        // TODO: Handle
-        // COUNT(id)
-        // count( )
-        // count_distinct
-        // min
-        // max
-        // sum
-        // toLabel()
-        // convertCurrency()
-        System.out.println("SELECT TOKEN=" + token);
 
         while ((token != null) && (!token.getValue().equalsIgnoreCase("from"))) {
             if (token.getValue().equals("(")) {
@@ -92,6 +78,31 @@ public class Select {
             } else {
                 result.add(token.getValue().toUpperCase());
                 token = la.getToken();
+            }
+        }
+
+        result = handleColumnAlias(result, la, token);
+
+        return result;
+    }
+
+    private Set<String> handleColumnAlias(Set<String> result, SimpleParser la, LexicalToken token) throws Exception {
+        if ((token != null) && (token.getValue().equalsIgnoreCase("from"))) {
+            String table = la.getValue();
+            if (table != null) {
+                String alias = la.getValue();
+                if (alias != null) {
+                    String prefix = alias.toUpperCase() + ".";
+                    Set<String> freshResult = new HashSet<String>();
+                    for (String columnName : result) {
+                        if (columnName.startsWith(prefix)) {
+                            freshResult.add(columnName.substring(prefix.length()));
+                        } else {
+                            freshResult.add(columnName);
+                        }
+                    }
+                    result = freshResult;
+                }
             }
         }
         return result;
