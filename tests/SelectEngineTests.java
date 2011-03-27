@@ -217,7 +217,6 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
      */
 
 
-
     @Test
     public void testPreparedQueryString() throws Exception {
         String soql = "select count() from Lead where lastName = ?";
@@ -311,37 +310,36 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
 
 
     /*
-@Test
+    @Test
     public void testRegression() throws Exception {
 
-    Properties info = new Properties();
-    info.put("user", "kerry.sainsbury@nzpost.co.nz.sandbox");
-    info.put("password", "u9SABqa2dQ8srnC7xytkAKhiKNe8vpazDIy");
+        Properties info = new Properties();
+        info.put("user", "kerry.sainsbury@nzpost.co.nz.sandbox");
+        info.put("password", "u9SABqa2dQ8srnC7xytkAKhiKNe8vpazDIy");
 //    info.put("standard", "true");
 //    info.put("includes", "Lead,Account");
 
-    // Get a connection to the database
-    Connection conn = DriverManager.getConnection(
-            "jdbc:sfdc:https://test.salesforce.com"
-            , info);
+        // Get a connection to the database
+        Connection conn = DriverManager.getConnection(
+                "jdbc:sfdc:https://test.salesforce.com"
+                , info);
 
+        String soql = "select  Preferred_Contact_Medium__r.Email_Address__c,  Person_Name__c, organisation__r.name, LastModifiedDate, Registered_User_Last_Update_By_Website__c  , Localist_Role__c, Role_Type__c\n" +
+                "from person_role__c \n" +
+                " where recordType.DeveloperName = 'Registered_User' \n" +
+                " and Organisation__r.Business_Type__c = 'Agency'\n" +
+                " and Registered_User_Last_Update_By_Website__c = 0\n" +
+                "order by LastModifiedDate desc";
 
-       Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("select Localist_Product__r.name,\n" +
-                "Localist_Product__r.Localist_Service__r.name,\n" +
-                "Localist_Product__r.Localist_Service__r.class__c,\n" +
-                "Localist_Product__r.Localist_Product_Specification__r.Name\n" +
-                "from\n" +
-                "Localist_Product_Category_Member__c\n" +
-                "where Localist_Product__r.Localist_Service__r.class__c = 'Online Listing'\n" +
-                "and Localist_Product__r.Localist_Product_Specification__r.Name != 'Listing Page'\n" +
-                "and Presence_Category__c in\n" +
-                "(select Presence_Category__c from \n" +
-                "Presence_Category_Group_Member__c\n" +
-                "where Presence_Category_Group__r.Category_Group_Tree_ID__c = 'ONL-STD-STANDARDONLINECATEGORIES')");
-        assertTrue(rs.next());
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(soql);
+        while (rs.next()) {
+            System.out.println("1>" + rs.getString("Preferred_Contact_Medium__r.Email_Address__c"));
+            System.out.println("2>" + rs.getString(1));
+        }
     }
     */
+
 
     // Given aaa.bbb__r.ccc__r.ddd__r.name
 
@@ -390,16 +388,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
                         "where id = '" + aaa.getId() + "'");
 
         ResultSetMetaData md = rs.getMetaData();
-        int colCount = md.getColumnCount();
-        Set<String> colNames = new HashSet<String>();
-        System.out.println("COL COUNT=" + colCount);
-        for (int i = 1; i <= colCount; i++) {
-            System.out.println("MD " + i + "=" + md.getColumnName(i));
-            colNames.add(md.getColumnName(i));
-        }
 
-//        assertTrue(colNames.contains("Parent.Name"));
-//        assertTrue(colNames.contains("Parent.CreatedBy.LastName"));
         int foundCount = 0;
         while (rs.next()) {
             foundCount++;
@@ -407,6 +396,42 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
             assertEquals("bbb Name", rs.getString("bbb__r.Name"));
             assertEquals("ccc Name", rs.getString("bbb__r.ccc__r.Name"));
             assertEquals("ddd Name", rs.getString("bbb__r.ccc__r.ddd__r.Name"));
+        }
+        assertEquals(1, foundCount);
+    }
+
+
+    @Test
+    public void testNonRelationship() throws Exception {
+
+        SfConnection sfConnection = conn;
+        PartnerConnection pc = sfConnection.getHelper().getPartnerConnection();
+
+        // Create aaa__c with no reference to bbb__c, but write a query that looks at bbb__r.name
+        aaa = new SObject();
+        aaa.setType("aaa__c");
+        aaa.addField("Name", "aaa Name");
+        String id = checkSaveResult(pc.create(new SObject[]{aaa}));
+        aaa.setId(id);
+
+
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(
+                "select name, " +
+                        "bbb__r.name, " +
+                        "bbb__r.ccc__r.Name, " +
+                        "bbb__r.ccc__r.ddd__r.Name " +
+                        " from aaa__c " +
+                        "where id = '" + aaa.getId() + "'");
+
+        ResultSetMetaData md = rs.getMetaData();
+        int foundCount = 0;
+        while (rs.next()) {
+            foundCount++;
+            assertEquals("aaa Name", rs.getString("Name"));
+            assertEquals(null, rs.getString("bbb__r.Name"));
+            assertEquals(null, rs.getString("bbb__r.ccc__r.Name"));
+            assertEquals(null, rs.getString("bbb__r.ccc__r.ddd__r.Name"));
         }
         assertEquals(1, foundCount);
     }

@@ -582,6 +582,7 @@ public class SalesfarceIDE {
 
 
     public void downloadFiles(String srcDir, File crcFile) throws Exception {
+        crcFile.createNewFile();
         Properties crcs = new Properties();
 
         String[] metadataTypes = new String[]{
@@ -670,7 +671,6 @@ public class SalesfarceIDE {
     }
 
     private String findFile(String src, final String searchname, String compileFile) {
-        System.out.println("SRC=" + src);
         File[] files = findDiskFile(src, "classes", searchname);
 
         if (files.length == 0) {
@@ -772,8 +772,11 @@ public class SalesfarceIDE {
         while ((entry = in.getNextEntry()) != null) {
             int count;
             byte data[] = new byte[1000];
+            File outputFile = new File(srcDir, entry.getName());
+//            outputFile.createNewFile();
+            outputFile.getParentFile().mkdirs();
             out = new BufferedOutputStream(new
-                    FileOutputStream(new File(srcDir, entry.getName())), 1000);
+                    FileOutputStream(outputFile), 1000);
             while ((count = in.read(data, 0, 1000)) != -1) {
                 out.write(data, 0, count);
             }
