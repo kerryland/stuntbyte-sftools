@@ -14,11 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
- * User: kerry
- * Date: 26/03/11
- * Time: 6:59 AM
- * To change this template use File | Settings | File Templates.
  */
 public class Insert {
 

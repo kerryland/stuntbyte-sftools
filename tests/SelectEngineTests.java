@@ -135,6 +135,7 @@ public class SelectEngineTests {
         assertEquals(1, rs.getMetaData().getColumnCount());
         assertTrue(rs.next());
         assertEquals(1, rs.getInt(1));
+        assertEquals(1, rs.getInt("count"));
     }
 
 
@@ -281,7 +282,21 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
             assertTrue("Did not find row " + count, rs.next());    // row should be found
         }
         assertFalse(rs.next());
+
+        // Seeing as we have all this data, lets check we can do a large update
+        count = stmt.executeUpdate("update aaa__c set currency__c = 4");
+        assertEquals("Did not report update count correctly", 300, count);
+
+        // Check the rows actually got updated
+        rs = stmt.executeQuery("select currency__c from aaa__c");
+        count = 0;
+        while (rs.next()) {
+            count++;
+            assertEquals("4.0", rs.getBigDecimal(1).toPlainString());
+        }
+        assertEquals(300, count);
     }
+
 
     @Test
     public void testResultSetMetaData() throws Exception {

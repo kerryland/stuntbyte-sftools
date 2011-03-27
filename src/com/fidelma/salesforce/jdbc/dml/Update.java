@@ -9,19 +9,18 @@ import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 
+import javax.jnlp.IntegrationService;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
- * User: kerry
- * Date: 26/03/11
- * Time: 7:24 AM
- * To change this template use File | Settings | File Templates.
  */
 public class Update {
+
+    private static int MAX_UPDATES_PER_CALL = 200;
 
     private SimpleParser al;
     private ResultSetFactory metaDataFactory;
@@ -35,7 +34,7 @@ public class Update {
 
     public int execute() throws Exception {
         LexicalToken token;
-        int count;
+        int count=0;
         String table = al.getToken().getValue();
 
         al.read("SET");
@@ -52,8 +51,6 @@ public class Update {
             LexicalToken value = al.getToken();
 
             if (!column.equalsIgnoreCase("Id")) {
-//                metaDataFactory.getTable(table).getColumn(column);
-//                Integer dataType = columnToDatatype.get(column.toUpperCase());
                 Integer dataType = metaDataFactory.lookupJdbcType(tableData.getColumn(column).getType());
                 assert dataType != null;
                 System.out.println("Data type is " + dataType + " for " + column);
@@ -91,43 +88,45 @@ public class Update {
             readSoql.append("select Id ");
             readSoql.append(" from ").append(table).append(" ").append(whereClause);
 
-            qr = this.pc.query(readSoql.toString());
+            qr = pc.query(readSoql.toString());
 
-            SObject[] sObjects = qr.getRecords();
-            SObject[] update = new SObject[sObjects.length];
+            SObject[] input = qr.getRecords();
 
-            for (int i = 0; i < sObjects.length; i++) {
-                SObject sObject = new SObject();
-                update[i] = sObject;
-                sObject.setType(table);
-                sObject.setId(sObjects[i].getId());
+            SObjectChunker chunker = new SObjectChunker(MAX_UPDATES_PER_CALL, pc, qr);
+            while (chunker.next()) {
+                SObject[] sObjects = chunker.nextChunk();
+                SObject[] update = new SObject[sObjects.length];
 
-                for (String key : values.keySet()) {
+                for (int i = 0; i < sObjects.length; i++) {
+                    SObject sObject = new SObject();
+                    update[i] = sObject;
+                    sObject.setType(table);
+                    sObject.setId(sObjects[i].getId());
 
-//                    metaDataFactory.getTable(table).getColumn(key);
-                    Integer dataType = metaDataFactory.lookupJdbcType(tableData.getColumn(key).getType());
-                    Object value = metaDataFactory.dataTypeConvert((String) values.get(key), dataType);
-
-                    sObject.setField(key, value);
-                }
-            }
-
-            SaveResult[] sr = this.pc.update(update); // TODO: Handle errors
-            for (SaveResult saveResult : sr) {
-//                System.out.println("UPDATE OK=" + saveResult.isSuccess());
-                if (!saveResult.isSuccess()) {
-                    com.sforce.soap.partner.Error[] errors = saveResult.getErrors();
-                    for (Error error : errors) {
-                        System.out.println("UPDATE ERROR: " + error.getMessage());
+                    for (String key : values.keySet()) {
+                        Integer dataType = metaDataFactory.lookupJdbcType(tableData.getColumn(key).getType());
+                        Object value = metaDataFactory.dataTypeConvert((String) values.get(key), dataType);
+                        sObject.setField(key, value);
                     }
                 }
+
+                SaveResult[] sr = pc.update(update); // TODO: Handle errors
+                for (SaveResult saveResult : sr) {
+                    if (!saveResult.isSuccess()) {
+                        com.sforce.soap.partner.Error[] errors = saveResult.getErrors();
+                        for (Error error : errors) {
+                            System.out.println("UPDATE ERROR: " + error.getMessage());
+                        }
+                    }
+                }
+                count += sObjects.length;
             }
-            count = qr.getSize();
 
         } catch (ConnectionException e) {
             throw new SQLException(e);
         }
         return count;
     }
+
 
 }

@@ -26,6 +26,7 @@ import java.util.Map;
  */
 public class Delete {
 
+    private static int MAX_DELETES_PER_CALL = 200;
     private SimpleParser al;
     private ResultSetFactory metaDataFactory;
     private PartnerConnection pc;
@@ -40,7 +41,7 @@ public class Delete {
         al.read("FROM");
 
         LexicalToken token;
-        int count;
+        int count=0;
         String table = al.getToken().getValue();
         token = al.getToken();
 
@@ -72,19 +73,12 @@ public class Delete {
             System.out.println("DELETE BASED ON " + readSoql.toString());
             qr = pc.query(readSoql.toString());
 
-            SObject[] sObjects = qr.getRecords();
-
-            List<String> chunk = new ArrayList<String>();
-
-            for (int i = 0; i < sObjects.length; i++) {
-                chunk.add(sObjects[i].getId());
-                if (chunk.size() == 200) {
-                    deleteChunk(chunk);
-                }
+            SObjectChunker chunker = new SObjectChunker(MAX_DELETES_PER_CALL, pc, qr);
+            while (chunker.next()) {
+                SObject[] sObjects = chunker.nextChunk();
+                deleteChunk(sObjects);
+                count+=sObjects.length;
             }
-            deleteChunk(chunk);
-
-            count = qr.getSize();
 
         } catch (ApiFault e) {
             // TODO: Build PartnerConnection delegate, and wrap this stuff
@@ -101,12 +95,14 @@ public class Delete {
         return count;
     }
 
-    private void deleteChunk(List<String> chunk) throws ConnectionException {
-        String[] delete = new String[chunk.size()];
-        chunk.toArray(delete);
+    private void deleteChunk(SObject[] chunk) throws ConnectionException {
+        String[] delete = new String[chunk.length];
+        for (int i = 0; i < chunk.length; i++) {
+            SObject sObject = chunk[i];
+            delete[i] = sObject.getId();
+        }
         DeleteResult[] sr = pc.delete(delete); // TODO: Handle errors
         for (DeleteResult deleteResult : sr) {
-//            System.out.println("DELETE OK=" + deleteResult.isSuccess());
             if (!deleteResult.isSuccess()) {
                 Error[] errors = deleteResult.getErrors();
                 for (Error error : errors) {
@@ -114,7 +110,6 @@ public class Delete {
                 }
             }
         }
-        chunk.clear();
     }
 
 
