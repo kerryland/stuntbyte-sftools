@@ -470,6 +470,7 @@ public class SalesfarceIDE {
         fw.close();
 
         if (!compileTestResult.isSuccess()) {
+
             CompileClassResult[] cr = compileTestResult.getClasses();
             for (CompileClassResult compileClassResult : cr) {
                 String failname = findFile(src, compileClassResult.getName(), filename);
@@ -487,6 +488,18 @@ public class SalesfarceIDE {
                             compileClassResult.getColumn(),
                             "W",
                             warning);
+                }
+            }
+
+            CompileTriggerResult[] tr = compileTestResult.getTriggers();
+            for (CompileTriggerResult compileClassResult : tr) {
+                 String failname = findFile(src, compileClassResult.getName(), filename);
+                if (compileClassResult.getProblem() != null) {
+
+                    err(failname, compileClassResult.getLine(),
+                            compileClassResult.getColumn(),
+                            "E",
+                            compileClassResult.getProblem());
                 }
             }
         }
