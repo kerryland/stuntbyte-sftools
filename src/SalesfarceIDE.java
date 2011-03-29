@@ -479,7 +479,7 @@ public class SalesfarceIDE {
                     err(failname, compileClassResult.getLine(),
                             compileClassResult.getColumn(),
                             "E",
-                            compileClassResult.getProblem());
+                            compileClassResult.getProblem().replaceAll("\n", " "));
                 }
 
                 String[] warnings = compileClassResult.getWarnings();
@@ -487,13 +487,13 @@ public class SalesfarceIDE {
                     err(failname, compileClassResult.getLine(),
                             compileClassResult.getColumn(),
                             "W",
-                            warning);
+                            warning.replaceAll("\n", " "));
                 }
             }
 
             CompileTriggerResult[] tr = compileTestResult.getTriggers();
             for (CompileTriggerResult compileClassResult : tr) {
-                 String failname = findFile(src, compileClassResult.getName(), filename);
+                String failname = findFile(src, compileClassResult.getName(), filename);
                 if (compileClassResult.getProblem() != null) {
 
                     err(failname, compileClassResult.getLine(),
@@ -520,6 +520,8 @@ public class SalesfarceIDE {
                 System.out.println("TESTS PASS!");
             }
 
+            Pattern trigPat = Pattern.compile("Trigger.(\\w.*)..*");
+
             for (RunTestFailure fail : fails) {
 
 //                System.out.println(fail.toString());
@@ -528,13 +530,13 @@ public class SalesfarceIDE {
                 LineNumberReader rr = new LineNumberReader(new StringReader(fail.getStackTrace()));
                 String stack = rr.readLine();
                 while (stack != null) {
-//                    System.out.println("STACKx : " + stack);
-                    Matcher nm = namePat.matcher(stack);
-//                    System.out.println("NM " + nm.matches());
 
+                    Matcher nm = trigPat.matcher(stack);
+                     if (!nm.matches()) {
+                         nm = namePat.matcher(stack);
+                     }
+                    
                     if (nm.matches()) {
-//                        System.out.println("FILE: " + nm.group(1));
-
                         Matcher m = linePat.matcher(stack);
 
                         String failname = findFile(src, nm.group(1), filename);
@@ -549,12 +551,9 @@ public class SalesfarceIDE {
                                 err(failname, -1, -1, "W", "Internal farce.ide error decoding: " + fail.getStackTrace());
                             }
                         }
-                        err(failname, line, column, "E", fail.getMessage());
-
-
+                        err(failname, line, column, "E", fail.getMessage().replaceAll("\n", "|"));
                     }
                     stack = rr.readLine();
-
                 }
             }
         }
