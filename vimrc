@@ -8,7 +8,7 @@ set shiftwidth=4
 set ignorecase
 set smartcase
 set laststatus=2
-set cmdheight=2
+set cmdheight=4
 syntax on
 
 

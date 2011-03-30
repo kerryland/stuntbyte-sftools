@@ -9,7 +9,6 @@ import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 
-import javax.jnlp.IntegrationService;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;

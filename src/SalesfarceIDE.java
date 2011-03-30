@@ -479,7 +479,7 @@ public class SalesfarceIDE {
                     err(failname, compileClassResult.getLine(),
                             compileClassResult.getColumn(),
                             "E",
-                            compileClassResult.getProblem());
+                            compileClassResult.getProblem().replaceAll("\n", " "));
                 }
 
                 String[] warnings = compileClassResult.getWarnings();
@@ -487,13 +487,13 @@ public class SalesfarceIDE {
                     err(failname, compileClassResult.getLine(),
                             compileClassResult.getColumn(),
                             "W",
-                            warning);
+                            warning.replaceAll("\n", " "));
                 }
             }
 
             CompileTriggerResult[] tr = compileTestResult.getTriggers();
             for (CompileTriggerResult compileClassResult : tr) {
-                 String failname = findFile(src, compileClassResult.getName(), filename);
+                String failname = findFile(src, compileClassResult.getName(), filename);
                 if (compileClassResult.getProblem() != null) {
 
                     err(failname, compileClassResult.getLine(),
@@ -520,6 +520,8 @@ public class SalesfarceIDE {
                 System.out.println("TESTS PASS!");
             }
 
+            Pattern trigPat = Pattern.compile("Trigger.(\\w.*)..*");
+
             for (RunTestFailure fail : fails) {
 
 //                System.out.println(fail.toString());
@@ -528,13 +530,13 @@ public class SalesfarceIDE {
                 LineNumberReader rr = new LineNumberReader(new StringReader(fail.getStackTrace()));
                 String stack = rr.readLine();
                 while (stack != null) {
-//                    System.out.println("STACKx : " + stack);
-                    Matcher nm = namePat.matcher(stack);
-//                    System.out.println("NM " + nm.matches());
 
+                    Matcher nm = trigPat.matcher(stack);
+                     if (!nm.matches()) {
+                         nm = namePat.matcher(stack);
+                     }
+                    
                     if (nm.matches()) {
-//                        System.out.println("FILE: " + nm.group(1));
-
                         Matcher m = linePat.matcher(stack);
 
                         String failname = findFile(src, nm.group(1), filename);
@@ -549,12 +551,9 @@ public class SalesfarceIDE {
                                 err(failname, -1, -1, "W", "Internal farce.ide error decoding: " + fail.getStackTrace());
                             }
                         }
-                        err(failname, line, column, "E", fail.getMessage());
-
-
+                        err(failname, line, column, "E", fail.getMessage().replaceAll("\n", "|"));
                     }
                     stack = rr.readLine();
-
                 }
             }
         }
@@ -595,6 +594,7 @@ public class SalesfarceIDE {
 
 
     public void downloadFiles(String srcDir, File crcFile) throws Exception {
+        crcFile.createNewFile();
         Properties crcs = new Properties();
 
         String[] metadataTypes = new String[]{
@@ -683,7 +683,6 @@ public class SalesfarceIDE {
     }
 
     private String findFile(String src, final String searchname, String compileFile) {
-        System.out.println("SRC=" + src);
         File[] files = findDiskFile(src, "classes", searchname);
 
         if (files.length == 0) {
@@ -785,8 +784,11 @@ public class SalesfarceIDE {
         while ((entry = in.getNextEntry()) != null) {
             int count;
             byte data[] = new byte[1000];
+            File outputFile = new File(srcDir, entry.getName());
+//            outputFile.createNewFile();
+            outputFile.getParentFile().mkdirs();
             out = new BufferedOutputStream(new
-                    FileOutputStream(new File(srcDir, entry.getName())), 1000);
+                    FileOutputStream(outputFile), 1000);
             while ((count = in.read(data, 0, 1000)) != -1) {
                 out.write(data, 0, count);
             }

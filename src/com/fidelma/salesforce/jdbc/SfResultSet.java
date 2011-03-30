@@ -182,7 +182,8 @@ public class SfResultSet implements java.sql.ResultSet {
 //            XmlObject child = (XmlObject) parent.getField(childName);
 //            System.out.println("Child " + childName + " of " + parentName + " vs " + parent.getName().getLocalPart() + " is " + child);
             if (child == null) {
-                throw new SQLException("Unknown child field " + parentName + " of " + parent.getName().getLocalPart() + " cn=" + childName);
+                return null;
+//                throw new SQLException("Unknown child field " + parentName + " of " + parent.getName().getLocalPart() + " cn=" + childName);
             }
 
             String childLabel = columnLabel.substring(dotPos + 1);
@@ -215,7 +216,8 @@ public class SfResultSet implements java.sql.ResultSet {
         String realColumnName = columnNameCaseMap.get(columnLabel.toUpperCase());
         if (realColumnName == null) {
 //            realColumnName = columnLabel;
-            throw new SQLException("Don't know about column " + columnLabel);
+            return null;  // ??
+//            throw new SQLException("Don't know about column " + columnLabel);
         }
 
 //        System.out.println("col label=" + columnLabel);
