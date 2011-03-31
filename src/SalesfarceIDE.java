@@ -167,9 +167,12 @@ public class SalesfarceIDE {
         ZipFile zip = new ZipFile(result);
         CrcResults crcResults = pullCrcs(zip, crcs, filenameNoPath);
 
+        boolean runTests = true;
+
         if ((crcResults.serverCrc != null) && (crcResults.localCrc != null) && (!crcResults.serverCrc.equals(crcResults.localCrc))) {
             if (arg.equals("-force")) {
                 System.out.println("Saving even though checksums mismatch");
+                runTests = false;
 
             } else {
                 err(filename, -1, -1, "E", "Code NOT saved due to checksum issue. Use -download to get latest or -force to force upload");
@@ -178,7 +181,7 @@ public class SalesfarceIDE {
         }
 
         if (filename.endsWith(".trigger") || filename.endsWith(".cls")) {
-            compileAndUploadCode(filename, prop, src, debugFile, sourceCode);
+            compileAndUploadCode(filename, prop, src, debugFile, sourceCode, runTests);
         } else {
             uploadNonCode(filename, src, sourceCode.toString());
         }
@@ -410,7 +413,7 @@ public class SalesfarceIDE {
     }
 
 
-    private void compileAndUploadCode(String filename, Properties prop, String src, String debugFile, StringBuilder sourceCode) throws ConnectionException, IOException {
+    private void compileAndUploadCode(String filename, Properties prop, String src, String debugFile, StringBuilder sourceCode, boolean runTests) throws ConnectionException, IOException {
         String[] triggers = new String[0];
         String[] classes = new String[0];
 
@@ -434,7 +437,7 @@ public class SalesfarceIDE {
 
         String name = new File(filename).getName();
 
-        if (name.contains("Test")) {
+        if (name.contains("Test") && runTests) {
             RunTestsRequest rtr = new RunTestsRequest();
             rtr.setClasses(new String[]{name.replace(".cls", "")});
             request.setRunTestsRequest(rtr);
@@ -505,7 +508,7 @@ public class SalesfarceIDE {
         }
         // \\s.*
         Pattern linePat = Pattern.compile(".* line ([0-9]*).*column ([0-9]*).*");
-        Pattern namePat = Pattern.compile("^\\w.*\\.(\\w.*)\\..*");
+        Pattern namePat = Pattern.compile("^\\w.*\\.(\\w.*)\\.(\\w.*)\\:.*");
 
 
         RunTestsResult testResult = compileTestResult.getRunTestsResult();
@@ -527,7 +530,7 @@ public class SalesfarceIDE {
 //                System.out.println(fail.toString());
 //                System.out.println(">>>> " + fail.getStackTrace() + "<<<<");
 
-                LineNumberReader rr = new LineNumberReader(new StringReader(fail.getStackTrace()));
+                LineNumberReader rr = new LineNumberReader(new StringReader(fail.getMessage() + "\n" + fail.getStackTrace()));
                 String stack = rr.readLine();
                 while (stack != null) {
 
@@ -540,9 +543,11 @@ public class SalesfarceIDE {
                         Matcher m = linePat.matcher(stack);
 
                         String failname = findFile(src, nm.group(1), filename);
+                        String method = nm.group(2);
 
                         int line = -1;
                         int column = -1;
+
                         if (m.matches() && m.groupCount() == 2) {
                             try {
                                 line = Integer.decode(m.group(1));
@@ -551,7 +556,8 @@ public class SalesfarceIDE {
                                 err(failname, -1, -1, "W", "Internal farce.ide error decoding: " + fail.getStackTrace());
                             }
                         }
-                        err(failname, line, column, "E", fail.getMessage().replaceAll("\n", "|"));
+//                        err(failname, line, column, "E", fail.getMessage().replaceAll("\n", "|"));
+                        err(failname, line, column, "E", "[" + method + "] " + fail.getMessage());
                     }
                     stack = rr.readLine();
                 }
