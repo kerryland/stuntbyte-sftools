@@ -23,15 +23,11 @@ import java.util.List;
 public class SfDatabaseMetaData implements DatabaseMetaData {
     private SfConnection sfConnection;
     private ResultSetFactory metaDataFactory;
-//    private MetadataConnection meta;
 
     public SfDatabaseMetaData(SfConnection sfConnection,
                               ResultSetFactory metaDataFactory) throws Exception {
         this.sfConnection = sfConnection;
         this.metaDataFactory = metaDataFactory;
-        LoginHelper helper = sfConnection.getHelper();
-//        meta = helper.getMetadataConnection();
-
     }
 
     public boolean allProceduresAreCallable() throws SQLException {
@@ -75,7 +71,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public String getDatabaseProductVersion() throws SQLException {
-        return "n";
+        return "Winter11"; //TODO: Pull from API?
     }
 
     public String getDriverName() throws SQLException {
@@ -83,15 +79,15 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public String getDriverVersion() throws SQLException {
-        return "1";
+        return "1.1";
     }
 
     public int getDriverMajorVersion() {
-        return 0;
+        return 1;
     }
 
     public int getDriverMinorVersion() {
-        return 0;
+        return 1;
     }
 
     public boolean usesLocalFiles() throws SQLException {
