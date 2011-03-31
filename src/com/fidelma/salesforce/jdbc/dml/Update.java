@@ -109,12 +109,12 @@ public class Update {
                     }
                 }
 
-                SaveResult[] sr = pc.update(update); // TODO: Handle errors
+                SaveResult[] sr = pc.update(update);
                 for (SaveResult saveResult : sr) {
                     if (!saveResult.isSuccess()) {
                         com.sforce.soap.partner.Error[] errors = saveResult.getErrors();
                         for (Error error : errors) {
-                            System.out.println("UPDATE ERROR: " + error.getMessage());
+                            throw new SQLException(error.getMessage());
                         }
                     }
                 }

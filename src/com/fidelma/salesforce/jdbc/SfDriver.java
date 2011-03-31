@@ -4,11 +4,6 @@ import java.sql.*;
 import java.util.Properties;
 
 /**
- * Created by IntelliJ IDEA.
- * User: kerry
- * Date: 8/03/2011
- * Time: 7:03:25 PM
- * To change this template use File | Settings | File Templates.
  */
 public class SfDriver implements java.sql.Driver {
 

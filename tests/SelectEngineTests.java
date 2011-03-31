@@ -1,4 +1,5 @@
 import com.fidelma.salesforce.jdbc.SfConnection;
+import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.sobject.SObject;
@@ -6,17 +7,13 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.Statement;
-import java.sql.Timestamp;
+import java.math.BigDecimal;
+import java.sql.*;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.Date;
 
 import static org.junit.Assert.*;
 
@@ -300,12 +297,9 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
     @Test
     public void testResultSetMetaData() throws Exception {
         DatabaseMetaData meta = conn.getMetaData();
-        ResultSet rs = meta.getPrimaryKeys(null, null, "Lead");
-        while (rs.next()) {
-            System.out.println(rs.getString("COLUMN_NAME"));
-            System.out.println(rs.getString("PK_NAME"));
-        }
-
+        ResultSet rs = meta.getPrimaryKeys(null, null, "aaa__c");
+        assertTrue(rs.next());
+        assertEquals("Id", rs.getString("COLUMN_NAME"));
     }
 
 
@@ -331,12 +325,15 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
                 " and Registered_User_Last_Update_By_Website__c = 0\n" +
                 "order by LastModifiedDate desc";
 
+        soql = "insert into leads_to_convert__c(lead__c) values ('00QQ0000005CJ7GMAW')";
+
         Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery(soql);
-        while (rs.next()) {
-            System.out.println("1>" + rs.getString("Preferred_Contact_Medium__r.Email_Address__c"));
-            System.out.println("2>" + rs.getString(1));
-        }
+        System.out.println(stmt.executeUpdate(soql));
+//        ResultSet rs = stmt.executeQuery(soql);
+//        while (rs.next()) {
+//            System.out.println("1>" + rs.getString("Preferred_Contact_Medium__r.Email_Address__c"));
+//            System.out.println("2>" + rs.getString(1));
+//        }
     }
     */
 
@@ -522,6 +519,111 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals(1, foundCount);
     }
 
+    @Test
+    public void testDatatypes() throws Exception {
+
+        PartnerConnection pc = conn.getHelper().getPartnerConnection();
+
+        bbb = new SObject();
+        bbb.setType("bbb__c");
+        bbb.addField("Name", "bbb Name");
+        String bid = checkSaveResult(pc.create(new SObject[]{bbb}));
+//             bbb.setId(id);
+
+        String name = "Willy" + System.currentTimeMillis();
+
+        String soql = "insert into aaa__c(\n" +
+                "Name, bbb__c, long_text_1__c, long_text_2__c, \n" +
+                "checkbox__c, currency__c, date__c, datetime__c, email__c, \n" +
+                "number4dp__c, percent0dp__c, phone__c, picklist__c, multipicklist__c, \n" +
+                "textarea__c, textarearich__c, url__c)\n" +
+                "values (?,?,?,?,\n" +
+                "        ?,?,?,?,?,\n" +
+                "        ?,?,?,?,?,\n" +
+                "        ?,?,?)";
+
+        StringBuilder sb = new StringBuilder();
+        for (int i=0; i < 31000; i++) {
+            sb.append("x");
+        }
+        // http://www.salesforce.com/us/developer/docs/api/Content/field_types.htm
+        PreparedStatement pstmt = conn.prepareStatement(soql);
+        int col=0;
+        pstmt.setString(++col, name); // Name
+        pstmt.setString(++col, bid);      // reference to bbb__c
+        pstmt.setString(++col, sb.toString());
+        pstmt.setString(++col, sb.toString().replaceAll("x", "y"));
+        pstmt.setBoolean(++col, true);                       // checkbox__c
+        pstmt.setBigDecimal(++col, new BigDecimal("12.25")); // currency__c
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        cal.set(2010, Calendar.FEBRUARY, 11, 23, 59, 59);
+        pstmt.setDate(++col, new java.sql.Date(cal.getTimeInMillis())); // date__c
+        cal.set(2010, Calendar.OCTOBER, 21, 23, 15, 0);
+        pstmt.setTimestamp(++col, new Timestamp(cal.getTimeInMillis())); // datetime__c
+        pstmt.setString(++col, "noddy@example.com"); // email__c
+        pstmt.setBigDecimal(++col, new BigDecimal("17.12345")); // number4dp__c
+        pstmt.setBigDecimal(++col, new BigDecimal("96.7777")); // percent0dp__c
+        pstmt.setString(++col, "0800-PHONE"); // phone__c
+        pstmt.setString(++col, "PickMe"); // picklist__c
+        pstmt.setString(++col, "Red;Blue;Green"); // multipicklist__c
+        pstmt.setString(++col, "Text Area");
+        pstmt.setString(++col, "Text Area Rich");
+        pstmt.setString(++col, "http://www.example.com"); // url__c
+
+        int count = pstmt.executeUpdate();
+
+        assertEquals(1, count);
+
+        Statement stmt = conn.createStatement();
+
+        ResultSet rs = stmt.executeQuery("select " +
+                "Name, bbb__c, long_text_1__c, long_text_2__c, \n" +
+                "checkbox__c, currency__c, date__c, datetime__c, email__c, \n" +
+                "number4dp__c, percent0dp__c, phone__c, picklist__c, multipicklist__c, \n" +
+                "textarea__c, textarearich__c, url__c " +
+                " from aaa__c where Name = '" + name + "'");
+
+        int foundCount = 0;
+        while (rs.next()) {
+            foundCount++;
+            assertEquals(name, rs.getString("name"));
+            assertEquals(bid, rs.getString("bbb__c"));
+            assertEquals(sb.toString(), rs.getString("long_text_1__c"));
+            assertEquals(Boolean.TRUE, rs.getBoolean("checkbox__c"));
+            assertEquals("12.25", rs.getBigDecimal("currency__c").toPlainString());
+
+            SimpleDateFormat sdf = new SimpleDateFormat(ResultSetFactory.dateFormat);
+            Date d = new Date(rs.getDate("date__c").getTime());
+            assertEquals("2010-02-11", sdf.format(d));
+
+            Timestamp ts = rs.getTimestamp("datetime__c");
+            d = new Date(ts.getTime());
+            sdf = new SimpleDateFormat(ResultSetFactory.timestampFormat);
+            assertEquals("2010-10-21T23:15:00.000Z", sdf.format(d));
+        }
+        assertEquals(1, foundCount);
+
+        stmt.execute("delete from aaa__c where name = '" + name + "'");
+    }
+
+    @Test
+    public void testSelectStar() throws Exception {
+        Statement stmt = conn.createStatement();
+        int count = stmt.executeUpdate("insert into aaa__c(name, number4dp__c) values ('selectStar', 1)");
+        ResultSet rs = stmt.executeQuery("select * from aaa__c where name='selectStar'");
+        assertEquals(27, rs.getMetaData().getColumnCount());
+        assertTrue(rs.next());
+        assertEquals("selectStar", rs.getString("name"));
+        assertEquals("1.0", rs.getBigDecimal("number4dp__c").toPlainString());
+
+        // Try alias.
+        rs = stmt.executeQuery("select a.* from aaa__c a where a.name='selectStar'");
+        assertEquals(27, rs.getMetaData().getColumnCount());
+        assertTrue(rs.next());
+        assertEquals("selectStar", rs.getString("name"));
+        assertEquals("1.0", rs.getBigDecimal("number4dp__c").toPlainString());
+
+    }
 
     @Test
     public void testDelete() throws Exception {
@@ -552,70 +654,6 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertFalse(rs.next());
 
     }
-
-
-    /*
-    public void testMe() throws Exception {
-
-//        rs = stmt.executeQuery("select Name, Description, CreatedBy.name from account limit 3");
-        rs = stmt.executeQuery("select Name, Description, CreatedBy.name, id,  createdby.id, createdby.lastname from account limit 3");
-//        rs = stmt.executeQuery("SELECT Title, Id,\n" +
-//                "       magic__c,\n" +
-//                "       Associated_Lead__r.id\n" +
-//                "FROM Lead\n" +
-//                "where lastname = 'Sainsbury'\n" +
-//                "order by magic__c limit 1\n" +
-//                "");
-
-        ResultSetMetaData rsmd = rs.getMetaData();
-        System.out.println("COL COUNT=" + rsmd.getColumnCount());
-        for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-            System.out.println(i + " " + rsmd.getColumnLabel(i));
-        }
-
-
-        while (rs.next()) {
-            System.out.print("GOTx ");
-            for (int i = 1; i < rsmd.getColumnCount(); i++) {
-                System.out.println(rsmd.getColumnLabel(i) + "=" + rs.getString(i) + " ");
-            }
-            System.out.println("<");
-        }
-
-//        ResultSetMetaData rsMeta = rs.getMetaData();
-//
-//        System.out.println("COUNT=" + rsMeta.getColumnCount());
-//        for (int i = 1; i < rsMeta.getColumnCount(); i++) {
-//            System.out.println("BLOOP : "+ i + " " + rsMeta.getColumnName(i));
-//        }
-
-//        assertEquals(3, rsMeta.getColumnCount());
-//        assertEquals("Name", rsMeta.getColumnName(1));
-//        assertEquals("Description", rsMeta.getColumnName(2));
-//        assertEquals("CreatedBy.Name", rsMeta.getColumnName(3));
-
-
-        // Crude prepared statement
-//        PreparedStatement pstnt = conn.prepareStatement("select name from account limit 2");
-//        rs = pstnt.executeQuery();
-//        while (rs.next()) {
-//            System.out.println("GOTx " + rs.getString("Name"));
-//        }
-
-//        rs = pstnt.executeQuery("select name, description from account limit 3");
-//        while (rs.next()) {
-//            System.out.println("GOTy " + rs.getString("Name") + " " + rs.getString("Description"));
-//        }
-//
-//        // Meta data
-//        rs = conn.getMetaData().getTables(null, null, null, null);
-//        while (rs.next()) {
-//            System.out.println("TAB: " + rs.getString("TABLE_NAME"));
-//        }
-
-
-    }
-    */
 
 
     private static String checkSaveResult(SaveResult[] sr) throws Exception {

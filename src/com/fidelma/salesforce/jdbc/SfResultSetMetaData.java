@@ -76,7 +76,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
                     }
                 } else {
                     // TODO: Throw an exception?
-                    System.out.println("WHAT TO DO WITH base  " + baseName + ">> " + ci.name);
+//                    System.out.println("WHAT TO DO WITH base  " + baseName + ">> " + ci.name);
                 }
             }
         }

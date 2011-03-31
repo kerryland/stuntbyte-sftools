@@ -43,7 +43,6 @@ public class Insert {
             while (token != null) {
                 String column = token.getValue();
                 columns.add(column);
-                System.out.println("ADDED COLUMN " + column);
 
                 // Comma or )
                 token = al.getToken();
@@ -96,16 +95,20 @@ public class Insert {
                 sObject.setField(key, value);
             }
 
-            SaveResult[] sr = pc.create(new SObject[]{sObject}); // TODO: Handle errors
+            SaveResult[] sr = pc.create(new SObject[]{sObject});
             for (SaveResult saveResult : sr) {
-                System.out.println("INSERT OK=" + saveResult.isSuccess());
                 if (!saveResult.isSuccess()) {
                     com.sforce.soap.partner.Error[] errors = saveResult.getErrors();
+                    StringBuilder sb = new StringBuilder();
                     for (Error error : errors) {
-                        System.out.println("ERROR: " + error.getMessage());
+                        sb.append(error.getMessage()).append(". ");
                     }
+                    throw new SQLException(sb.toString());
                 }
             }
+        } catch (SQLException e) {
+            throw e;
+
         } catch (Exception e) {
             throw new SQLException(e);
         }
