@@ -6,7 +6,10 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,8 +21,11 @@ import java.util.Map;
  */
 public class ResultSetFactory {
 
+    public static String timestampFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+    public static String dateFormat = "yyyy-MM-dd";
+
     // TODO: See TYPE_INFO_DATA for all the ones we need to cover
-    public Object dataTypeConvert(String value, Integer dataType) {
+    public Object dataTypeConvert(String value, Integer dataType) throws ParseException {
 
         if (dataType == null) {
             return value;
@@ -38,7 +44,20 @@ public class ResultSetFactory {
             return new BigDecimal(value);
         }
 
-        //TODO: DATE, TIME, TIMESTAMP, ARRAY, OTHER, VARBINARY
+        if (dataType == Types.DATE) {
+            SimpleDateFormat dateSdf = new SimpleDateFormat(dateFormat);
+            return dateSdf.parse(value);
+        }
+
+        if (dataType == Types.TIMESTAMP) {
+            SimpleDateFormat dateSdf = new SimpleDateFormat(timestampFormat);
+            Calendar cal =  Calendar.getInstance();
+            cal.setTimeInMillis(dateSdf.parse(value).getTime());
+            return cal;
+        }
+
+
+        //TODO: TIME,  ARRAY, OTHER, VARBINARY
 
         return value;
     }
@@ -108,8 +127,12 @@ public class ResultSetFactory {
         tableMap.put(table.getName().toUpperCase(), table);
     }
 
-    public Table getTable(String tableName) {
-        return tableMap.get(tableName.toUpperCase());
+    public Table getTable(String tableName) throws SQLException {
+        Table result = tableMap.get(tableName.toUpperCase());
+        if (result == null) {
+            throw new SQLException("Unknown table: " + tableName);
+        }
+        return result;
     }
 
     /**
@@ -235,7 +258,7 @@ public class ResultSetFactory {
                 return entry;
             }
         }
-          throw new SQLException("Unable to identify type for " + forceTypeName);
+        throw new SQLException("Unable to identify type for " + forceTypeName);
 //        return null;
     }
 

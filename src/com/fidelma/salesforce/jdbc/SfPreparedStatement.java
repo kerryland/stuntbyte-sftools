@@ -1,5 +1,6 @@
 package com.fidelma.salesforce.jdbc;
 
+import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalAnalyzer;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
 import com.fidelma.salesforce.misc.LoginHelper;
@@ -85,7 +86,7 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
             Integer soqlIndex = paramMap.get(parameterIndex);
             String param = tokenizedSoql.get(soqlIndex);
             if (param.equals("?")) {
-                throw new SQLException("Parameter " + soqlIndex + " not set");
+                throw new SQLException("Parameter " + parameterIndex + " not set");
             }
         }
     }
@@ -150,13 +151,21 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
         setParameter(parameterIndex, "'" + x + "'");
     }
 
-    private SimpleDateFormat timestampSdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+
+    private SimpleDateFormat timestampSdf = new SimpleDateFormat(ResultSetFactory.timestampFormat);
+    private SimpleDateFormat dateSdf = new SimpleDateFormat(ResultSetFactory.dateFormat);
 
 
     public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {
         Date d = new Date(x.getTime());
         setParameter(parameterIndex, timestampSdf.format(d));
     }
+
+    public void setDate(int parameterIndex, Date x) throws SQLException {
+        Date d = new Date(x.getTime());
+        setParameter(parameterIndex, dateSdf.format(d));
+    }
+
 
     public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
         // TODO
@@ -182,9 +191,6 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
 
     }
 
-    public void setDate(int parameterIndex, Date x) throws SQLException {
-
-    }
 
     public void setTime(int parameterIndex, Time x) throws SQLException {
 

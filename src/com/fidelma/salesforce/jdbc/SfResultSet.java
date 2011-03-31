@@ -1,5 +1,6 @@
 package com.fidelma.salesforce.jdbc;
 
+import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.QueryResult;
 import com.sforce.soap.partner.sobject.SObject;
@@ -149,7 +150,6 @@ public class SfResultSet implements java.sql.ResultSet {
             columnName = columnName.substring(8);
             if (!columnsInResult.contains(columnName)) {
                 columnsInResult.add(columnName);
-                System.out.println("COLUMNS IN RESULT: " + columnName);
             }
         }
 
@@ -159,7 +159,6 @@ public class SfResultSet implements java.sql.ResultSet {
             if (columnsInSql.contains(col.toUpperCase()) || col.startsWith("expr")) {
                 blurg.add(col);
                 columnNameCaseMap.put(col.toUpperCase(), col);
-                System.out.println("INCL " + col);
             }
         }
         columnsInResult.clear();
@@ -243,7 +242,6 @@ public class SfResultSet implements java.sql.ResultSet {
         int col = -1;
 
         for (String fieldName : columnsInResult) {
-            System.out.println("RF has " + fieldName + "( check for " + columnLabel);
             i++;
             if (fieldName.equalsIgnoreCase(columnLabel)) {
                 col = i;
@@ -427,7 +425,8 @@ public class SfResultSet implements java.sql.ResultSet {
         return getTimestamp(columnLabel);
     }
 
-    private SimpleDateFormat timestampSdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    private SimpleDateFormat timestampSdf = new SimpleDateFormat(ResultSetFactory.timestampFormat);
+    private SimpleDateFormat dateSdf = new SimpleDateFormat(ResultSetFactory.dateFormat);
 
     private Timestamp getTimestamp(Object o) throws SQLException {
         if (o == null) {
@@ -451,24 +450,41 @@ public class SfResultSet implements java.sql.ResultSet {
         return metaData;
     }
 
-
-    // TODO ------------------------------------------------------------------------
     public Date getDate(int columnIndex) throws SQLException {
-        return null;
+        return getDate(getObject(columnIndex));
     }
 
     public Date getDate(String columnLabel) throws SQLException {
-        return null;
+        return getDate(getObject(columnLabel));
     }
 
-
+    // TODO: Handle cal
     public Date getDate(int columnIndex, Calendar cal) throws SQLException {
-        return null;
+        return getDate(getObject(columnIndex));
     }
 
+    // TODO: Handle cal
     public Date getDate(String columnLabel, Calendar cal) throws SQLException {
-        return null;
+        return getDate(getObject(columnLabel));
     }
+
+    private Date getDate(Object o) throws SQLException {
+        if (o == null) {
+            return null;
+        } else if (o instanceof Date) {
+            return ((Date) o);
+        } else if (o instanceof String) {
+            try {
+                java.util.Date d = dateSdf.parse((String) o);
+                return new Date(d.getTime());
+            } catch (ParseException e) {
+                throw new SQLException("No type conversion to Date available for " + o);
+            }
+        } else {
+            throw new SQLException("No type conversion to Date available for " + o);
+        }
+    }
+
 
 
     // This is rubbish
@@ -555,7 +571,7 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
     public String getCursorName() throws SQLException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
 

@@ -52,6 +52,7 @@ public class SfStatement implements java.sql.Statement {
                 count = delete.execute();
 
             } else if (token.getValue().equalsIgnoreCase("COMMIT")) {
+            } else if (token.getValue().equalsIgnoreCase("ROLLBACK")) {
             } else {
                 throw new SQLException("Unsupported command " + token.getValue());
             }
@@ -170,25 +171,13 @@ public class SfStatement implements java.sql.Statement {
         return sfConnection;
     }
 
-    // SQLFeatureNotSupportedException from here down...
-
-    public void addBatch(String sql) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
-    }
-
-    public void clearBatch() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
-
-    }
-
-    public int[] executeBatch() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
-    }
-
-
     public boolean getMoreResults(int current) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return false;
+//        throw new SQLFeatureNotSupportedException();
     }
+
+
+    // TODO: maybe, if we can be bothered
 
     public ResultSet getGeneratedKeys() throws SQLException {
         throw new SQLFeatureNotSupportedException();
@@ -217,6 +206,24 @@ public class SfStatement implements java.sql.Statement {
     public boolean execute(String sql, String[] columnNames) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
+
+
+    // SQLFeatureNotSupportedException from here down...
+
+    public void addBatch(String sql) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+    }
+
+    public void clearBatch() throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+
+    }
+
+    public int[] executeBatch() throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+    }
+
+
 
     public int getResultSetHoldability() throws SQLException {
         return 0;
