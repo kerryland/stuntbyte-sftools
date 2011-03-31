@@ -606,6 +606,24 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         stmt.execute("delete from aaa__c where name = '" + name + "'");
     }
 
+    @Test
+    public void testSelectStar() throws Exception {
+        Statement stmt = conn.createStatement();
+        int count = stmt.executeUpdate("insert into aaa__c(name, number4dp__c) values ('selectStar', 1)");
+        ResultSet rs = stmt.executeQuery("select * from aaa__c where name='selectStar'");
+        assertEquals(27, rs.getMetaData().getColumnCount());
+        assertTrue(rs.next());
+        assertEquals("selectStar", rs.getString("name"));
+        assertEquals("1.0", rs.getBigDecimal("number4dp__c").toPlainString());
+
+        // Try alias.
+        rs = stmt.executeQuery("select a.* from aaa__c a where a.name='selectStar'");
+        assertEquals(27, rs.getMetaData().getColumnCount());
+        assertTrue(rs.next());
+        assertEquals("selectStar", rs.getString("name"));
+        assertEquals("1.0", rs.getBigDecimal("number4dp__c").toPlainString());
+
+    }
 
     @Test
     public void testDelete() throws Exception {

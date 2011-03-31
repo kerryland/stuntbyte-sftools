@@ -1,7 +1,10 @@
 package com.fidelma.salesforce.jdbc.dml;
 
+import com.fidelma.salesforce.jdbc.SfConnection;
 import com.fidelma.salesforce.jdbc.SfResultSet;
 import com.fidelma.salesforce.jdbc.SfStatement;
+import com.fidelma.salesforce.jdbc.metaforce.Column;
+import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
 import com.fidelma.salesforce.misc.SimpleParser;
 import com.sforce.soap.partner.PartnerConnection;
@@ -11,6 +14,7 @@ import com.sforce.ws.ConnectionException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -19,6 +23,7 @@ public class Select {
 
     private SfStatement statement;
     private PartnerConnection pc;
+    private String table;
 
     public Select(SfStatement statement, PartnerConnection pc) {
         this.statement = statement;
@@ -27,11 +32,13 @@ public class Select {
 
     public ResultSet execute(String sql) throws SQLException {
         try {
-            Set<String> columnsInSql = extractColumnsFromSoql(sql);
-            System.out.println("SOQL: " + sql + " found " + columnsInSql.size());
-            for (String s : columnsInSql) {
-                System.out.println("COL IN SQL: " + s);
-            }
+            SimpleParser la = new SimpleParser(sql);
+            Set<String> columnsInSql = extractColumnsFromSoql(la);
+
+//            System.out.println("SOQL: " + sql + " found " + columnsInSql.size());
+//            for (String s : columnsInSql) {
+//                System.out.println("COL IN SQL: " + s);
+//            }
 
             boolean oldTypeCount = false;
 
@@ -44,6 +51,24 @@ public class Select {
                     oldTypeCount = true;
                 }
             }
+
+            if ((columnsInSql.size() == 1) && (columnsInSql.contains("*"))) {
+                SfConnection conn = (SfConnection) statement.getConnection();
+                Table t = conn.getMetaDataFactory().getTable(table);
+                List<Column> cols = t.getColumns();
+                StringBuilder sb = new StringBuilder("Id");
+                columnsInSql = new HashSet<String>();
+                columnsInSql.add("Id".toUpperCase());
+                for (Column col : cols) {
+                    if ((!col.getName().equalsIgnoreCase("Id")) &&
+                            (!col.getName().equalsIgnoreCase("Type"))) {
+                        sb.append(",").append(col.getName());
+                        columnsInSql.add(col.getName().toUpperCase());
+                    }
+                }
+                sql = sql.replace("*", sb.toString());
+            }
+
             Integer oldBatchSize = 2000;
             if (pc.getQueryOptions() != null) {
                 oldBatchSize = pc.getQueryOptions().getBatchSize();
@@ -65,18 +90,20 @@ public class Select {
         }
     }
 
-    private Set<String> extractColumnsFromSoql(String sql) throws Exception {
+    private Set<String> extractColumnsFromSoql(SimpleParser la) throws Exception {
         Set<String> result = new HashSet<String>();
 
-        SimpleParser la = new SimpleParser(sql);
         la.getToken("SELECT");
         LexicalToken token = la.getToken();
 
-        while ((token != null) && (!token.getValue().equalsIgnoreCase("from"))) {
+        while ((token != null) && (!token.getValue().equalsIgnoreCase("FROM"))) {
             if (token.getValue().equals("(")) {
                 token = swallowUntilMatchingBracket(la);
             } else {
-                result.add(token.getValue().toUpperCase());
+                String x = token.getValue().trim();
+                if (x.length() > 0) {
+                    result.add(x.toUpperCase());
+                }
                 token = la.getToken();
             }
         }
@@ -88,7 +115,7 @@ public class Select {
 
     private Set<String> handleColumnAlias(Set<String> result, SimpleParser la, LexicalToken token) throws Exception {
         if ((token != null) && (token.getValue().equalsIgnoreCase("from"))) {
-            String table = la.getValue();
+            table = la.getValue();
             if (table != null) {
                 String alias = la.getValue();
                 if (alias != null) {
@@ -96,9 +123,15 @@ public class Select {
                     Set<String> freshResult = new HashSet<String>();
                     for (String columnName : result) {
                         if (columnName.startsWith(prefix)) {
-                            freshResult.add(columnName.substring(prefix.length()));
+                            String x = columnName.substring(prefix.length()).trim();
+                            if (x.length() != 0) {
+                                freshResult.add(x);
+                            }
+
                         } else {
-                            freshResult.add(columnName);
+                            if (!columnName.equals("")) {
+                                freshResult.add(columnName);
+                            }
                         }
                     }
                     result = freshResult;
@@ -140,15 +173,12 @@ public class Select {
         int start = 0;
         int countPos = detectCountStar(sql, start);
         while (countPos != -1) {
-            System.out.println("FROM " + start + " TO " + countPos);
-
             fixed.append(sql.substring(start, countPos));
             fixed.append("count()");
             start = countPos + 8;
             countPos = detectCountStar(sql, start);
         }
         fixed.append(sql.substring(start));
-        System.out.println(fixed.toString());
         return fixed.toString();
     }
 }
