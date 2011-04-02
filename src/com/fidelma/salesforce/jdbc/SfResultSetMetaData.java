@@ -1,27 +1,30 @@
 package com.fidelma.salesforce.jdbc;
 
-import com.sforce.soap.partner.QueryResult;
+import com.fidelma.salesforce.jdbc.metaforce.Column;
+import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
+import com.fidelma.salesforce.jdbc.metaforce.Table;
+import com.fidelma.salesforce.misc.TypeHelper;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.bind.XmlObject;
 
-import java.sql.DatabaseMetaData;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
  */
 public class SfResultSetMetaData implements ResultSetMetaData {
 
+    private ResultSetFactory rsf;
+
     private class ColumnInfo {
-        String type;
-        String name;
+        String table;
+        String column;
     }
 
     private List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
@@ -31,7 +34,10 @@ public class SfResultSetMetaData implements ResultSetMetaData {
 
     }
 
-    public SfResultSetMetaData(SObject record, List<String> resultFields) throws SQLException {
+    public SfResultSetMetaData(
+            ResultSetFactory rsf,
+            SObject record, List<String> resultFields) throws SQLException {
+        this.rsf = rsf;
         addChildren(null, record, resultFields, new HashSet<String>());
     }
 
@@ -61,22 +67,22 @@ public class SfResultSetMetaData implements ResultSetMetaData {
                 addChildren(baseName, next, resultFields, already);
             } else {
                 ColumnInfo ci = new ColumnInfo();
-                ci.type = type;
+                ci.table = type;
                 if (baseName == null) {
-                    ci.name = next.getName().getLocalPart();
+                    ci.column = next.getName().getLocalPart();
                 } else {
-                    ci.name = baseName + "." + next.getName().getLocalPart();
+                    ci.column = baseName + "." + next.getName().getLocalPart();
                 }
-                if (resultFields.contains(ci.name)) {
-                    if (already.contains(ci.name)) {
+                if (resultFields.contains(ci.column)) {
+                    if (already.contains(ci.column)) {
 
                     } else {
                         cols.add(ci);
-                        already.add(ci.name);
+                        already.add(ci.column);
                     }
                 } else {
                     // TODO: Throw an exception?
-//                    System.out.println("WHAT TO DO WITH base  " + baseName + ">> " + ci.name);
+                    System.out.println("WHAT TO DO WITH base  " + baseName + ">> " + ci.column);
                 }
             }
         }
@@ -88,15 +94,23 @@ public class SfResultSetMetaData implements ResultSetMetaData {
     }
 
     public boolean isAutoIncrement(int column) throws SQLException {
-        return false;
+        Column col = getColumn(column);
+        if (col == null) {
+            return true;
+        }
+        return col.isAutoIncrement();
     }
 
     public boolean isCaseSensitive(int column) throws SQLException {
-        return true;
+        Column col = getColumn(column);
+        if (col == null) {
+            return true;
+        }
+        return col.isCaseSensitive();
     }
 
     public boolean isSearchable(int column) throws SQLException {
-        return false;
+        return true;
     }
 
     public boolean isCurrency(int column) throws SQLException {
@@ -104,7 +118,14 @@ public class SfResultSetMetaData implements ResultSetMetaData {
     }
 
     public int isNullable(int column) throws SQLException {
-        return 0;
+        Column col = getColumn(column);
+        if (col == null) {
+            return ResultSetMetaData.columnNullableUnknown;
+        }
+        if (col.isNillable()) {
+            return ResultSetMetaData.columnNullable;
+        }
+        return ResultSetMetaData.columnNoNulls;
     }
 
     public boolean isSigned(int column) throws SQLException {
@@ -112,19 +133,27 @@ public class SfResultSetMetaData implements ResultSetMetaData {
     }
 
     public int getColumnDisplaySize(int column) throws SQLException {
-        return 10; // TODO:
+        Column col = getColumn(column);
+        if (col == null) {
+            return 10;
+        }
+        return col.getLength();
     }
 
     public String getColumnLabel(int column) throws SQLException {
-        return cols.get(column - 1).name;
+        Column col = getColumn(column);
+        if (col != null) {
+            return col.getLabel();
+        }
+        return getColumnName(column);
     }
 
     public String getColumnName(int column) throws SQLException {
-        return cols.get(column - 1).name;
+        return cols.get(column - 1).column;
     }
 
     public String getSchemaName(int column) throws SQLException {
-        return null;
+        return "";
     }
 
     public int getPrecision(int column) throws SQLException {
@@ -136,35 +165,58 @@ public class SfResultSetMetaData implements ResultSetMetaData {
     }
 
     public String getTableName(int column) throws SQLException {
-        return cols.get(column - 1).type;
+        return cols.get(column - 1).table;
     }
 
     public String getCatalogName(int column) throws SQLException {
-        return null;
+        return "";
     }
 
     public int getColumnType(int column) throws SQLException {
-        return 0;
+        Column col = getColumn(column);
+        if (col == null) {
+            return Types.VARCHAR; // TODO: Be smarter?
+        }
+        return ResultSetFactory.lookupJdbcType(col.getType());
     }
 
     public String getColumnTypeName(int column) throws SQLException {
-        return null;
+        Column col = getColumn(column);
+        if (col == null) {
+            return "Unknown";
+        }
+        return col.getType();
     }
 
+    private Column getColumn(int column) throws SQLException {
+        String columnName = cols.get(column-1).column;
+        Table table = rsf.getTable(cols.get(column-1).table);
+        try {
+            return table.getColumn(columnName);
+        } catch (SQLException e) {
+            return null;
+        }
+    }
+
+
     public boolean isReadOnly(int column) throws SQLException {
-        return false;
+        Column col = getColumn(column);
+        if (col == null) {
+            return true;
+        }
+        return col.isCalculated();
     }
 
     public boolean isWritable(int column) throws SQLException {
-        return false;
+        return !isReadOnly(column);
     }
 
     public boolean isDefinitelyWritable(int column) throws SQLException {
-        return false;
+        return !isReadOnly(column);
     }
 
     public String getColumnClassName(int column) throws SQLException {
-        return null;
+        return TypeHelper.dataTypeToClassName(getColumnType(column));
     }
 
     public <T> T unwrap(Class<T> iface) throws SQLException {

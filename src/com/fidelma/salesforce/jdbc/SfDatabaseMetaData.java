@@ -539,7 +539,9 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public ResultSet getSchemas() throws SQLException {
-        return metaDataFactory.getSchemas(); // TODO - what are schemas?
+        return new SfResultSet();
+
+//        return metaDataFactory.getSchemas(); // TODO - what are schemas?
     }
 
     public ResultSet getCatalogs() throws SQLException {
@@ -572,16 +574,20 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws SQLException {
-//        ColumnMap<String, Object> row = new ColumnMap<String, Object>();
-//        row.put("TABLE_TYPE", "TABLE");
-//        maps.add(row);
-//        return new ForceResultSet(maps);
-
-        return null;
+        return new SfResultSet(); // TODO: Could use Id
     }
 
     public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
-        return null;
+        return new SfResultSet(); // TODO: Could use LastModifiedDate
+    }
+
+    public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable, String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException {
+        return new SfResultSet(); // TODO?
+
+    }
+
+    public ResultSet getTypeInfo() throws SQLException {
+        return metaDataFactory.getTypeInfo();
     }
 
     public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
@@ -603,20 +609,13 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
         return new ForceResultSet(maps);
     }
 
-    public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable, String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException {
-        return null;
-    }
-
-    public ResultSet getTypeInfo() throws SQLException {
-        return null;
-    }
 
     public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {
         return metaDataFactory.getIndexInfo(table);
     }
 
     public boolean supportsResultSetType(int type) throws SQLException {
-        return false;
+        return type == ResultSet.TYPE_FORWARD_ONLY;
     }
 
     public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
@@ -664,11 +663,11 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types) throws SQLException {
-        return null;
+        return new SfResultSet();
     }
 
     public Connection getConnection() throws SQLException {
-        return null;
+        return sfConnection;
     }
 
     public boolean supportsSavepoints() throws SQLException {
@@ -688,15 +687,15 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException {
-        return null;
+        return new SfResultSet();
     }
 
     public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
-        return null;
+        return new SfResultSet();
     }
 
     public ResultSet getAttributes(String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern) throws SQLException {
-        return null;
+        return new SfResultSet();
     }
 
     public boolean supportsResultSetHoldability(int holdability) throws SQLException {
@@ -736,11 +735,11 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public RowIdLifetime getRowIdLifetime() throws SQLException {
-        return null;
+        return RowIdLifetime.ROWID_UNSUPPORTED;
     }
 
     public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
-        return null;
+        return getSchemas();
     }
 
     public boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException {
@@ -752,11 +751,11 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public ResultSet getClientInfoProperties() throws SQLException {
-        return null;
+        return new SfResultSet();
     }
 
     public ResultSet getFunctions(String catalog, String schemaPattern, String functionNamePattern) throws SQLException {
-        return null;
+        return new SfResultSet();
     }
 
     public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern) throws SQLException {
@@ -764,7 +763,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        return null;
+        throw new SQLException("Unsupported");
     }
 
     public boolean isWrapperFor(Class<?> iface) throws SQLException {

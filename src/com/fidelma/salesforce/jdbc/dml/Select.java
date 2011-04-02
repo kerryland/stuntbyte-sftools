@@ -4,6 +4,7 @@ import com.fidelma.salesforce.jdbc.SfConnection;
 import com.fidelma.salesforce.jdbc.SfResultSet;
 import com.fidelma.salesforce.jdbc.SfStatement;
 import com.fidelma.salesforce.jdbc.metaforce.Column;
+import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
 import com.fidelma.salesforce.misc.SimpleParser;
@@ -75,9 +76,14 @@ public class Select {
             }
 
             try {
+                ResultSetFactory rsf = ((SfConnection) statement.getConnection()).getMetaDataFactory();
                 pc.setQueryOptions(statement.getFetchSize());
                 QueryResult qr = pc.query(sql);
-                return new SfResultSet(pc, qr, columnsInSql, statement.getMaxRows(), oldTypeCount);
+                return new SfResultSet(
+                        rsf,
+                        pc, qr, columnsInSql,
+                        statement.getMaxRows(),
+                        oldTypeCount);
 
             } finally {
                 pc.setQueryOptions(oldBatchSize);
@@ -116,6 +122,8 @@ public class Select {
     private Set<String> handleColumnAlias(Set<String> result, SimpleParser la, LexicalToken token) throws Exception {
         if ((token != null) && (token.getValue().equalsIgnoreCase("from"))) {
             table = la.getValue();
+            // TODO: Handle quotes
+            System.out.println("TABLE=" + table);
             if (table != null) {
                 String alias = la.getValue();
                 if (alias != null) {

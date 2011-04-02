@@ -1,5 +1,5 @@
 import com.fidelma.salesforce.jdbc.SfConnection;
-import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
+import com.fidelma.salesforce.misc.TypeHelper;
 import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.sobject.SObject;
@@ -295,11 +295,27 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
 
 
     @Test
-    public void testResultSetMetaData() throws Exception {
+    public void testDatabaseMetaData() throws Exception {
         DatabaseMetaData meta = conn.getMetaData();
         ResultSet rs = meta.getPrimaryKeys(null, null, "aaa__c");
         assertTrue(rs.next());
         assertEquals("Id", rs.getString("COLUMN_NAME"));
+
+        rs = meta.getTables(null, null, "aaa__c", null);
+        assertTrue(rs.next());
+        assertEquals("aaa__c", rs.getString("TABLE_NAME"));
+        assertFalse(rs.next());
+
+        rs = meta.getTables(null, null, "aaa%", null);
+        assertTrue(rs.next());
+        assertEquals("aaa__c", rs.getString("TABLE_NAME"));
+        assertFalse(rs.next());
+
+        rs = meta.getTables(null, null, "%aa__c", null);
+        assertTrue(rs.next());
+        assertEquals("aaa__c", rs.getString("TABLE_NAME"));
+        assertFalse(rs.next());
+
     }
 
 
@@ -543,12 +559,12 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
                 "        ?,?,?)";
 
         StringBuilder sb = new StringBuilder();
-        for (int i=0; i < 31000; i++) {
+        for (int i = 0; i < 31000; i++) {
             sb.append("x");
         }
         // http://www.salesforce.com/us/developer/docs/api/Content/field_types.htm
         PreparedStatement pstmt = conn.prepareStatement(soql);
-        int col=0;
+        int col = 0;
         pstmt.setString(++col, name); // Name
         pstmt.setString(++col, bid);      // reference to bbb__c
         pstmt.setString(++col, sb.toString());
@@ -592,16 +608,84 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
             assertEquals(Boolean.TRUE, rs.getBoolean("checkbox__c"));
             assertEquals("12.25", rs.getBigDecimal("currency__c").toPlainString());
 
-            SimpleDateFormat sdf = new SimpleDateFormat(ResultSetFactory.dateFormat);
+            SimpleDateFormat sdf = new SimpleDateFormat(TypeHelper.dateFormat);
             Date d = new Date(rs.getDate("date__c").getTime());
             assertEquals("2010-02-11", sdf.format(d));
 
             Timestamp ts = rs.getTimestamp("datetime__c");
             d = new Date(ts.getTime());
-            sdf = new SimpleDateFormat(ResultSetFactory.timestampFormat);
+            sdf = new SimpleDateFormat(TypeHelper.timestampFormat);
             assertEquals("2010-10-21T23:15:00.000Z", sdf.format(d));
         }
         assertEquals(1, foundCount);
+
+        // Check Name metadata
+        ResultSetMetaData rsm = rs.getMetaData();
+        assertEquals("aaa Name", rsm.getColumnLabel(1));
+        assertEquals("Name", rsm.getColumnName(1));
+        assertEquals("", rsm.getCatalogName(1));
+        assertEquals("java.lang.String", rsm.getColumnClassName(1));
+        assertEquals(80, rsm.getColumnDisplaySize(1));
+        assertEquals("string", rsm.getColumnTypeName(1));
+        assertEquals(Types.VARCHAR, rsm.getColumnType(1));
+
+        assertEquals("bbb", rsm.getColumnLabel(2));
+        assertEquals("bbb__c", rsm.getColumnName(2));
+        assertEquals("", rsm.getCatalogName(2));
+        assertEquals("java.lang.String", rsm.getColumnClassName(2));
+        assertEquals(18, rsm.getColumnDisplaySize(2));
+        assertEquals("reference", rsm.getColumnTypeName(2));
+        assertEquals(Types.VARCHAR, rsm.getColumnType(2));
+
+
+        // long_text_1__c
+        assertEquals("long text 1", rsm.getColumnLabel(3));
+        assertEquals("long_text_1__c", rsm.getColumnName(3));
+        assertEquals("", rsm.getCatalogName(3));
+        assertEquals("java.lang.String", rsm.getColumnClassName(3));
+        assertEquals(32000, rsm.getColumnDisplaySize(3));
+        assertEquals("textarea", rsm.getColumnTypeName(3));
+        assertEquals(Types.LONGVARCHAR, rsm.getColumnType(3));
+
+        assertEquals("checkbox", rsm.getColumnLabel(5));
+        assertEquals("checkbox__c", rsm.getColumnName(5));
+        assertEquals("", rsm.getCatalogName(5));
+        assertEquals("java.lang.Boolean", rsm.getColumnClassName(5));
+        assertEquals(5, rsm.getColumnDisplaySize(5));
+        assertEquals("_boolean", rsm.getColumnTypeName(5));
+        assertEquals(Types.BOOLEAN, rsm.getColumnType(5));
+
+        assertEquals("currency2dp", rsm.getColumnLabel(6));
+        assertEquals("currency__c", rsm.getColumnName(6));
+        assertEquals("", rsm.getCatalogName(6));
+        assertEquals("java.lang.Double", rsm.getColumnClassName(6));
+        assertEquals(14, rsm.getColumnDisplaySize(6));
+        assertEquals("currency", rsm.getColumnTypeName(6));
+        assertEquals(Types.DOUBLE, rsm.getColumnType(6));
+//        assertEquals(0, rsm.getPrecision(6));  // TODO: Broken?
+//        assertEquals(0, rsm.getScale(6));      // TODO: Broken?
+
+        assertEquals("date", rsm.getColumnLabel(7));
+        assertEquals("date__c", rsm.getColumnName(7));
+        assertEquals("", rsm.getCatalogName(7));
+        assertEquals("java.sql.Date", rsm.getColumnClassName(7));
+        assertEquals(10, rsm.getColumnDisplaySize(7));
+        assertEquals("date", rsm.getColumnTypeName(7));
+        assertEquals(Types.DATE, rsm.getColumnType(7));
+
+        assertEquals("datetime", rsm.getColumnLabel(8));
+        assertEquals("datetime__c", rsm.getColumnName(8));
+        assertEquals("", rsm.getCatalogName(8));
+        assertEquals("java.sql.Timestamp", rsm.getColumnClassName(8));
+        assertEquals(15, rsm.getColumnDisplaySize(8));
+        assertEquals("datetime", rsm.getColumnTypeName(8));
+        assertEquals(Types.TIMESTAMP, rsm.getColumnType(8));
+
+        //TODO:
+//        ", , , , email__c, \n" +
+//        "number4dp__c, percent0dp__c, phone__c, picklist__c, multipicklist__c, \n" +
+//        "textarea__c, textarearich__c, url__c " +
+
 
         stmt.execute("delete from aaa__c where name = '" + name + "'");
     }
@@ -622,6 +706,14 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertTrue(rs.next());
         assertEquals("selectStar", rs.getString("name"));
         assertEquals("1.0", rs.getBigDecimal("number4dp__c").toPlainString());
+
+        // Try quoted table.
+        // TODO: This is not implemented yet:
+//        rs = stmt.executeQuery("select a.* from \"aaa__c\" a where a.name='selectStar'");
+//        assertEquals(27, rs.getMetaData().getColumnCount());
+//        assertTrue(rs.next());
+//        assertEquals("selectStar", rs.getString("name"));
+//        assertEquals("1.0", rs.getBigDecimal("number4dp__c").toPlainString());
 
     }
 

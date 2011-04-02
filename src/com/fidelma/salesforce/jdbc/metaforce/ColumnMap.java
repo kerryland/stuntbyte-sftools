@@ -18,9 +18,17 @@ public class ColumnMap<K, V> extends HashMap<K, V> {
 	};
 
 	/**
-	 * Get a column name by index, starting at 1, that represents the insertion order into the map.
+	 * Get a column value by index, starting at 1, that represents the insertion order into the map.
 	 */
-	public V getByIndex(int index) {
+	public V getValueByIndex(int index) {
 		return get(columnNames.get(index - 1));
 	}
+
+    /**
+     * Get a column name by index, starting at 1, that represents the insertion order into the map.
+     */
+    public V getColumnNameByIndex(int index) {
+        return (V) columnNames.get(index - 1);
+    }
+
 }

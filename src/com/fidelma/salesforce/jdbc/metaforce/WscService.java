@@ -1,15 +1,14 @@
 package com.fidelma.salesforce.jdbc.metaforce;
 
 import com.sforce.soap.partner.ChildRelationship;
-import com.sforce.soap.partner.Connector;
 import com.sforce.soap.partner.DescribeGlobalSObjectResult;
 import com.sforce.soap.partner.DescribeSObjectResult;
 import com.sforce.soap.partner.Field;
+import com.sforce.soap.partner.FieldType;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.PicklistEntry;
 import com.sforce.soap.partner.RecordTypeInfo;
 import com.sforce.ws.ConnectionException;
-import com.sforce.ws.ConnectorConfig;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -83,7 +82,12 @@ public class WscService {
                             Column column = new Column(field.getName(), getType(field));
                             columns.add(column);
 
+                            column.setLabel(field.getLabel());
                             column.setLength(getLength(field));
+                            column.setAutoIncrement(field.getAutoNumber());
+                            column.setCaseSensitive(field.getCaseSensitive());
+                            column.setPrecision(field.getPrecision());
+                            column.setScale(field.getScale());
 
                             if ("reference".equals(field.getType().toString())) {
                                 // MasterDetail vs Reference apparently not
@@ -141,6 +145,13 @@ public class WscService {
             return field.getDigits();
         } else if (field.getByteLength() != 0) {
             return field.getByteLength();
+        } else if (field.getType() == FieldType._boolean) {
+            return 5; // Long enough for 'false'
+        } else if (field.getType() == FieldType.date) {
+            return 10;
+        } else if (field.getType() == FieldType.datetime) {
+            return 15;
+
         } else {
             // SchemaSpy expects a value
             return 0;

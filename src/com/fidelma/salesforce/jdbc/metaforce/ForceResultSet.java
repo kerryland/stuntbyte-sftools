@@ -2,30 +2,11 @@ package com.fidelma.salesforce.jdbc.metaforce;
 
 import com.fidelma.salesforce.jdbc.SfMetadataResultSetMetadata;
 import com.fidelma.salesforce.jdbc.SfResultSet;
-import com.fidelma.salesforce.jdbc.SfResultSetMetaData;
 
-import java.io.InputStream;
-import java.io.Reader;
-import java.math.BigDecimal;
-import java.net.URL;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.Date;
-import java.sql.NClob;
-import java.sql.Ref;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-import java.sql.RowId;
 import java.sql.SQLException;
-import java.sql.SQLWarning;
-import java.sql.SQLXML;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.Calendar;
 import java.util.List;
-import java.util.Map;
 
 public class ForceResultSet extends SfResultSet implements ResultSet {
 
@@ -40,7 +21,7 @@ public class ForceResultSet extends SfResultSet implements ResultSet {
         return maps.get(index).get(columnName.toUpperCase());
     }
     public Object getObject(int columnIndex) throws SQLException {
-        return maps.get(index).getByIndex(columnIndex);
+        return maps.get(index).getValueByIndex(columnIndex);
     }
 
     public boolean first() throws SQLException {

@@ -4,6 +4,7 @@ import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
 import com.fidelma.salesforce.misc.SimpleParser;
+import com.fidelma.salesforce.misc.TypeHelper;
 import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.sobject.SObject;
@@ -104,7 +105,7 @@ public class Update {
 
                     for (String key : values.keySet()) {
                         Integer dataType = metaDataFactory.lookupJdbcType(tableData.getColumn(key).getType());
-                        Object value = metaDataFactory.dataTypeConvert((String) values.get(key), dataType);
+                        Object value = TypeHelper.dataTypeConvert((String) values.get(key), dataType);
                         sObject.setField(key, value);
                     }
                 }

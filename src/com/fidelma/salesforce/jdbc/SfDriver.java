@@ -31,7 +31,7 @@ public class SfDriver implements java.sql.Driver {
     }
 
     public boolean acceptsURL(String url) throws SQLException {
-        return false;
+        return url.startsWith("jdbc:sfdc:");
     }
 
     public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
@@ -39,7 +39,7 @@ public class SfDriver implements java.sql.Driver {
     }
 
     public int getMajorVersion() {
-        return 2;
+        return 1;
     }
 
     public int getMinorVersion() {

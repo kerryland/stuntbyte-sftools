@@ -1,15 +1,10 @@
 package com.fidelma.salesforce.jdbc;
 
-import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
-import com.fidelma.salesforce.jdbc.sqlforce.LexicalAnalyzer;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
 import com.fidelma.salesforce.misc.LoginHelper;
 import com.fidelma.salesforce.misc.SimpleParser;
-import com.sforce.soap.partner.PartnerConnection;
-import com.sforce.soap.partner.QueryResult;
-import com.sforce.ws.ConnectionException;
+import com.fidelma.salesforce.misc.TypeHelper;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -152,8 +147,8 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
     }
 
 
-    private SimpleDateFormat timestampSdf = new SimpleDateFormat(ResultSetFactory.timestampFormat);
-    private SimpleDateFormat dateSdf = new SimpleDateFormat(ResultSetFactory.dateFormat);
+    private SimpleDateFormat timestampSdf = new SimpleDateFormat(TypeHelper.timestampFormat);
+    private SimpleDateFormat dateSdf = new SimpleDateFormat(TypeHelper.dateFormat);
 
 
     public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {

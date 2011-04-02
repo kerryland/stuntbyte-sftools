@@ -13,6 +13,11 @@ public class Column {
     private boolean nillable;
     private String comments;
     private boolean calculated;
+    private boolean autoIncrement;
+    private boolean caseSensitive;
+    private int precision;
+    private int scale;
+    private String label;
 
     public Column(String name, String type) {
         this.name = name;
@@ -34,8 +39,6 @@ public class Column {
     public String getType() {
         return type;
     }
-
-
 
     public String getReferencedTable() {
         return referencedTable;
@@ -83,5 +86,45 @@ public class Column {
 
     public void setCalculated(boolean calculated) {
         this.calculated = calculated;
+    }
+
+    public void setAutoIncrement(boolean autoIncrement) {
+        this.autoIncrement = autoIncrement;
+    }
+
+    public boolean isAutoIncrement() {
+        return autoIncrement;
+    }
+
+    public void setCaseSensitive(boolean caseSensitive) {
+        this.caseSensitive = caseSensitive;
+    }
+
+    public boolean isCaseSensitive() {
+        return caseSensitive;
+    }
+
+    public void setPrecision(int precision) {
+        this.precision = precision;
+    }
+
+    public int getPrecision() {
+        return precision;
+    }
+
+    public void setScale(int scale) {
+        this.scale = scale;
+    }
+
+    public int getScale() {
+        return scale;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    public String getLabel() {
+        return label;
     }
 }

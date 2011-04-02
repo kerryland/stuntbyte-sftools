@@ -1,6 +1,7 @@
 package com.fidelma.salesforce.jdbc;
 
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
+import com.fidelma.salesforce.misc.TypeHelper;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.QueryResult;
 import com.sforce.soap.partner.sobject.SObject;
@@ -60,10 +61,14 @@ public class SfResultSet implements java.sql.ResultSet {
 
     public SfResultSet() {
         // Create an empty resultset
+        metaData = new SfResultSetMetaData();
+        rowCount = 2;
+        maxRows = 1;
     }
 
 
-    public SfResultSet(PartnerConnection pc, QueryResult qr,
+    public SfResultSet(ResultSetFactory rsf,
+                       PartnerConnection pc, QueryResult qr,
                        Set<String> columnsInSql, int maxRows,
                        boolean oldTypeCount) throws SQLException {
         this.pc = pc;
@@ -81,11 +86,11 @@ public class SfResultSet implements java.sql.ResultSet {
             count.setName(new QName("records"));
             count.addField("count", qr.getSize());
             records = new SObject[]{count};
-            metaData = new SfResultSetMetaData(count, columnsInResult);
+            metaData = new SfResultSetMetaData(rsf, count, columnsInResult);
 
         } else if (records.length > 0) {
             generateResultFields(null, records[0], columnsInResult, columnsInSql);
-            metaData = new SfResultSetMetaData(records[0], columnsInResult);
+            metaData = new SfResultSetMetaData(rsf, records[0], columnsInResult);
 
         } else {
             metaData = new SfResultSetMetaData();
@@ -98,6 +103,7 @@ public class SfResultSet implements java.sql.ResultSet {
     public boolean next() throws SQLException {
         try {
             if ((maxRows > 0) && (rowCount >= maxRows)) {
+//            if (rowCount >= maxRows) {
                 return false;
             }
 
@@ -199,7 +205,14 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
     public String getString(int columnIndex) throws SQLException {
-        return (String) getObject(columnIndex);
+        Object obj = null;
+        try {
+            obj = getObject(columnIndex);
+            return (String) obj;
+        } catch (ClassCastException e) {
+            throw new SQLException("Tried to cast " + obj + " "     + columnsInResult + " index: " + columnIndex + " to String");
+
+        }
     }
 
     // What about using "expr0" or "expr1"?
@@ -425,8 +438,8 @@ public class SfResultSet implements java.sql.ResultSet {
         return getTimestamp(columnLabel);
     }
 
-    private SimpleDateFormat timestampSdf = new SimpleDateFormat(ResultSetFactory.timestampFormat);
-    private SimpleDateFormat dateSdf = new SimpleDateFormat(ResultSetFactory.dateFormat);
+    private SimpleDateFormat timestampSdf = new SimpleDateFormat(TypeHelper.timestampFormat);
+    private SimpleDateFormat dateSdf = new SimpleDateFormat(TypeHelper.dateFormat);
 
     private Timestamp getTimestamp(Object o) throws SQLException {
         if (o == null) {

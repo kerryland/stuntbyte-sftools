@@ -5,6 +5,7 @@ import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalAnalyzer;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
 import com.fidelma.salesforce.misc.SimpleParser;
+import com.fidelma.salesforce.misc.TypeHelper;
 import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.sobject.SObject;
@@ -90,7 +91,7 @@ public class Insert {
             for (String key : columns) {
                 String val = values.get(i++);
                 Integer dataType = metaDataFactory.lookupJdbcType(tableData.getColumn(key).getType());
-                Object value = metaDataFactory.dataTypeConvert(val, dataType);
+                Object value = TypeHelper.dataTypeConvert(val, dataType);
 
                 sObject.setField(key, value);
             }

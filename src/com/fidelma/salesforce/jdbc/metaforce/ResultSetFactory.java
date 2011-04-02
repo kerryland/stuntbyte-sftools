@@ -21,47 +21,6 @@ import java.util.Map;
  */
 public class ResultSetFactory {
 
-    public static String timestampFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
-    public static String dateFormat = "yyyy-MM-dd";
-
-    // TODO: See TYPE_INFO_DATA for all the ones we need to cover
-    public Object dataTypeConvert(String value, Integer dataType) throws ParseException {
-
-        if (dataType == null) {
-            return value;
-        }
-        if (dataType == Types.INTEGER) {
-            return Integer.parseInt(value);
-        }
-        if (dataType == Types.DOUBLE) {
-            return Double.parseDouble(value);
-        }
-        if (dataType == Types.BOOLEAN) {
-            return Boolean.parseBoolean(value);
-        }
-
-        if (dataType == Types.DECIMAL) {
-            return new BigDecimal(value);
-        }
-
-        if (dataType == Types.DATE) {
-            SimpleDateFormat dateSdf = new SimpleDateFormat(dateFormat);
-            return dateSdf.parse(value);
-        }
-
-        if (dataType == Types.TIMESTAMP) {
-            SimpleDateFormat dateSdf = new SimpleDateFormat(timestampFormat);
-            Calendar cal =  Calendar.getInstance();
-            cal.setTimeInMillis(dateSdf.parse(value).getTime());
-            return cal;
-        }
-
-
-        //TODO: TIME,  ARRAY, OTHER, VARBINARY
-
-        return value;
-    }
-
     private static class TypeInfo {
         public TypeInfo(
                 String typeName,
@@ -107,7 +66,7 @@ public class ResultSetFactory {
             new TypeInfo("double", Types.DOUBLE, 17, -324, 306, 10),
             new TypeInfo("_double", Types.DOUBLE, 17, -324, 306, 10),
             new TypeInfo("percent", Types.DOUBLE, 17, -324, 306, 10),
-            new TypeInfo("currency", Types.DOUBLE, 17, -324, 306, 10),
+            new TypeInfo("currency", Types.DOUBLE, 17, -324, 306, 10), // double for currency seems crazy!
             new TypeInfo("date", Types.DATE, 10, 0, 0, 0),
             new TypeInfo("time", Types.TIME, 10, 0, 0, 0),
             new TypeInfo("datetime", Types.TIMESTAMP, 10, 0, 0, 0),
@@ -138,11 +97,31 @@ public class ResultSetFactory {
     /**
      * Provide table (object) detail.
      */
-    public ResultSet getTables(String tableName) {
+    public ResultSet getTables(String search) {
+        if (search != null) {
+            search = search.toUpperCase();
+        }
+
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
         for (Table table : tables) {
-            // TODO: Regex?
-            if (tableName == null || table.getName().equalsIgnoreCase(tableName)) {
+
+            String tabUpper = table.getName().toUpperCase();
+
+            boolean include = false;
+
+            if (search == null) {
+                include = true;
+            } else if (search.equals("%")) {
+                include = true;
+            } else if (search.startsWith("%") && tabUpper.endsWith(search.substring(1))) {
+                include = true;
+            } else if (search.endsWith("%") && tabUpper.startsWith(search.substring(0, search.indexOf("%") - 1))) {
+                include = true;
+            } else if (table.getName().equalsIgnoreCase(search)) {
+                include = true;
+            }
+
+            if (include) {
                 ColumnMap<String, Object> map = new ColumnMap<String, Object>();
                 map.put("TABLE_CAT", null);
                 map.put("TABLE_SCHEM", null);
@@ -196,12 +175,16 @@ public class ResultSetFactory {
 
     public ResultSet getSchemas() {
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
+        return new ForceResultSet(maps);
+        /*
+        List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
         ColumnMap<String, Object> row = new ColumnMap<String, Object>();
         row.put("TABLE_SCHEM", "SF");
         row.put("TABLE_CATALOG", null);
-        row.put("IS_DEFAULT", true);
+//        row.put("IS_DEFAULT", true);// This is a non-standard column that breaks DBVisualizer
         maps.add(row);
         return new ForceResultSet(maps);
+        */
     }
 
     /**
@@ -252,7 +235,7 @@ public class ResultSetFactory {
     }
 
 
-      private TypeInfo lookupTypeInfo(String forceTypeName) throws SQLException {
+    private static TypeInfo lookupTypeInfo(String forceTypeName) throws SQLException {
         for (TypeInfo entry : TYPE_INFO_DATA) {
             if (forceTypeName.equals(entry.typeName)) {
                 return entry;
@@ -262,9 +245,14 @@ public class ResultSetFactory {
 //        return null;
     }
 
-    public Integer lookupJdbcType(String forceTypeName) throws SQLException {
+    public static Integer lookupJdbcType(String forceTypeName) throws SQLException {
         return lookupTypeInfo(forceTypeName).sqlDataType;
     }
+
+//    public static String lookupJdbcType(String forceTypeName) throws SQLException {
+//          return lookupTypeInfo(forceTypeName).sqlDataType;
+//      }
+//
 
     /**
      * Provide table (object) relationship information.

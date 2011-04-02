@@ -4,6 +4,7 @@ import com.fidelma.salesforce.jdbc.metaforce.ColumnMap;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 
 /**
@@ -24,12 +25,34 @@ public class SfMetadataResultSetMetadata implements ResultSetMetaData {
         return 0;
     }
 
-    //--------- Here down not implemented
-
+    // Here down prob should implement
     public String getColumnName(int column) throws SQLException {
+        if (getColumnCount() == 0) {
+            throw new SQLException("No data returned");
+        }
+        ColumnMap<String, Object> colMap = maps.get(0);
+        return (String) colMap.getColumnNameByIndex(column);
+    }
+
+    public String getTableName(int column) throws SQLException {
         return "";
     }
 
+
+    public String getColumnLabel(int column) throws SQLException {
+        return getColumnName(column);
+    }
+
+    // TODO: Implement properly
+    public int getColumnType(int column) throws SQLException {
+        return Types.VARCHAR;
+    }
+    // TODO: Implement properly
+    public String getColumnTypeName(int column) throws SQLException {
+        return "string";
+    }
+
+    //--------- Here down not implemented
 
 
     public boolean isAutoIncrement(int column) throws SQLException {
@@ -60,13 +83,10 @@ public class SfMetadataResultSetMetadata implements ResultSetMetaData {
         return 0;
     }
 
-    public String getColumnLabel(int column) throws SQLException {
-        return null;
-    }
 
 
     public String getSchemaName(int column) throws SQLException {
-        return null;
+        return "";
     }
 
     public int getPrecision(int column) throws SQLException {
@@ -77,20 +97,9 @@ public class SfMetadataResultSetMetadata implements ResultSetMetaData {
         return 0;
     }
 
-    public String getTableName(int column) throws SQLException {
-        return null;
-    }
 
     public String getCatalogName(int column) throws SQLException {
-        return null;
-    }
-
-    public int getColumnType(int column) throws SQLException {
-        return 0;
-    }
-
-    public String getColumnTypeName(int column) throws SQLException {
-        return null;
+        return "";
     }
 
     public boolean isReadOnly(int column) throws SQLException {
