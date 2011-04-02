@@ -739,12 +739,11 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("1.0", rs.getBigDecimal("number4dp__c").toPlainString());
 
         // Try quoted table.
-        // TODO: This is not implemented yet:
-//        rs = stmt.executeQuery("select a.* from \"aaa__c\" a where a.name='selectStar'");
-//        assertEquals(27, rs.getMetaData().getColumnCount());
-//        assertTrue(rs.next());
-//        assertEquals("selectStar", rs.getString("name"));
-//        assertEquals("1.0", rs.getBigDecimal("number4dp__c").toPlainString());
+        rs = stmt.executeQuery("select a.* from \"aaa__c\" a where a.name='selectStar'");
+        assertEquals(27, rs.getMetaData().getColumnCount());
+        assertTrue(rs.next());
+        assertEquals("selectStar", rs.getString("name"));
+        assertEquals("1.0", rs.getBigDecimal("number4dp__c").toPlainString());
 
     }
 
