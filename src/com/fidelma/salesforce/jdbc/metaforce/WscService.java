@@ -229,10 +229,11 @@ public class WscService {
     }
 
     private boolean keep(DescribeGlobalSObjectResult sob) {
+        return true;
         // Filter tables.
         // Normally want the User table filtered as all objects are associated with that
         // so the graphs become a mess and very slow to generate.
-        return filter.accept(sob);
+//        return filter.accept(sob);
     }
 
     private boolean keep(Field field) {

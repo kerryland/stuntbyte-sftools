@@ -616,6 +616,12 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
             d = new Date(ts.getTime());
             sdf = new SimpleDateFormat(TypeHelper.timestampFormat);
             assertEquals("2010-10-21T23:15:00.000Z", sdf.format(d));
+
+            String pick = rs.getString("picklist__c");
+            assertEquals("PickMe", pick);
+//            Array ar = rs.getArray("picklist__c");
+//            assertEquals("string", ar.getBaseTypeName());
+//            assertEquals(Types.VARCHAR, ar.getBaseType());
         }
         assertEquals(1, foundCount);
 
@@ -682,9 +688,34 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals(Types.TIMESTAMP, rsm.getColumnType(8));
 
         //TODO:
-//        ", , , , email__c, \n" +
-//        "number4dp__c, percent0dp__c, phone__c, picklist__c, multipicklist__c, \n" +
-//        "textarea__c, textarearich__c, url__c " +
+//       email__c, \n" +            // 9
+//        "number4dp__c,            // 10
+//        percent0dp__c,            // 11
+//        phone__c,                 // 12
+//       picklist__c,               // 13
+
+//        assertEquals("picklist", rsm.getColumnLabel(13));
+//        assertEquals("picklist__c", rsm.getColumnName(13));
+//        assertEquals("", rsm.getCatalogName(13));
+//        assertEquals("java.sql.Array", rsm.getColumnClassName(13));
+//        assertEquals(255, rsm.getColumnDisplaySize(13));
+//        assertEquals("picklist", rsm.getColumnTypeName(13));
+//        assertEquals(Types.ARRAY, rsm.getColumnType(13));
+
+
+        assertEquals("picklist", rsm.getColumnLabel(13));
+        assertEquals("picklist__c", rsm.getColumnName(13));
+        assertEquals("", rsm.getCatalogName(13));
+        assertEquals("java.lang.String", rsm.getColumnClassName(13));
+        assertEquals(255, rsm.getColumnDisplaySize(13));
+        assertEquals("picklist", rsm.getColumnTypeName(13));
+        assertEquals(Types.VARCHAR, rsm.getColumnType(13));
+
+
+//         multipicklist__c, \n" +  // 14
+//        "textarea__c,             // 15
+//      textarearich__c,            // 16
+//      url__c " +                  // 17
 
 
         stmt.execute("delete from aaa__c where name = '" + name + "'");

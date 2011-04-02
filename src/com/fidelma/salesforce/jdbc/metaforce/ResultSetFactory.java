@@ -70,9 +70,15 @@ public class ResultSetFactory {
             new TypeInfo("date", Types.DATE, 10, 0, 0, 0),
             new TypeInfo("time", Types.TIME, 10, 0, 0, 0),
             new TypeInfo("datetime", Types.TIMESTAMP, 10, 0, 0, 0),
-            new TypeInfo("picklist", Types.ARRAY, 0, 0, 0, 0),
-            new TypeInfo("multipicklist", Types.ARRAY, 0, 0, 0, 0),
-            new TypeInfo("combobox", Types.ARRAY, 0, 0, 0, 0),
+
+            new TypeInfo("picklist", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("multipicklist", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("combobox", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+
+            // new TypeInfo("picklist", Types.ARRAY, 0, 0, 0, 0),
+            // new TypeInfo("multipicklist", Types.ARRAY, 0, 0, 0, 0),
+            // new TypeInfo("combobox", Types.ARRAY, 0, 0, 0, 0),
+
             new TypeInfo("anyType", Types.OTHER, 0, 0, 0, 0),
     };
 

@@ -36,6 +36,8 @@ public class Select {
             SimpleParser la = new SimpleParser(sql);
             Set<String> columnsInSql = extractColumnsFromSoql(la);
 
+            sql = removeQuotedTableName(sql);
+
 //            System.out.println("SOQL: " + sql + " found " + columnsInSql.size());
 //            for (String s : columnsInSql) {
 //                System.out.println("COL IN SQL: " + s);
@@ -94,6 +96,18 @@ public class Select {
         } catch (Exception e) {
             throw new SQLException(e);
         }
+    }
+
+    // DBVisualizer likes to put quotes around the table name
+    // for no obvious reason. This undoes that, kinda crudely....
+    private String removeQuotedTableName(String sql) {
+        String upper = sql.toUpperCase();
+        String check = "FROM \"" + table.toUpperCase() + "\"";
+        int pos = upper.indexOf(check);
+        if (pos != -1) {
+            sql = sql.substring(0, pos) + " from " + table + sql.substring(pos + check.length());
+        }
+        return sql;
     }
 
     private Set<String> extractColumnsFromSoql(SimpleParser la) throws Exception {

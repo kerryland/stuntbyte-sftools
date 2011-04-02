@@ -37,16 +37,6 @@ public class SfConnection implements java.sql.Connection {
             svc = new WscService(helper.getPartnerConnection(), info);
             metaDataFactory = svc.createResultSetFactory();
 
-//            ResultSet trs = metaDataFactory.getTables();
-//            while (trs.next()) {
-//                System.out.println(trs.getString("TABLE_NAME"));
-//            }
-//            System.out.println("SEE THEM?");
-//            trs = metaDataFactory.getColumns("Lead");
-//            while (trs.next()) {
-//                System.out.println(trs.getString("COLUMN_NAME"));
-//            }
-
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
