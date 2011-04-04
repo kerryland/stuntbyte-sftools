@@ -100,6 +100,25 @@ public class ResultSetFactory {
         return result;
     }
 
+    private boolean include(String search, String compare) {
+        String compareUpper = compare.toUpperCase();
+        boolean include = false;
+
+        if (search == null) {
+            include = true;
+        } else if (search.equals("%")) {
+            include = true;
+        } else if (search.startsWith("%") && compareUpper.endsWith(search.substring(1))) {
+            include = true;
+        } else if (search.endsWith("%") && compareUpper.startsWith(search.substring(0, search.indexOf("%") - 1))) {
+            include = true;
+        } else if (compareUpper.equalsIgnoreCase(search)) {
+            include = true;
+        }
+
+        return include;
+    }
+
     /**
      * Provide table (object) detail.
      */
@@ -111,23 +130,7 @@ public class ResultSetFactory {
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
         for (Table table : tables) {
 
-            String tabUpper = table.getName().toUpperCase();
-
-            boolean include = false;
-
-            if (search == null) {
-                include = true;
-            } else if (search.equals("%")) {
-                include = true;
-            } else if (search.startsWith("%") && tabUpper.endsWith(search.substring(1))) {
-                include = true;
-            } else if (search.endsWith("%") && tabUpper.startsWith(search.substring(0, search.indexOf("%") - 1))) {
-                include = true;
-            } else if (table.getName().equalsIgnoreCase(search)) {
-                include = true;
-            }
-
-            if (include) {
+            if (include(search, table.getName())) {
                 ColumnMap<String, Object> map = new ColumnMap<String, Object>();
                 map.put("TABLE_CAT", null);
                 map.put("TABLE_SCHEM", null);
@@ -196,46 +199,47 @@ public class ResultSetFactory {
     /**
      * Provide column (field) detail.
      */
-    public ResultSet getColumns(String tableName) throws SQLException {
+    public ResultSet getColumns(String tableName, String columnPattern) throws SQLException {
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
-        Table table = tableMap.get(tableName.toUpperCase());
-        if (table != null) {
-//        for (Table table : tables) {
-//            if (table.getName().equals(tableName)) {
-            int ordinal = 1;
-            for (Column column : table.getColumns()) {
-                ColumnMap<String, Object> map = new ColumnMap<String, Object>();
-                TypeInfo typeInfo = lookupTypeInfo(column.getType());
-                map.put("TABLE_CAT", null);
-                map.put("TABLE_SCHEM", null);
-                map.put("TABLE_NAME", table.getName());
-                map.put("COLUMN_NAME", column.getName());
-                map.put("DATA_TYPE", typeInfo != null ? typeInfo.sqlDataType : Types.OTHER);
-                map.put("TYPE_NAME", column.getType());
-                map.put("COLUMN_SIZE", column.getLength());
-                map.put("BUFFER_LENGTH", 0);
-                map.put("DECIMAL_DIGITS", 0);
-                map.put("NUM_PREC_RADIX", typeInfo != null ? typeInfo.radix : 10);
-                map.put("NULLABLE", 0);
-                map.put("REMARKS", column.getComments());
-                map.put("COLUMN_DEF", null);
-                map.put("SQL_DATA_TYPE", null);
-                map.put("SQL_DATETIME_SUB", null);
-                map.put("CHAR_OCTET_LENGTH", 0);
-                map.put("ORDINAL_POSITION", ordinal++);
-                map.put("IS_NULLABLE", "");
-                map.put("SCOPE_CATLOG", null);
-                map.put("SCOPE_SCHEMA", null);
-                map.put("SCOPE_TABLE", null);
-                map.put("SOURCE_DATA_TYPE", column.getType());
 
-                map.put("NULLABLE", column.isNillable() ? DatabaseMetaData.columnNullable : DatabaseMetaData.columnNoNulls);
+        for (Table table : tableMap.values()) {
+            if (include(tableName, table.getName())) {
+                int ordinal = 1;
+                for (Column column : table.getColumns()) {
+                    if (include(columnPattern, column.getName())) {
+                        ColumnMap<String, Object> map = new ColumnMap<String, Object>();
+                        TypeInfo typeInfo = lookupTypeInfo(column.getType());
+                        map.put("TABLE_CAT", null);
+                        map.put("TABLE_SCHEM", null);
+                        map.put("TABLE_NAME", table.getName());
+                        map.put("COLUMN_NAME", column.getName());
+                        map.put("DATA_TYPE", typeInfo != null ? typeInfo.sqlDataType : Types.OTHER);
+                        map.put("TYPE_NAME", column.getType());
+                        map.put("COLUMN_SIZE", column.getLength());
+                        map.put("BUFFER_LENGTH", 0);
+                        map.put("DECIMAL_DIGITS", 0);
+                        map.put("NUM_PREC_RADIX", typeInfo != null ? typeInfo.radix : 10);
+                        map.put("NULLABLE", 0);
+                        map.put("REMARKS", column.getComments());
+                        map.put("COLUMN_DEF", null);
+                        map.put("SQL_DATA_TYPE", null);
+                        map.put("SQL_DATETIME_SUB", null);
+                        map.put("CHAR_OCTET_LENGTH", 0);
+                        map.put("ORDINAL_POSITION", ordinal++);
+                        map.put("IS_NULLABLE", "");
+                        map.put("SCOPE_CATLOG", null);
+                        map.put("SCOPE_SCHEMA", null);
+                        map.put("SCOPE_TABLE", null);
+                        map.put("SOURCE_DATA_TYPE", column.getType());
 
-                // The Auto column is obtained by SchemaSpy via ResultSetMetaData so awkward to support
+                        map.put("NULLABLE", column.isNillable() ? DatabaseMetaData.columnNullable : DatabaseMetaData.columnNoNulls);
 
-                maps.add(map);
+                        // The Auto column is obtained by SchemaSpy via ResultSetMetaData so awkward to support
+
+                        maps.add(map);
+                    }
+                }
             }
-//            }
         }
         return new ForceResultSet(maps);
     }

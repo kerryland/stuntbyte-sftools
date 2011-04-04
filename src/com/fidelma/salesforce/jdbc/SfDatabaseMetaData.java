@@ -559,10 +559,8 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     public ResultSet getColumns(String catalog, String schemaPattern,
                                 String tableNamePattern,
                                 String columnNamePattern) throws SQLException {
-        // TODO: columnNamePattern?
 
-//        System.out.println("GET COLUMNS WITH " + tableNamePattern);
-        return metaDataFactory.getColumns(tableNamePattern);
+        return metaDataFactory.getColumns(tableNamePattern, columnNamePattern);
     }
 
     public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException {

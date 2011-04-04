@@ -316,10 +316,13 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("aaa__c", rs.getString("TABLE_NAME"));
         assertFalse(rs.next());
 
+        rs = meta.getColumns(null, null, "Account", "Type");
+        assertTrue(rs.next());
+        assertEquals("Type", rs.getString("COLUMN_NAME"));
     }
 
 
-    /*
+  /*
     @Test
     public void testRegression() throws Exception {
 
@@ -334,22 +337,21 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
                 "jdbc:sfdc:https://test.salesforce.com"
                 , info);
 
-        String soql = "select  Preferred_Contact_Medium__r.Email_Address__c,  Person_Name__c, organisation__r.name, LastModifiedDate, Registered_User_Last_Update_By_Website__c  , Localist_Role__c, Role_Type__c\n" +
-                "from person_role__c \n" +
-                " where recordType.DeveloperName = 'Registered_User' \n" +
-                " and Organisation__r.Business_Type__c = 'Agency'\n" +
-                " and Registered_User_Last_Update_By_Website__c = 0\n" +
-                "order by LastModifiedDate desc";
+        String soql = "select Localist_Service__r.Name from localist_product__c \n" +
+                "where state__c = 'Cancelled'";
 
-        soql = "insert into leads_to_convert__c(lead__c) values ('00QQ0000005CJ7GMAW')";
 
         Statement stmt = conn.createStatement();
-        System.out.println(stmt.executeUpdate(soql));
-//        ResultSet rs = stmt.executeQuery(soql);
-//        while (rs.next()) {
+//        System.out.println(stmt.executeUpdate(soql));
+        ResultSet rs = stmt.executeQuery(soql);
+        String col = rs.getMetaData().getColumnName(1);
+
+        System.out.println("COL IS " + col);
+        while (rs.next()) {
 //            System.out.println("1>" + rs.getString("Preferred_Contact_Medium__r.Email_Address__c"));
-//            System.out.println("2>" + rs.getString(1));
-//        }
+            System.out.println("1>" + rs.getString(col));
+            System.out.println("2>" + rs.getString(1));
+        }
     }
     */
 
@@ -725,6 +727,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
     public void testSelectStar() throws Exception {
         Statement stmt = conn.createStatement();
         int count = stmt.executeUpdate("insert into aaa__c(name, number4dp__c) values ('selectStar', 1)");
+        assertEquals(1, count);
         ResultSet rs = stmt.executeQuery("select * from aaa__c where name='selectStar'");
         assertEquals(27, rs.getMetaData().getColumnCount());
         assertTrue(rs.next());
@@ -744,8 +747,30 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertTrue(rs.next());
         assertEquals("selectStar", rs.getString("name"));
         assertEquals("1.0", rs.getBigDecimal("number4dp__c").toPlainString());
-
     }
+
+
+    // "Type" is a bit of a weird column name, because there's an implicit column called
+    // "Type" in all results that we want to ignore.
+    // This makes sure that we can select the "Type" column from Account.
+    @Test
+    public void testSelectType() throws Exception {
+        String name = "A" + System.currentTimeMillis();
+        Statement stmt = conn.createStatement();
+
+        int count = stmt.executeUpdate("insert into Account(name, Type) values ('" + name + "', 'Blue')");
+        assertEquals(1, count);
+
+
+        ResultSet rs = stmt.executeQuery("select Id, Name, Type from Account where name='" + name + "'");
+        assertTrue(rs.next());
+        deleteMe.add(rs.getString(1));
+
+        assertEquals(3, rs.getMetaData().getColumnCount());
+        assertEquals(name, rs.getString("name"));
+        assertEquals("Blue", rs.getString("Type"));
+    }
+
 
     @Test
     public void testDelete() throws Exception {

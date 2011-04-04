@@ -140,9 +140,14 @@ public class SfResultSet implements java.sql.ResultSet {
                 parentName = parent.getName().getLocalPart();
             }
 
+            int childPos = 0;
             while (children.hasNext()) {
                 XmlObject child = children.next();
-                generateResultFields(parentName, child, columnsInResult, columnsInSql);
+
+                // Always skip the first two columns. They are hard-coded to be "Type" and "Id".
+                if (++childPos > 2) {
+                    generateResultFields(parentName, child, columnsInResult, columnsInSql);
+                }
             }
         } else {
 
@@ -159,16 +164,16 @@ public class SfResultSet implements java.sql.ResultSet {
             }
         }
 
-        // Strip out unwanted columns (eg: Type and Id), put include expressions
-        List<String> blurg = new ArrayList<String>();
+        // Include expressions
+        List<String> newColumnsInResult = new ArrayList<String>();
         for (String col : columnsInResult) {
             if (columnsInSql.contains(col.toUpperCase()) || col.startsWith("expr")) {
-                blurg.add(col);
+                newColumnsInResult.add(col);
                 columnNameCaseMap.put(col.toUpperCase(), col);
             }
         }
         columnsInResult.clear();
-        columnsInResult.addAll(blurg);
+        columnsInResult.addAll(newColumnsInResult);
     }
 
 
