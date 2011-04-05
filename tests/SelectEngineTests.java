@@ -333,7 +333,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
     }
 
 
-  /*
+
     @Test
     public void testRegression() throws Exception {
 
@@ -348,15 +348,16 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
                 "jdbc:sfdc:https://test.salesforce.com"
                 , info);
 
-        String soql = "select Localist_Service__r.Name from localist_product__c \n" +
-                "where state__c = 'Cancelled'";
+        String soql = "select Localist_Service__r.Name from Localist_Product__c limit 50";
 
 
         Statement stmt = conn.createStatement();
 //        System.out.println(stmt.executeUpdate(soql));
         ResultSet rs = stmt.executeQuery(soql);
         String col = rs.getMetaData().getColumnName(1);
+        String lab = rs.getMetaData().getColumnLabel(1);
 
+        System.out.println("LAB IS " + lab);
         System.out.println("COL IS " + col);
         while (rs.next()) {
 //            System.out.println("1>" + rs.getString("Preferred_Contact_Medium__r.Email_Address__c"));
@@ -364,7 +365,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
             System.out.println("2>" + rs.getString(1));
         }
     }
-    */
+
 
 
     // Given aaa.bbb__r.ccc__r.ddd__r.name
@@ -414,6 +415,15 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
                         "where id = '" + aaa.getId() + "'");
 
         ResultSetMetaData md = rs.getMetaData();
+
+        assertEquals("Name", md.getColumnName(1));
+        assertEquals("bbb__r.Name", md.getColumnName(2));
+        //TODO: Broken assertEquals("bbb__r.ccc__r.ddd__r.Name", md.getColumnName(3));
+
+        assertEquals("aaa Name", md.getColumnLabel(1));
+        assertEquals("bbb.Name", md.getColumnLabel(2));
+        assertEquals("bbb.ccc.ddd.Name", md.getColumnLabel(3));
+
 
         int foundCount = 0;
         while (rs.next()) {
