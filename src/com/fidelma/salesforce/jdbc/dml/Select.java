@@ -38,36 +38,25 @@ public class Select {
 
             sql = removeQuotedTableName(sql);
 
-//            System.out.println("SOQL: " + sql + " found " + columnsInSql.size());
-//            for (String s : columnsInSql) {
-//                System.out.println("COL IN SQL: " + s);
-//            }
-
-            boolean oldTypeCount = false;
-
-            if ((columnsInSql.size() == 1) && (columnsInSql.contains("COUNT"))) {
-                String upper = sql.toUpperCase();
-                if (upper.contains("COUNT(*)")) {
-                    sql = patchCountStar(sql);
-                    oldTypeCount = true;
-                } else if (upper.contains("COUNT()")) {
-                    oldTypeCount = true;
-                }
+            if (columnsInSql.contains("COUNT")) {
+                sql = sql.replaceAll("COUNT\\(\\*\\)", "COUNT(ID)");
+                sql = sql.replaceAll("count\\(\\*\\)", "count(ID)");
+                sql = sql.replaceAll("COUNT\\(\\)", "COUNT(ID)");
+                sql = sql.replaceAll("count\\(\\)", "count(ID)");
             }
 
             if ((columnsInSql.size() == 1) && (columnsInSql.contains("*"))) {
                 SfConnection conn = (SfConnection) statement.getConnection();
                 Table t = conn.getMetaDataFactory().getTable(table);
                 List<Column> cols = t.getColumns();
-                StringBuilder sb = new StringBuilder("Id");
+                StringBuilder sb = new StringBuilder();
                 columnsInSql = new HashSet<String>();
-                columnsInSql.add("Id".toUpperCase());
                 for (Column col : cols) {
-                    if ((!col.getName().equalsIgnoreCase("Id")) &&
-                            (!col.getName().equalsIgnoreCase("Type"))) {
-                        sb.append(",").append(col.getName());
-                        columnsInSql.add(col.getName().toUpperCase());
+                    if (columnsInSql.size() > 0) {
+                        sb.append(",");
                     }
+                    sb.append(col.getName());
+                    columnsInSql.add(col.getName().toUpperCase());
                 }
                 sql = sql.replace("*", sb.toString());
             }
@@ -84,8 +73,8 @@ public class Select {
                 return new SfResultSet(
                         rsf,
                         pc, qr, columnsInSql,
-                        statement.getMaxRows(),
-                        oldTypeCount);
+                        statement.getMaxRows()
+                );
 
             } finally {
                 pc.setQueryOptions(oldBatchSize);
@@ -177,30 +166,5 @@ public class Select {
             token = la.getToken();
         }
         return token;
-    }
-
-    // Convert the SQL-normal "count(*)" to Salesforce's "count()"
-    private int detectCountStar(String sql, int start) {
-        int countPos = sql.indexOf("count(*)", start);
-        if (countPos == -1) {
-            countPos = sql.indexOf("COUNT(*)", start);
-        }
-        return countPos;
-
-    }
-
-    private String patchCountStar(String sql) {
-        StringBuilder fixed = new StringBuilder();
-
-        int start = 0;
-        int countPos = detectCountStar(sql, start);
-        while (countPos != -1) {
-            fixed.append(sql.substring(start, countPos));
-            fixed.append("count()");
-            start = countPos + 8;
-            countPos = detectCountStar(sql, start);
-        }
-        fixed.append(sql.substring(start));
-        return fixed.toString();
     }
 }

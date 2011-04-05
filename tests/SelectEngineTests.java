@@ -131,8 +131,19 @@ public class SelectEngineTests {
         ResultSet rs = stmt.executeQuery("select count() from Lead where lastName = '" + surname + "'");
         assertEquals(1, rs.getMetaData().getColumnCount());
         assertTrue(rs.next());
+        assertEquals("expr0", rs.getMetaData().getColumnName(1));
+        assertEquals("expr0", rs.getMetaData().getColumnLabel(1));
+
         assertEquals(1, rs.getInt(1));
-        assertEquals(1, rs.getInt("count"));
+        assertEquals(1, rs.getInt("expr0"));
+
+//        rs = stmt.executeQuery("select count() from AAA__c");
+//        assertEquals(1, rs.getMetaData().getColumnCount());
+//        assertTrue(rs.next());
+//        assertEquals("count", rs.getMetaData().getColumnName(1));
+//        assertEquals("count", rs.getMetaData().getColumnLabel(1));
+//        assertEquals(0, rs.getInt(1));
+
     }
 
 
@@ -761,7 +772,6 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         int count = stmt.executeUpdate("insert into Account(name, Type) values ('" + name + "', 'Blue')");
         assertEquals(1, count);
 
-
         ResultSet rs = stmt.executeQuery("select Id, Name, Type from Account where name='" + name + "'");
         assertTrue(rs.next());
         deleteMe.add(rs.getString(1));
@@ -769,6 +779,18 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals(3, rs.getMetaData().getColumnCount());
         assertEquals(name, rs.getString("name"));
         assertEquals("Blue", rs.getString("Type"));
+
+        rs = stmt.executeQuery("select * from Account where name='" + name + "'");
+        assertTrue(rs.next());
+        assertEquals(name, rs.getString("name"));
+        assertEquals("Blue", rs.getString("Type"));
+
+
+        // TODO
+//        rs = stmt.executeQuery("select Name, \"Type\" from Account where name='" + name + "'");
+//        assertTrue(rs.next());
+//        assertEquals(name, rs.getString("name"));
+//        assertEquals("Blue", rs.getString("Type"));
     }
 
 

@@ -190,6 +190,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
 
     private Column getColumn(int column) throws SQLException {
         String columnName = cols.get(column-1).column;
+        System.out.println("COLUMNNAME=" + columnName);
         Table table = rsf.getTable(cols.get(column-1).table);
         try {
             return table.getColumn(columnName);
