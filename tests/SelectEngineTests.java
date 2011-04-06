@@ -333,7 +333,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
     }
 
 
-
+        /*
     @Test
     public void testRegression() throws Exception {
 
@@ -365,7 +365,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
             System.out.println("2>" + rs.getString(1));
         }
     }
-
+          */
 
 
     // Given aaa.bbb__r.ccc__r.ddd__r.name
@@ -418,11 +418,13 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
 
         assertEquals("Name", md.getColumnName(1));
         assertEquals("bbb__r.Name", md.getColumnName(2));
-        //TODO: Broken assertEquals("bbb__r.ccc__r.ddd__r.Name", md.getColumnName(3));
+        assertEquals("bbb__r.ccc__r.Name", md.getColumnName(3));
+        assertEquals("bbb__r.ccc__r.ddd__r.Name", md.getColumnName(4));
 
         assertEquals("aaa Name", md.getColumnLabel(1));
-        assertEquals("bbb.Name", md.getColumnLabel(2));
-        assertEquals("bbb.ccc.ddd.Name", md.getColumnLabel(3));
+        assertEquals("bbb__r.Name", md.getColumnLabel(2));
+        assertEquals("bbb__r.ccc__r.Name", md.getColumnLabel(3));
+        assertEquals("bbb__r.ccc__r.ddd__r.Name", md.getColumnLabel(4));
 
 
         int foundCount = 0;

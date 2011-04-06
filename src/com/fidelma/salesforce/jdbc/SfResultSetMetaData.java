@@ -45,7 +45,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
     private void addChildren(String baseName, XmlObject parent, List<String> resultFields, Set<String> already) {
         Iterator cIt = parent.getChildren();
 
-        String type = "Unknown";
+        String type = null;
         if (parent instanceof SObject) {
             SObject sObject = (SObject) parent;
             type = sObject.getType();
@@ -66,6 +66,10 @@ public class SfResultSetMetaData implements ResultSetMetaData {
             if (next.hasChildren()) {
                 addChildren(baseName, next, resultFields, already);
             } else {
+                if (next instanceof SObject) {
+                    SObject sObject = (SObject) next;
+                }
+
                 ColumnInfo ci = new ColumnInfo();
                 ci.table = type;
                 if (baseName == null) {
@@ -82,7 +86,10 @@ public class SfResultSetMetaData implements ResultSetMetaData {
                     }
                 } else {
                     // TODO: Throw an exception?
-                    System.out.println("WHAT TO DO WITH base  " + baseName + ">> " + ci.column);
+//                    System.out.println("WHAT TO DO WITH base  " + baseName + ">> " + ci.column);
+//                    for (String resultField : resultFields) {
+//                        System.out.println("    not in " + resultField);
+//                    }
                 }
             }
         }
@@ -189,9 +196,17 @@ public class SfResultSetMetaData implements ResultSetMetaData {
     }
 
     private Column getColumn(int column) throws SQLException {
-        String columnName = cols.get(column-1).column;
-        System.out.println("COLUMNNAME=" + columnName);
-        Table table = rsf.getTable(cols.get(column-1).table);
+        String columnName = cols.get(column - 1).column;
+
+        if (cols.get(column - 1).table == null) {
+            // TODO: Look up type somewhere else, somehow
+            Column c = new Column(columnName, "string");
+            c.setLabel(columnName);
+            return c;
+        }
+
+        System.out.println("COLUMNNAME=" + columnName + " from table " + cols.get(column - 1).table);
+        Table table = rsf.getTable(cols.get(column - 1).table);
         try {
             return table.getColumn(columnName);
         } catch (SQLException e) {
