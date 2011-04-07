@@ -333,7 +333,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
     }
 
 
-        /*
+
     @Test
     public void testRegression() throws Exception {
 
@@ -348,12 +348,24 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
                 "jdbc:sfdc:https://test.salesforce.com"
                 , info);
 
-        String soql = "select Localist_Service__r.Name from Localist_Product__c limit 50";
+        String soql = "select \n" +
+                "Presence_Category__r.Name,\n" +
+                "Localist_Product__r.Main_Category__r.Name,\n" +
+                "Localist_Product__r.Account__r.Primary_Category__r.Name\n" +
+                "from Localist_Product_Category_Member__c\n" +
+                "where Localist_Product__r.Main_Category__r.Name = '' " +
+           //     "order by id " +
+                "limit 1";
 
 
         Statement stmt = conn.createStatement();
+
+
 //        System.out.println(stmt.executeUpdate(soql));
+
         ResultSet rs = stmt.executeQuery(soql);
+                assertEquals(3, rs.getMetaData().getColumnCount());
+            /*
         String col = rs.getMetaData().getColumnName(1);
         String lab = rs.getMetaData().getColumnLabel(1);
 
@@ -363,9 +375,12 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
 //            System.out.println("1>" + rs.getString("Preferred_Contact_Medium__r.Email_Address__c"));
             System.out.println("1>" + rs.getString(col));
             System.out.println("2>" + rs.getString(1));
+            System.out.println("2>" + rs.getString(2));
+            System.out.println("2>" + rs.getString(3));
         }
+        */
     }
-          */
+
 
 
     // Given aaa.bbb__r.ccc__r.ddd__r.name

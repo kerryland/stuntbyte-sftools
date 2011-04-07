@@ -78,6 +78,8 @@ public class SfResultSet implements java.sql.ResultSet {
 
         columnsInResult = new ArrayList<String>();
 
+        System.out.println("IN SQL: " + columnsInSql.size());
+
          if (records.length > 0) {
             generateResultFields(null, records[0], columnsInResult, columnsInSql);
             metaData = new SfResultSetMetaData(rsf, records[0], columnsInResult);
@@ -154,12 +156,23 @@ public class SfResultSet implements java.sql.ResultSet {
             }
         }
 
+//        new Exception("Who called").printStackTrace();
+//        for (String s : columnsInResult) {
+//                 System.out.println("Result contains " + s);
+//             }
+//
+//        for (String s : columnsInSql) {
+//            System.out.println("Request contains " + s);
+//        }
+
         // Include expressions
         List<String> newColumnsInResult = new ArrayList<String>();
         for (String col : columnsInResult) {
             if (columnsInSql.contains(col.toUpperCase()) || col.startsWith("expr")) {
                 newColumnsInResult.add(col);
                 columnNameCaseMap.put(col.toUpperCase(), col);
+            }  else {
+                System.out.println("Ignoring " + col.toUpperCase());
             }
         }
         columnsInResult.clear();
