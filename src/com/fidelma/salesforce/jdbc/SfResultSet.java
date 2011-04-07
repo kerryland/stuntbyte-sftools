@@ -34,7 +34,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,7 +71,7 @@ public class SfResultSet implements java.sql.ResultSet {
 
     public SfResultSet(ResultSetFactory rsf,
                        PartnerConnection pc, QueryResult qr,
-                       Set<String> columnsInSql, int maxRows) throws SQLException {
+                       List<String> columnsInSql, int maxRows) throws SQLException {
         this.pc = pc;
         this.qr = qr;
         this.maxRows = maxRows;
@@ -78,11 +80,16 @@ public class SfResultSet implements java.sql.ResultSet {
 
         columnsInResult = new ArrayList<String>();
 
-        System.out.println("IN SQL: " + columnsInSql.size());
+//        System.out.println("IN SQL: " + columnsInSql.size());
 
-         if (records.length > 0) {
+        if (records.length > 0) {
+            System.out.println("GOING IN!");
             generateResultFields(null, records[0], columnsInResult, columnsInSql);
+            finaliseColumnList(columnsInResult, columnsInSql);
+
             metaData = new SfResultSetMetaData(rsf, records[0], columnsInResult);
+
+//            metaData = new SfResultSetMetaData(rsf, records[0], columnsInSql);
 
         } else {
             metaData = new SfResultSetMetaData();
@@ -122,7 +129,7 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
     private void generateResultFields(String parentName, XmlObject parent, List<String> columnsInResult,
-                                      Set<String> columnsInSql) throws SQLException {
+                                      List<String> columnsInSql) throws SQLException {
         if (parent.hasChildren()) {
             Iterator<XmlObject> children = parent.getChildren();
 
@@ -161,22 +168,85 @@ public class SfResultSet implements java.sql.ResultSet {
 //                 System.out.println("Result contains " + s);
 //             }
 //
-//        for (String s : columnsInSql) {
-//            System.out.println("Request contains " + s);
-//        }
+    }
 
-        // Include expressions
-        List<String> newColumnsInResult = new ArrayList<String>();
-        for (String col : columnsInResult) {
-            if (columnsInSql.contains(col.toUpperCase()) || col.startsWith("expr")) {
-                newColumnsInResult.add(col);
-                columnNameCaseMap.put(col.toUpperCase(), col);
-            }  else {
-                System.out.println("Ignoring " + col.toUpperCase());
+    private void finaliseColumnList(List<String> columnsInResult, List<String> columnsInSql) {
+        List<String> newColumnsInResult = new ArrayList<String>(columnsInSql.size());
+
+        Set<Integer> done = new HashSet<Integer>();
+        for (int i = 0; i < columnsInSql.size(); i++) {
+            newColumnsInResult.add(null);
+            done.add(i);
+        }
+
+        // Do column name matches
+        for (int i = 0; i < columnsInSql.size(); i++) {
+            String inSQl = columnsInSql.get(i);
+
+            for (int j = 0; j < columnsInResult.size(); j++) {
+                String inResult = columnsInResult.get(j);
+                if ((inSQl != null) && (inResult != null)) {
+                    System.out.println("Compare " + inSQl.toUpperCase() + " vs " + inResult.toUpperCase());
+                    if (inSQl.toUpperCase().equals(inResult.toUpperCase())) {
+                        newColumnsInResult.set(i, columnsInResult.get(j));
+                        columnsInResult.set(j, null);
+                        columnsInSql.set(i, null);
+                        done.remove(i);
+                        break;
+                    }
+                }
             }
         }
+
+        if (!done.isEmpty()) {
+            for (int i = 0; i < columnsInSql.size(); i++) {
+                if (newColumnsInResult.get(i) == null) {
+                    for (int j = 0; j < columnsInResult.size(); j++) {
+                        if (columnsInResult.get(j) != null) {
+                            newColumnsInResult.set(i, columnsInResult.get(j));
+                            columnsInResult.set(j, null);
+                            columnsInSql.set(i, null);
+                            done.remove(i);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!done.isEmpty()) {
+            for (int i = 0; i < columnsInSql.size(); i++) {
+                if (newColumnsInResult.get(i) == null) {
+                    newColumnsInResult.set(i, columnsInSql.get(i));
+                    done.remove(i);
+                }
+            }
+        }
+
+        assert done.isEmpty();
+
+        System.out.println("-------------");
+        for (String col : newColumnsInResult) {
+            System.out.println("BLOOOP " + col);
+            if (col != null) {
+                columnNameCaseMap.put(col.toUpperCase(), col);
+            }
+        }
+        System.out.println("-------------");
+
+
+        // Include expressions
+//        newColumnsInResult = new ArrayList<String>();
+//        for (String col : columnsInResult) {
+//            if (columnsInSql.contains(col.toUpperCase()) || col.startsWith("expr")) {
+//                newColumnsInResult.add(col);
+//                columnNameCaseMap.put(col.toUpperCase(), col);
+//            } else {
+//                System.out.println("Ignoring " + col.toUpperCase());
+//            }
+//        }
         columnsInResult.clear();
         columnsInResult.addAll(newColumnsInResult);
+
     }
 
 
@@ -218,7 +288,7 @@ public class SfResultSet implements java.sql.ResultSet {
             obj = getObject(columnIndex);
             return (String) obj;
         } catch (ClassCastException e) {
-            throw new SQLException("Tried to cast " + obj + " "     + columnsInResult + " index: " + columnIndex + " to String");
+            throw new SQLException("Tried to cast " + obj + " " + columnsInResult + " index: " + columnIndex + " to String");
 
         }
     }
@@ -505,7 +575,6 @@ public class SfResultSet implements java.sql.ResultSet {
             throw new SQLException("No type conversion to Date available for " + o);
         }
     }
-
 
 
     // This is rubbish

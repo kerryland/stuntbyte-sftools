@@ -14,6 +14,7 @@ import com.sforce.ws.ConnectionException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -34,7 +35,7 @@ public class Select {
     public ResultSet execute(String sql) throws SQLException {
         try {
             SimpleParser la = new SimpleParser(sql);
-            Set<String> columnsInSql = extractColumnsFromSoql(la);
+            List<String> columnsInSql = extractColumnsFromSoql(la);
 
             sql = removeQuotedTableName(sql);
 
@@ -50,7 +51,7 @@ public class Select {
                 Table t = conn.getMetaDataFactory().getTable(table);
                 List<Column> cols = t.getColumns();
                 StringBuilder sb = new StringBuilder();
-                columnsInSql = new HashSet<String>();
+                columnsInSql = new ArrayList<String>();
                 for (Column col : cols) {
                     if (columnsInSql.size() > 0) {
                         sb.append(",");
@@ -99,8 +100,8 @@ public class Select {
         return sql;
     }
 
-    private Set<String> extractColumnsFromSoql(SimpleParser la) throws Exception {
-        Set<String> result = new HashSet<String>();
+    private List<String> extractColumnsFromSoql(SimpleParser la) throws Exception {
+        List<String> result = new ArrayList<String>();
 
         la.getToken("SELECT");
         LexicalToken token = la.getToken();
@@ -108,12 +109,20 @@ public class Select {
         while ((token != null) && (!token.getValue().equalsIgnoreCase("FROM"))) {
             if (token.getValue().equals("(")) {
                 token = swallowUntilMatchingBracket(la);
+            } else if (token.getValue().equals(",")) {
+                token = la.getToken();
             } else {
                 String x = token.getValue().trim();
                 if (x.length() > 0) {
-                    result.add(x.toUpperCase());
+                    token = la.getToken();
+//                    if (token.getValue().equals(",")) {
+                        result.add(x.toUpperCase());
+//                    } else {
+//                        result.add(token.getValue().toUpperCase()); // Alias
+//                    }
+                } else {
+                    token = la.getToken();
                 }
-                token = la.getToken();
             }
         }
 
@@ -122,7 +131,7 @@ public class Select {
         return result;
     }
 
-    private Set<String> handleColumnAlias(Set<String> result, SimpleParser la, LexicalToken token) throws Exception {
+    private List<String> handleColumnAlias(List<String> result, SimpleParser la, LexicalToken token) throws Exception {
         if ((token != null) && (token.getValue().equalsIgnoreCase("from"))) {
             table = la.getValue();
             // TODO: Handle quotes
@@ -131,7 +140,7 @@ public class Select {
                 String alias = la.getValue();
                 if (alias != null) {
                     String prefix = alias.toUpperCase() + ".";
-                    Set<String> freshResult = new HashSet<String>();
+                    List<String> freshResult = new ArrayList<String>();
                     for (String columnName : result) {
                         if (columnName.startsWith(prefix)) {
                             String x = columnName.substring(prefix.length()).trim();

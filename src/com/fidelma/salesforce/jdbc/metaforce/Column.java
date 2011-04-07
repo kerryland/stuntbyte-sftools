@@ -18,6 +18,7 @@ public class Column {
     private int precision;
     private int scale;
     private String label;
+    private String relationshipType;
 
     public Column(String name, String type) {
         this.name = name;
@@ -126,5 +127,13 @@ public class Column {
 
     public String getLabel() {
         return label;
+    }
+
+    public void setRelationshipType(String relationshipType) {
+        this.relationshipType = relationshipType;
+    }
+
+    public String getRelationshipType() {
+        return relationshipType;
     }
 }

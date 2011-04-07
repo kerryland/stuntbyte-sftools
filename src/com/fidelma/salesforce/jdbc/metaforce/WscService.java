@@ -20,7 +20,7 @@ import java.util.Set;
 
 /**
  * Wraps the Force.com describe calls web service outputting simple data objects.
- *
+ * <p/>
  * Uses WSC.
  */
 public class WscService {
@@ -42,7 +42,10 @@ public class WscService {
     /**
      * Grab the describe data and return it wrapped in a factory.
      */
-    public ResultSetFactory createResultSetFactory() throws ConnectionException  {
+    public ResultSetFactory createResultSetFactory() throws ConnectionException {
+
+        // Map a table to a map of columns and their related lookup object
+        Map<String, Map<String, String>> relationshipMap = new HashMap<String, Map<String, String>>();
 
         ResultSetFactory factory = new ResultSetFactory();
         Map<String, String> childParentReferenceNames = new HashMap<String, String>();
@@ -59,7 +62,20 @@ public class WscService {
                     ChildRelationship[] crs = sob.getChildRelationships();
                     if (crs != null) {
                         for (ChildRelationship cr : crs) {
+                            Map<String, String> lookupColumns = relationshipMap.get(cr.getChildSObject());
+                            if (lookupColumns == null) {
+                                lookupColumns = new HashMap<String, String>();
+                                relationshipMap.put(cr.getChildSObject(), lookupColumns);
+                            }
+
+//                            System.out.println(
+//                                    "Got " +
+//                                            sob.getName() + " and " +
+//                                            cr.getRelationshipName() + " " +
+//                                            cr.getField() + " " +
+//                                            cr.getChildSObject());
                             if (typesSet.contains(cr.getChildSObject())) {
+                                lookupColumns.put(cr.getField(), sob.getName());
                                 String qualified = cr.getChildSObject() + '.' + cr.getField();
                                 childParentReferenceNames.put(qualified, cr.getRelationshipName());
                                 childCascadeDeletes.put(qualified, cr.isCascadeDelete());
@@ -95,6 +111,12 @@ public class WscService {
                                 String qualified = sob.getName() + "." + field.getName();
                                 String childParentReferenceName = childParentReferenceNames.get(qualified);
                                 Boolean cascadeDelete = childCascadeDeletes.get(qualified);
+
+                                Map<String, String> lookupColumns = relationshipMap.get(sob.getName());
+                                if (lookupColumns != null) {
+                                    column.setRelationshipType(lookupColumns.get(field.getName()));
+                                }
+
                                 if (childParentReferenceName != null && cascadeDelete != null) {
                                     column.setComments("Referenced: " + childParentReferenceName + (cascadeDelete ? " (cascade delete)" : ""));
                                 }

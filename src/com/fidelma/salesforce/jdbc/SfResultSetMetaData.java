@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 /**
  */
@@ -38,11 +39,83 @@ public class SfResultSetMetaData implements ResultSetMetaData {
             ResultSetFactory rsf,
             SObject record, List<String> resultFields) throws SQLException {
         this.rsf = rsf;
-        addChildren(null, record, resultFields, new HashSet<String>());
+
+        System.out.println("I AM " + record.getType());
+
+        for (String resultField : resultFields) {
+            System.out.println("META " + resultField);
+        }
+
+        addChildren(null, record.getType(), resultFields, new HashSet<String>());
+//        addChildren(null, record, resultFields, new HashSet<String>());
     }
 
+    private Column keepDrilling(StringTokenizer tok, String type, Column column) {
+        while (tok.hasMoreTokens()) {
+            String col = tok.nextToken();
+            String lookup = col;
+            if (col.toLowerCase().endsWith("__r")) {
+                lookup = col.replaceFirst("__r$", "__c");
+            }
+            System.out.println("Lookup " + lookup);
+            try {
+                Table t = rsf.getTable(type);
+                try {
+                    column = t.getColumn(lookup);
+                    if (column.getRelationshipType() != null) {
+                        type = column.getRelationshipType();
+                        return keepDrilling(tok, type, column);
+                    }
+                } catch (SQLException e) {
+                    // make something up
+                }
 
-    private void addChildren(String baseName, XmlObject parent, List<String> resultFields, Set<String> already) {
+            } catch (SQLException e) {
+                System.out.println("Borked table?");
+                e.printStackTrace();
+            }
+        }
+        return column;
+
+    }
+
+    private void addChildren(String baseName, String type, List<String> resultFields, Set<String> already) {
+        for (String resultField : resultFields) {
+
+            StringTokenizer tok = new StringTokenizer(resultField, ".", false);
+            Column column = keepDrilling(tok, type, null);
+            if (column == null) {
+                System.out.println("Failed to find column " + resultField);
+            }
+
+            // TODO: Store full content
+            ColumnInfo ci = new ColumnInfo();
+            if (column != null) {
+                ci.table = column.getTable().getName();
+            }
+            ci.column = resultField;
+            cols.add(ci);
+
+
+//            if (baseName != null) {
+//                baseName += "." + parent.getName().getLocalPart();
+//            } else if (!"records".equals(parent.getName().getLocalPart())) {
+//                baseName = parent.getName().getLocalPart();
+//            }
+//        }
+//
+//        ColumnInfo ci = new ColumnInfo();
+//        ci.table = type;
+//        if (baseName == null) {
+//            ci.column = next.getName().getLocalPart();
+//        } else {
+//            ci.column = baseName + "." + next.getName().getLocalPart();
+//        }
+        }
+
+    }
+
+    private void XaddChildren(String baseName, XmlObject parent, List<String> resultFields, Set<String> already) {
         Iterator cIt = parent.getChildren();
 
         String type = null;
@@ -64,7 +137,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
             XmlObject next = (XmlObject) cIt.next();
 
             if (next.hasChildren()) {
-                addChildren(baseName, next, resultFields, already);
+                XaddChildren(baseName, next, resultFields, already);
             } else {
                 if (next instanceof SObject) {
                     SObject sObject = (SObject) next;

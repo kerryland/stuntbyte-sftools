@@ -332,8 +332,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("Type", rs.getString("COLUMN_NAME"));
     }
 
-
-
+    /*
     @Test
     public void testRegression() throws Exception {
 
@@ -354,7 +353,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
                 "Localist_Product__r.Account__r.Primary_Category__r.Name\n" +
                 "from Localist_Product_Category_Member__c\n" +
                 "where Localist_Product__r.Main_Category__r.Name = '' " +
-           //     "order by id " +
+                //     "order by id " +
                 "limit 1";
 
 
@@ -364,8 +363,8 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
 //        System.out.println(stmt.executeUpdate(soql));
 
         ResultSet rs = stmt.executeQuery(soql);
-                assertEquals(3, rs.getMetaData().getColumnCount());
-            /*
+        assertEquals(3, rs.getMetaData().getColumnCount());
+
         String col = rs.getMetaData().getColumnName(1);
         String lab = rs.getMetaData().getColumnLabel(1);
 
@@ -378,10 +377,9 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
             System.out.println("2>" + rs.getString(2));
             System.out.println("2>" + rs.getString(3));
         }
-        */
+
     }
-
-
+        */
 
     // Given aaa.bbb__r.ccc__r.ddd__r.name
 
@@ -430,6 +428,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
                         "where id = '" + aaa.getId() + "'");
 
         ResultSetMetaData md = rs.getMetaData();
+        assertEquals(4, md.getColumnCount());
 
         assertEquals("Name", md.getColumnName(1));
         assertEquals("bbb__r.Name", md.getColumnName(2));
@@ -451,6 +450,29 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
             assertEquals("ddd Name", rs.getString("bbb__r.ccc__r.ddd__r.Name"));
         }
         assertEquals(1, foundCount);
+
+        // Remove DDD -- we should still get 4 columns returned!
+        pc.delete(new String[]{ddd.getId()});
+        rs = stmt.executeQuery(
+                "select name, " +
+                        "bbb__r.name, " +
+                        "bbb__r.ccc__r.Name, " +
+                        "bbb__r.ccc__r.ddd__r.Name " +
+                        " from aaa__c " +
+                        "where id = '" + aaa.getId() + "'");
+
+        assertEquals(4, rs.getMetaData().getColumnCount());
+        foundCount = 0;
+        while (rs.next()) {
+            foundCount++;
+            assertEquals("aaa Name", rs.getString("Name"));
+            assertEquals("bbb Name", rs.getString("bbb__r.Name"));
+            assertEquals("ccc Name", rs.getString("bbb__r.ccc__r.Name"));
+            assertEquals(null, rs.getString("bbb__r.ccc__r.ddd__r.Name"));
+        }
+        assertEquals(1, foundCount);
+
+
     }
 
 
