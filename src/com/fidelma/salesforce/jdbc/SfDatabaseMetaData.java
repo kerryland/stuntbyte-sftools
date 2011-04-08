@@ -564,11 +564,11 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException {
-        return null;
+        return new SfResultSet(); // Maybe need to do more
     }
 
     public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) throws SQLException {
-        return null;
+        return new SfResultSet(); // Maybe need to do more
     }
 
     public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws SQLException {
@@ -599,6 +599,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
 
+        // TODO: This is totally incomplete
         ColumnMap<String, Object> row = new ColumnMap<String, Object>();
         row.put("PKTABLE_CAT", null);
         row.put("PKTABLE_SCHEM", null);
