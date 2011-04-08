@@ -24,17 +24,12 @@ public class SObjectChunker {
 
     public SObject[] nextChunk() {
         SObject[] chunk;
-        System.out.println("ptr=" + ptr + " len=" + input.length + " diff=" + (input.length - ptr) + " vs chunksize " + chunkSize);
         if (input.length - ptr <= chunkSize) {
             chunk = Arrays.copyOfRange(input, ptr, input.length);
-            System.out.println("END CHUNK WAS " + chunk.length);
             ptr = Integer.MAX_VALUE;
         } else {
-
             int end = Math.min(input.length, ptr + chunkSize);
-            System.out.println("NEXT CHUNK IS " + ptr + " TO " + end);
             chunk = Arrays.copyOfRange(input, ptr, end);
-            System.out.println("MID CHUNK WAS " + chunk.length);
             ptr += chunkSize;
         }
         return chunk;

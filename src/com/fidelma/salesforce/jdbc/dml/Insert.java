@@ -2,9 +2,8 @@ package com.fidelma.salesforce.jdbc.dml;
 
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
-import com.fidelma.salesforce.jdbc.sqlforce.LexicalAnalyzer;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
-import com.fidelma.salesforce.misc.SimpleParser;
+import com.fidelma.salesforce.parse.SimpleParser;
 import com.fidelma.salesforce.misc.TypeHelper;
 import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.Error;

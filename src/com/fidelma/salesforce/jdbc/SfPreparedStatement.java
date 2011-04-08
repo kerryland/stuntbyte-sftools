@@ -2,7 +2,7 @@ package com.fidelma.salesforce.jdbc;
 
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
 import com.fidelma.salesforce.misc.LoginHelper;
-import com.fidelma.salesforce.misc.SimpleParser;
+import com.fidelma.salesforce.parse.SimpleParser;
 import com.fidelma.salesforce.misc.TypeHelper;
 
 import java.io.InputStream;

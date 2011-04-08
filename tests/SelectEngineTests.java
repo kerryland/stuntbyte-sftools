@@ -41,6 +41,7 @@ public class SelectEngineTests {
         info.put("password", "u9SABqa2dQxG0Y3kqWiJQVEwnYtryr1Ja1");
         info.put("standard", "true");
         info.put("includes", "Lead,Account");
+        info.put("useLabels", "true");
 
         // Get a connection to the database
         conn = (SfConnection) DriverManager.getConnection(
@@ -189,16 +190,18 @@ public class SelectEngineTests {
     @Test
     public void testSimpleAggregate() throws Exception {
         Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("select company, max(lastName), min(lastName) small from Lead where lastName = '" + surname + "' group by company");
-        assertEquals(3, rs.getMetaData().getColumnCount());
+        ResultSet rs = stmt.executeQuery("select company, max(lastName), min(lastName) small, Max(firstName) from Lead where lastName = '" + surname + "' group by company");
+        assertEquals(4, rs.getMetaData().getColumnCount());
         assertTrue(rs.next());
         assertEquals("MikeCo", rs.getString(1));
         assertEquals(surname, rs.getString(2));
         assertEquals(surname, rs.getString(3));
+        assertEquals("Mike", rs.getString(4));
 
         assertEquals("MikeCo", rs.getString("Company"));
         assertEquals(surname, rs.getString("expr0"));
         assertEquals(surname, rs.getString("small"));
+        assertEquals("Mike", rs.getString("expr1"));
     }
 
     /*
@@ -417,7 +420,6 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         id = checkSaveResult(pc.create(new SObject[]{aaa}));
         aaa.setId(id);
 
-
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery(
                 "select name, " +
@@ -436,9 +438,9 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("bbb__r.ccc__r.ddd__r.Name", md.getColumnName(4));
 
         assertEquals("aaa Name", md.getColumnLabel(1));
-        assertEquals("bbb__r.Name", md.getColumnLabel(2));
-        assertEquals("bbb__r.ccc__r.Name", md.getColumnLabel(3));
-        assertEquals("bbb__r.ccc__r.ddd__r.Name", md.getColumnLabel(4));
+        assertEquals("bbb Name", md.getColumnLabel(2));
+        assertEquals("ccc Name", md.getColumnLabel(3));
+        assertEquals("ddd Name", md.getColumnLabel(4));
 
 
         int foundCount = 0;

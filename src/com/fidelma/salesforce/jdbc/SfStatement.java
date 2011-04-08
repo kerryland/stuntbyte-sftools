@@ -6,7 +6,7 @@ import com.fidelma.salesforce.jdbc.dml.Select;
 import com.fidelma.salesforce.jdbc.dml.Update;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
 import com.fidelma.salesforce.misc.LoginHelper;
-import com.fidelma.salesforce.misc.SimpleParser;
+import com.fidelma.salesforce.parse.SimpleParser;
 import com.sforce.soap.partner.*;
 import com.sforce.ws.ConnectionException;
 

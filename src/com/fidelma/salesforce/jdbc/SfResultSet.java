@@ -1,6 +1,7 @@
 package com.fidelma.salesforce.jdbc;
 
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
+import com.fidelma.salesforce.parse.ParseColumn;
 import com.fidelma.salesforce.misc.TypeHelper;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.QueryResult;
@@ -8,7 +9,6 @@ import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.bind.XmlObject;
 
-import javax.xml.namespace.QName;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -36,7 +36,6 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,8 +56,6 @@ public class SfResultSet implements java.sql.ResultSet {
     private int ptr = -1;
     private int rowCount = 0;
     private int batchEnd = 0;
-    private String soqlObjectType;
-    private List<String> columns = new ArrayList<String>();
     private SfResultSetMetaData metaData;
 
     public SfResultSet() {
@@ -69,28 +66,28 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
 
-    public SfResultSet(ResultSetFactory rsf,
-                       PartnerConnection pc, QueryResult qr,
-                       List<String> columnsInSql, int maxRows) throws SQLException {
+    public SfResultSet(SfStatement statement,
+                       PartnerConnection pc,
+                       QueryResult qr,
+                       List<ParseColumn> columnsInSql) throws SQLException {
+
+        SfConnection conn = (SfConnection) statement.getConnection();
+        ResultSetFactory rsf = (conn).getMetaDataFactory();
+        boolean useLabels = Boolean.parseBoolean(conn.getClientInfo("useLabels"));
+
         this.pc = pc;
         this.qr = qr;
-        this.maxRows = maxRows;
+        this.maxRows = statement.getMaxRows();
 
         records = qr.getRecords();
 
         columnsInResult = new ArrayList<String>();
 
-//        System.out.println("IN SQL: " + columnsInSql.size());
-
         if (records.length > 0) {
-            System.out.println("GOING IN!");
-            generateResultFields(null, records[0], columnsInResult, columnsInSql);
+            generateResultFields(null, records[0], columnsInResult);
             finaliseColumnList(columnsInResult, columnsInSql);
 
-            metaData = new SfResultSetMetaData(rsf, records[0], columnsInResult);
-
-//            metaData = new SfResultSetMetaData(rsf, records[0], columnsInSql);
-
+            metaData = new SfResultSetMetaData(rsf, records[0], columnsInResult, useLabels);
         } else {
             metaData = new SfResultSetMetaData();
         }
@@ -102,7 +99,6 @@ public class SfResultSet implements java.sql.ResultSet {
     public boolean next() throws SQLException {
         try {
             if ((maxRows > 0) && (rowCount >= maxRows)) {
-//            if (rowCount >= maxRows) {
                 return false;
             }
 
@@ -128,8 +124,7 @@ public class SfResultSet implements java.sql.ResultSet {
         }
     }
 
-    private void generateResultFields(String parentName, XmlObject parent, List<String> columnsInResult,
-                                      List<String> columnsInSql) throws SQLException {
+    private void generateResultFields(String parentName, XmlObject parent, List<String> columnsInResult) throws SQLException {
         if (parent.hasChildren()) {
             Iterator<XmlObject> children = parent.getChildren();
 
@@ -145,7 +140,7 @@ public class SfResultSet implements java.sql.ResultSet {
 
                 // Always skip the first two columns. They are hard-coded to be "Type" and "Id".
                 if (++childPos > 2) {
-                    generateResultFields(parentName, child, columnsInResult, columnsInSql);
+                    generateResultFields(parentName, child, columnsInResult);
                 }
             }
         } else {
@@ -162,15 +157,9 @@ public class SfResultSet implements java.sql.ResultSet {
                 columnsInResult.add(columnName);
             }
         }
-
-//        new Exception("Who called").printStackTrace();
-//        for (String s : columnsInResult) {
-//                 System.out.println("Result contains " + s);
-//             }
-//
     }
 
-    private void finaliseColumnList(List<String> columnsInResult, List<String> columnsInSql) {
+    private void finaliseColumnList(List<String> columnsInResult, List<ParseColumn> columnsInSql) {
         List<String> newColumnsInResult = new ArrayList<String>(columnsInSql.size());
 
         Set<Integer> done = new HashSet<Integer>();
@@ -181,13 +170,13 @@ public class SfResultSet implements java.sql.ResultSet {
 
         // Do column name matches
         for (int i = 0; i < columnsInSql.size(); i++) {
-            String inSQl = columnsInSql.get(i);
+            ParseColumn inSQl = columnsInSql.get(i);
 
             for (int j = 0; j < columnsInResult.size(); j++) {
                 String inResult = columnsInResult.get(j);
                 if ((inSQl != null) && (inResult != null)) {
-                    System.out.println("Compare " + inSQl.toUpperCase() + " vs " + inResult.toUpperCase());
-                    if (inSQl.toUpperCase().equals(inResult.toUpperCase())) {
+                    if ((inSQl.getName().equalsIgnoreCase(inResult)) ||
+                            (inSQl.isFunction() && inResult.toUpperCase().startsWith("EXPR"))) {
                         newColumnsInResult.set(i, columnsInResult.get(j));
                         columnsInResult.set(j, null);
                         columnsInSql.set(i, null);
@@ -198,6 +187,7 @@ public class SfResultSet implements java.sql.ResultSet {
             }
         }
 
+        // TODO: Remove this -- does it make a difference?
         if (!done.isEmpty()) {
             for (int i = 0; i < columnsInSql.size(); i++) {
                 if (newColumnsInResult.get(i) == null) {
@@ -213,10 +203,13 @@ public class SfResultSet implements java.sql.ResultSet {
             }
         }
 
+        // This is so that when Salesforce decides to not bother
+        // mentioning null columns in the result set, we still show
+        // something!
         if (!done.isEmpty()) {
             for (int i = 0; i < columnsInSql.size(); i++) {
                 if (newColumnsInResult.get(i) == null) {
-                    newColumnsInResult.set(i, columnsInSql.get(i));
+                    newColumnsInResult.set(i, columnsInSql.get(i).getName());
                     done.remove(i);
                 }
             }
@@ -224,26 +217,12 @@ public class SfResultSet implements java.sql.ResultSet {
 
         assert done.isEmpty();
 
-        System.out.println("-------------");
         for (String col : newColumnsInResult) {
-            System.out.println("BLOOOP " + col);
             if (col != null) {
                 columnNameCaseMap.put(col.toUpperCase(), col);
             }
         }
-        System.out.println("-------------");
 
-
-        // Include expressions
-//        newColumnsInResult = new ArrayList<String>();
-//        for (String col : columnsInResult) {
-//            if (columnsInSql.contains(col.toUpperCase()) || col.startsWith("expr")) {
-//                newColumnsInResult.add(col);
-//                columnNameCaseMap.put(col.toUpperCase(), col);
-//            } else {
-//                System.out.println("Ignoring " + col.toUpperCase());
-//            }
-//        }
         columnsInResult.clear();
         columnsInResult.addAll(newColumnsInResult);
 
@@ -262,11 +241,8 @@ public class SfResultSet implements java.sql.ResultSet {
 
             String childName = columnLabel.substring(dotPos + 1);
             XmlObject child = (XmlObject) parent.getField(parentName);
-//            XmlObject child = (XmlObject) parent.getField(childName);
-//            System.out.println("Child " + childName + " of " + parentName + " vs " + parent.getName().getLocalPart() + " is " + child);
             if (child == null) {
                 return null;
-//                throw new SQLException("Unknown child field " + parentName + " of " + parent.getName().getLocalPart() + " cn=" + childName);
             }
 
             String childLabel = columnLabel.substring(dotPos + 1);
@@ -305,12 +281,10 @@ public class SfResultSet implements java.sql.ResultSet {
 
         String realColumnName = columnNameCaseMap.get(columnLabel.toUpperCase());
         if (realColumnName == null) {
-//            realColumnName = columnLabel;
             return null;  // ??
 //            throw new SQLException("Don't know about column " + columnLabel);
         }
 
-//        System.out.println("col label=" + columnLabel);
         SObject obj = records[ptr];
 
         return drillToChild(obj, realColumnName);

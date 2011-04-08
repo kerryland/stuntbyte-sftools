@@ -3,16 +3,14 @@ package com.fidelma.salesforce.jdbc.dml;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
-import com.fidelma.salesforce.misc.SimpleParser;
+import com.fidelma.salesforce.parse.SimpleParser;
 import com.fidelma.salesforce.misc.TypeHelper;
 import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -53,7 +51,6 @@ public class Update {
             if (!column.equalsIgnoreCase("Id")) {
                 Integer dataType = metaDataFactory.lookupJdbcType(tableData.getColumn(column).getType());
                 assert dataType != null;
-                System.out.println("Data type is " + dataType + " for " + column);
                 values.put(column.toUpperCase(), value.getValue());
             }
 
@@ -64,7 +61,6 @@ public class Update {
                         if (token.getType().equals(LexicalToken.Type.STRING)) {
                             whereClause += "'";
                         }
-                        System.out.println(token.getType() + " " + token.getValue());
                         whereClause += token.getValue();
                         if (token.getType().equals(LexicalToken.Type.STRING)) {
                             whereClause += "'";

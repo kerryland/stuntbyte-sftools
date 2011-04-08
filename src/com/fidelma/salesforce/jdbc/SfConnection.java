@@ -21,6 +21,7 @@ public class SfConnection implements java.sql.Connection {
     private String sessionId;
     private LoginHelper helper;
     private ResultSetFactory metaDataFactory;
+    private Properties info;
 
     public ResultSetFactory getMetaDataFactory() {
         return metaDataFactory;
@@ -30,6 +31,7 @@ public class SfConnection implements java.sql.Connection {
         this.server = server;
         this.username = username;
         this.password = password;
+        this.info = info;
         helper = new LoginHelper(server, username, password);
 
         WscService svc = null;
@@ -221,19 +223,19 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public void setClientInfo(String name, String value) throws SQLClientInfoException {
-
+        info.setProperty(name, value);
     }
 
     public void setClientInfo(Properties properties) throws SQLClientInfoException {
-
+        info = properties;
     }
 
     public String getClientInfo(String name) throws SQLException {
-        return null;
+        return info.getProperty(name);
     }
 
     public Properties getClientInfo() throws SQLException {
-        return null;
+        return info;
     }
 
     public Array createArrayOf(String typeName, Object[] elements) throws SQLException {

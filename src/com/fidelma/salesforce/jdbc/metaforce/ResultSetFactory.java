@@ -93,7 +93,6 @@ public class ResultSetFactory {
     }
 
     public Table getTable(String tableName) throws SQLException {
-        System.out.println("TABLENAME=" + tableName);
         Table result = tableMap.get(tableName.toUpperCase());
         if (result == null) {
             throw new SQLException("Unknown table: " + tableName);
