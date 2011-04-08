@@ -731,8 +731,8 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals(14, rsm.getColumnDisplaySize(6));
         assertEquals("currency", rsm.getColumnTypeName(6));
         assertEquals(Types.DOUBLE, rsm.getColumnType(6));
-//        assertEquals(0, rsm.getPrecision(6));  // TODO: Broken?
-//        assertEquals(0, rsm.getScale(6));      // TODO: Broken?
+        assertEquals(14, rsm.getPrecision(6));
+        assertEquals(2, rsm.getScale(6));
 
         assertEquals("date", rsm.getColumnLabel(7));
         assertEquals("date__c", rsm.getColumnName(7));
