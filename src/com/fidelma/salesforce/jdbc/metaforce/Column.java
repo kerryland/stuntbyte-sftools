@@ -19,6 +19,7 @@ public class Column {
     private int scale;
     private String label;
     private String relationshipType;
+    private String aDefault;
 
     public Column(String name, String type) {
         this.name = name;
@@ -135,5 +136,13 @@ public class Column {
 
     public String getRelationshipType() {
         return relationshipType;
+    }
+
+    public void setDefault(String aDefault) {
+        this.aDefault = aDefault;
+    }
+
+    public String getDefault() {
+        return aDefault;
     }
 }

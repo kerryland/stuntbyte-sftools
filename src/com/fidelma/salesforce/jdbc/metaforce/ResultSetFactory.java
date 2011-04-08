@@ -217,11 +217,11 @@ public class ResultSetFactory {
                         map.put("TYPE_NAME", column.getType());
                         map.put("COLUMN_SIZE", column.getLength());
                         map.put("BUFFER_LENGTH", 0);
-                        map.put("DECIMAL_DIGITS", 0);
+                        map.put("DECIMAL_DIGITS", column.getPrecision());
                         map.put("NUM_PREC_RADIX", typeInfo != null ? typeInfo.radix : 10);
-                        map.put("NULLABLE", 0);
+//                        map.put("NULLABLE",  column.isNillable() ? 1 : 0);
                         map.put("REMARKS", column.getComments());
-                        map.put("COLUMN_DEF", null);
+                        map.put("COLUMN_DEF", column.getDefault());
                         map.put("SQL_DATA_TYPE", null);
                         map.put("SQL_DATETIME_SUB", null);
                         map.put("CHAR_OCTET_LENGTH", 0);

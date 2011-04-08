@@ -120,6 +120,7 @@ public class WscService {
         column.setCaseSensitive(field.getCaseSensitive());
         column.setPrecision(field.getPrecision());
         column.setScale(field.getScale());
+        column.setDefault(field.getDefaultValueFormula());
 
         if ("reference".equals(field.getType().toString())) {
             // MasterDetail vs Reference apparently not
