@@ -14,6 +14,8 @@ import java.util.Properties;
  */
 public class SfConnection implements java.sql.Connection {
 
+    private boolean closed = true;
+
     private String server;
     private String username;
     private String password;
@@ -39,6 +41,7 @@ public class SfConnection implements java.sql.Connection {
             svc = new WscService(helper.getPartnerConnection(), info);
             metaDataFactory = svc.createResultSetFactory();
 
+            closed = false;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -87,11 +90,12 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public void close() throws SQLException {
+        closed = true;
 
     }
 
     public boolean isClosed() throws SQLException {
-        return false;
+        return closed;
     }
 
     public DatabaseMetaData getMetaData() throws SQLException {
