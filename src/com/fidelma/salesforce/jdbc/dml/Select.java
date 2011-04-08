@@ -37,10 +37,9 @@ public class Select {
             ParseSelect parseSelect = la.extractColumnsFromSoql();
 
             table = parseSelect.getDrivingTable();
-            List<ParseColumn> columnsInSql = parseSelect.getColumns();
 
             sql = removeQuotedTableName(sql);
-            sql = patchCountStar(sql, columnsInSql);
+            sql = patchCountStar(sql, parseSelect.getColumns());
 
             Integer oldBatchSize = 2000;
             if (pc.getQueryOptions() != null) {
@@ -52,7 +51,7 @@ public class Select {
                 pc.setQueryOptions(statement.getFetchSize());
                 QueryResult qr = pc.query(sql);
 
-                return new SfResultSet(statement, pc, qr, columnsInSql);
+                return new SfResultSet(statement, pc, qr, parseSelect);
 
             } finally {
                 pc.setQueryOptions(oldBatchSize);

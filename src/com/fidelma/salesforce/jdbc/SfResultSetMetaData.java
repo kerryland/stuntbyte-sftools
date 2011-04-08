@@ -29,6 +29,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
     }
 
     public SfResultSetMetaData(
+            String drivingTable,
             ResultSetFactory rsf,
             SObject record,
             List<String> resultFields,
@@ -36,18 +37,24 @@ public class SfResultSetMetaData implements ResultSetMetaData {
 
         this.rsf = rsf;
         this.useLabels = useLabels;
-        addChildren(record.getType(), resultFields);
+
+        String baseType = record.getType();
+        Boolean isAggregate = baseType.equals("AggregateResult");
+        if (isAggregate) {
+            baseType = drivingTable;
+        }
+
+        addChildren(baseType, isAggregate, resultFields);
     }
 
 
-    private void addChildren(String type, List<String> resultFields) throws SQLException {
+    private void addChildren(String type, Boolean aggregate, List<String> resultFields) throws SQLException {
         for (String resultField : resultFields) {
 
             StringTokenizer tok = new StringTokenizer(resultField, ".", false);
-            Column column = keepDrilling(tok, type, null);
+            Column column = keepDrilling(tok, type, null, aggregate);
             if (column == null) {
-                System.out.println("IMPLICATIONS? Failed to find column " + resultField);
-                column = new Column(resultField, "string");
+                throw new SQLException("Failed to find column " + resultField);
             }
 
             cols.add(column);
@@ -55,24 +62,38 @@ public class SfResultSetMetaData implements ResultSetMetaData {
         }
     }
 
-    private Column keepDrilling(StringTokenizer tok, String type, Column column) {
+    private Column keepDrilling(StringTokenizer tok, String type, Column column, Boolean aggregate) {
         while (tok.hasMoreTokens()) {
             String col = tok.nextToken();
             String lookup = col;
             if (col.toLowerCase().endsWith("__r")) {
-                lookup = col.replaceFirst("__r$", "__c");
+                lookup = col.substring(0, col.length()-1) + "c";
             }
             try {
                 Table t = rsf.getTable(type);
                 try {
-                    column = t.getColumn(lookup);
+                    column = null;
+
+                    if (lookup.equalsIgnoreCase("CreatedBy") || (lookup.equalsIgnoreCase("LastModifiedBy"))) {
+                        column = new Column(lookup, "reference");
+                        column.setRelationshipType("User");
+                    } else {
+                        column = t.getColumn(lookup);
+                    }
+
                     if (column.getRelationshipType() != null) {
                         type = column.getRelationshipType();
-                        return keepDrilling(tok, type, column);
+                        return keepDrilling(tok, type, column, aggregate);
                     }
+
                 } catch (SQLException e) {
                     // make something up
-                    System.out.println("Make up data about column " + lookup);
+
+                    if (!aggregate) {
+                        throw new SQLException("Attempted to invent column data for " + lookup + " : " + e.getMessage());
+                    }
+
+                    // TODO: Maybe we could figure out the data type for an aggregate result, but it would be hard!
                     column = new Column(lookup, "string");
                     column.setLabel(lookup);
                     column.setLength(10);

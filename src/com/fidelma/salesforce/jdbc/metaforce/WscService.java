@@ -92,55 +92,12 @@ public class WscService {
             if (sobs != null) {
                 for (DescribeSObjectResult sob : sobs) {
                     Field[] fields = sob.getFields();
+
                     List<Column> columns = new ArrayList<Column>(fields.length);
+
                     for (Field field : fields) {
                         if (keep(field)) {
-                            Column column = new Column(field.getName(), getType(field));
-                            columns.add(column);
-
-                            column.setLabel(field.getLabel());
-                            column.setLength(getLength(field));
-                            column.setAutoIncrement(field.getAutoNumber());
-                            column.setCaseSensitive(field.getCaseSensitive());
-                            column.setPrecision(field.getPrecision());
-                            column.setScale(field.getScale());
-
-                            if ("reference".equals(field.getType().toString())) {
-                                // MasterDetail vs Reference apparently not
-                                // in API; cascade delete is though
-                                String qualified = sob.getName() + "." + field.getName();
-                                String childParentReferenceName = childParentReferenceNames.get(qualified);
-                                Boolean cascadeDelete = childCascadeDeletes.get(qualified);
-
-                                Map<String, String> lookupColumns = relationshipMap.get(sob.getName());
-                                if (lookupColumns != null) {
-                                    column.setRelationshipType(lookupColumns.get(field.getName()));
-                                }
-
-                                if (childParentReferenceName != null && cascadeDelete != null) {
-                                    column.setComments("Referenced: " + childParentReferenceName + (cascadeDelete ? " (cascade delete)" : ""));
-                                }
-                            } else {
-                                column.setComments(getPicklistValues(field.getPicklistValues()));
-                            }
-
-                            // Booleans have this as false so not too
-                            // helpful; leave off
-                            column.setNillable(false);
-
-                            // NB Not implemented; see comment in
-                            // ResultSetFactory class
-                            column.setCalculated(field.isCalculated() || field.isAutoNumber());
-
-                            String[] referenceTos = field.getReferenceTo();
-                            if (referenceTos != null) {
-                                for (String referenceTo : referenceTos) {
-                                    if (typesSet.contains(referenceTo)) {
-                                        column.setReferencedTable(referenceTo);
-                                        column.setReferencedColumn("Id");
-                                    }
-                                }
-                            }
+                            recordColumn(relationshipMap, childParentReferenceNames, childCascadeDeletes, typesSet, sob, columns, field);
                         }
                     }
 
@@ -151,6 +108,55 @@ public class WscService {
         }
 
         return factory;
+    }
+
+    private void recordColumn(Map<String, Map<String, String>> relationshipMap, Map<String, String> childParentReferenceNames, Map<String, Boolean> childCascadeDeletes, Set<String> typesSet, DescribeSObjectResult sob, List<Column> columns, Field field) {
+        Column column = new Column(field.getName(), getType(field));
+        columns.add(column);
+
+        column.setLabel(field.getLabel());
+        column.setLength(getLength(field));
+        column.setAutoIncrement(field.getAutoNumber());
+        column.setCaseSensitive(field.getCaseSensitive());
+        column.setPrecision(field.getPrecision());
+        column.setScale(field.getScale());
+
+        if ("reference".equals(field.getType().toString())) {
+            // MasterDetail vs Reference apparently not
+            // in API; cascade delete is though
+            String qualified = sob.getName() + "." + field.getName();
+            String childParentReferenceName = childParentReferenceNames.get(qualified);
+            Boolean cascadeDelete = childCascadeDeletes.get(qualified);
+
+            Map<String, String> lookupColumns = relationshipMap.get(sob.getName());
+            if (lookupColumns != null) {
+                column.setRelationshipType(lookupColumns.get(field.getName()));
+                column.setComments("Relationship: " + column.getRelationshipType());
+
+            } else if (childParentReferenceName != null && cascadeDelete != null) {
+                column.setComments("Referenced: " + childParentReferenceName + (cascadeDelete ? " (cascade delete)" : ""));
+            }
+        } else {
+            column.setComments(getPicklistValues(field.getPicklistValues()));
+        }
+
+        // Booleans have this as false so not too
+        // helpful; leave off
+        column.setNillable(false);
+
+        // NB Not implemented; see comment in
+        // ResultSetFactory class
+        column.setCalculated(field.isCalculated() || field.isAutoNumber());
+
+        String[] referenceTos = field.getReferenceTo();
+        if (referenceTos != null) {
+            for (String referenceTo : referenceTos) {
+                if (typesSet.contains(referenceTo)) {
+                    column.setReferencedTable(referenceTo);
+                    column.setReferencedColumn("Id");
+                }
+            }
+        }
     }
 
     private String getType(Field field) {

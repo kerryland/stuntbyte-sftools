@@ -579,7 +579,6 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         String soql = "insert\n into Lead(Company, FirstName, LastName, Phone, AnnualRevenue, NumberOfEmployees)" +
                 "values ('CoCo', 'wibbleXYZ'," + "'" + surname + "', '0800xxxx',475001, 7)";
 
-        System.out.println(soql);
         int count = stmt.executeUpdate(soql);
         assertEquals(1, count);
 

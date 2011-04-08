@@ -128,7 +128,6 @@ public class SimpleParser {
         if ((token != null) && (token.getValue().equalsIgnoreCase("from"))) {
             table = la.getValue();
             // TODO: Handle quotes    ?
-            System.out.println("TABLE=" + table);
             if (table != null) {
                 String alias = la.getValue();
                 if (alias != null) {

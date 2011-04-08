@@ -3,6 +3,7 @@ package com.fidelma.salesforce.jdbc;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.parse.ParseColumn;
 import com.fidelma.salesforce.misc.TypeHelper;
+import com.fidelma.salesforce.parse.ParseSelect;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.QueryResult;
 import com.sforce.soap.partner.sobject.SObject;
@@ -69,7 +70,7 @@ public class SfResultSet implements java.sql.ResultSet {
     public SfResultSet(SfStatement statement,
                        PartnerConnection pc,
                        QueryResult qr,
-                       List<ParseColumn> columnsInSql) throws SQLException {
+                       ParseSelect parseSelect) throws SQLException {
 
         SfConnection conn = (SfConnection) statement.getConnection();
         ResultSetFactory rsf = (conn).getMetaDataFactory();
@@ -85,9 +86,9 @@ public class SfResultSet implements java.sql.ResultSet {
 
         if (records.length > 0) {
             generateResultFields(null, records[0], columnsInResult);
-            finaliseColumnList(columnsInResult, columnsInSql);
+            finaliseColumnList(columnsInResult, parseSelect.getColumns());
 
-            metaData = new SfResultSetMetaData(rsf, records[0], columnsInResult, useLabels);
+            metaData = new SfResultSetMetaData(parseSelect.getDrivingTable(), rsf, records[0], columnsInResult, useLabels);
         } else {
             metaData = new SfResultSetMetaData();
         }
