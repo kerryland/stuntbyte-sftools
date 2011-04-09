@@ -18,9 +18,16 @@ public class ForceResultSet extends SfResultSet implements ResultSet {
     }
 
     public Object getObject(String columnName) throws SQLException {
+        if (isBeforeFirst()) {
+            throw new SQLException("ResultSet.next() not called");
+        }
         return maps.get(index).get(columnName.toUpperCase());
     }
+
     public Object getObject(int columnIndex) throws SQLException {
+        if (isBeforeFirst()) {
+            throw new SQLException("ResultSet.next() not called");
+        }
         return maps.get(index).getValueByIndex(columnIndex);
     }
 

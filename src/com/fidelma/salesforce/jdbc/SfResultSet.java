@@ -57,7 +57,11 @@ public class SfResultSet implements java.sql.ResultSet {
     private int ptr = -1;
     private int rowCount = 0;
     private int batchEnd = 0;
+    private int batchSize = 200;
     private SfResultSetMetaData metaData;
+    private boolean wasNull;
+    private SfStatement statement;
+    private boolean closed;
 
     public SfResultSet() {
         // Create an empty resultset
@@ -71,10 +75,12 @@ public class SfResultSet implements java.sql.ResultSet {
                        PartnerConnection pc,
                        QueryResult qr,
                        ParseSelect parseSelect) throws SQLException {
+        this.statement = statement;
 
         SfConnection conn = (SfConnection) statement.getConnection();
         ResultSetFactory rsf = (conn).getMetaDataFactory();
         boolean useLabels = Boolean.parseBoolean(conn.getClientInfo("useLabels"));
+        batchSize = pc.getQueryOptions().getBatchSize();
 
         this.pc = pc;
         this.qr = qr;
@@ -276,19 +282,23 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
     public Object getObject(String columnLabel) throws SQLException {
+        Object result;
+
         if (ptr == -1) {
             throw new SQLException("No data available -- next not called");
         }
 
         String realColumnName = columnNameCaseMap.get(columnLabel.toUpperCase());
         if (realColumnName == null) {
-            return null;  // ??
+            wasNull = true;
+            result = null;  // ??
 //            throw new SQLException("Don't know about column " + columnLabel);
+        } else {
+            SObject obj = records[ptr];
+            result = drillToChild(obj, realColumnName);
         }
-
-        SObject obj = records[ptr];
-
-        return drillToChild(obj, realColumnName);
+        wasNull = (result == null);
+        return result;
     }
 
     private String findLabelFromIndex(int columnIndex) throws SQLException {
@@ -300,7 +310,14 @@ public class SfResultSet implements java.sql.ResultSet {
 
 
     public void close() throws SQLException {
+        closed = true;
     }
+
+    public boolean isClosed() throws SQLException {
+        return closed;
+    }
+
+
 
 
     public int findColumn(String columnLabel) throws SQLException {
@@ -573,14 +590,14 @@ public class SfResultSet implements java.sql.ResultSet {
 
 
     public boolean wasNull() throws SQLException {
-        return false;
+        return wasNull;
     }
 
 
     // HERE DOWN DON'T NEED IMPLEMENTING -- but should throw some exceptions ----------------------
 
     public Statement getStatement() throws SQLException {
-        return null;
+        return statement;
     }
 
 
@@ -650,51 +667,51 @@ public class SfResultSet implements java.sql.ResultSet {
 
 
     public boolean isBeforeFirst() throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public boolean isAfterLast() throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public boolean isFirst() throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public boolean isLast() throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void beforeFirst() throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void afterLast() throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public boolean first() throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public boolean last() throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public int getRow() throws SQLException {
-        return 0;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public boolean absolute(int row) throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public boolean relative(int rows) throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public boolean previous() throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void setFetchDirection(int direction) throws SQLException {
@@ -702,7 +719,7 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
     public int getFetchDirection() throws SQLException {
-        return 0;
+        return ResultSet.FETCH_FORWARD;
     }
 
     public void setFetchSize(int rows) throws SQLException {
@@ -710,206 +727,226 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
     public int getFetchSize() throws SQLException {
-        return 0;
+        return batchSize;
     }
 
     public int getType() throws SQLException {
-        return 0;
+        return ResultSet.TYPE_FORWARD_ONLY;
     }
 
     public int getConcurrency() throws SQLException {
-        return 0;
+        return ResultSet.CONCUR_READ_ONLY;
     }
 
     public boolean rowUpdated() throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public boolean rowInserted() throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public boolean rowDeleted() throws SQLException {
-        return false;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateNull(int columnIndex) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateBoolean(int columnIndex, boolean x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateByte(int columnIndex, byte x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateShort(int columnIndex, short x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateInt(int columnIndex, int x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateLong(int columnIndex, long x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateFloat(int columnIndex, float x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateDouble(int columnIndex, double x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateString(int columnIndex, String x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateBytes(int columnIndex, byte[] x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateDate(int columnIndex, Date x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateTime(int columnIndex, Time x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateTimestamp(int columnIndex, Timestamp x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateObject(int columnIndex, Object x, int scaleOrLength) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateObject(int columnIndex, Object x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateNull(String columnLabel) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateBoolean(String columnLabel, boolean x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateByte(String columnLabel, byte x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateShort(String columnLabel, short x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateInt(String columnLabel, int x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateLong(String columnLabel, long x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateFloat(String columnLabel, float x) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateDouble(String columnLabel, double x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
+
 
     public void updateBigDecimal(String columnLabel, BigDecimal x) throws SQLException {
-
+        throw new SQLFeatureNotSupportedException();
     }
 
+
     public void updateString(String columnLabel, String x) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateBytes(String columnLabel, byte[] x) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateDate(String columnLabel, Date x) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateTime(String columnLabel, Time x) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateTimestamp(String columnLabel, Timestamp x) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateAsciiStream(String columnLabel, InputStream x, int length) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateBinaryStream(String columnLabel, InputStream x, int length) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateCharacterStream(String columnLabel, Reader reader, int length) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateObject(String columnLabel, Object x, int scaleOrLength) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateObject(String columnLabel, Object x) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void insertRow() throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateRow() throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void deleteRow() throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void refreshRow() throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void cancelRowUpdates() throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void moveToInsertRow() throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void moveToCurrentRow() throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
@@ -920,15 +957,15 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
     public Ref getRef(int columnIndex) throws SQLException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public Blob getBlob(int columnIndex) throws SQLException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public Clob getClob(int columnIndex) throws SQLException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public Array getArray(int columnIndex) throws SQLException {
@@ -940,59 +977,67 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
     public Ref getRef(String columnLabel) throws SQLException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public Blob getBlob(String columnLabel) throws SQLException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public Clob getClob(String columnLabel) throws SQLException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public Array getArray(String columnLabel) throws SQLException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
 
     public URL getURL(int columnIndex) throws SQLException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public URL getURL(String columnLabel) throws SQLException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateRef(int columnIndex, Ref x) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateRef(String columnLabel, Ref x) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateBlob(int columnIndex, Blob x) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateBlob(String columnLabel, Blob x) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateClob(int columnIndex, Clob x) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateClob(String columnLabel, Clob x) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateArray(int columnIndex, Array x) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
     public void updateArray(String columnLabel, Array x) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
 
     }
 
@@ -1014,10 +1059,6 @@ public class SfResultSet implements java.sql.ResultSet {
 
     public int getHoldability() throws SQLException {
         return ResultSet.CLOSE_CURSORS_AT_COMMIT;
-    }
-
-    public boolean isClosed() throws SQLException {
-        return true;
     }
 
     public void updateNString(int columnIndex, String nString) throws SQLException {
