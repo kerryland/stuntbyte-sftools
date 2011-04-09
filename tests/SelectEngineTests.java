@@ -833,6 +833,26 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("1.0", rs.getBigDecimal("number4dp__c").toPlainString());
     }
 
+    @Test
+    public void testWhoWhat() throws Exception {
+        Statement stmt = conn.createStatement();
+        stmt.executeUpdate("insert into Contact(LastName) values ('Bob')", Statement.RETURN_GENERATED_KEYS);
+        ResultSet rs = stmt.getGeneratedKeys();
+        rs.next();
+        String id = rs.getString("Id");
+
+        stmt.executeUpdate("insert into Task(Subject, WhoId) values ('Glooper', '" + id + "')");
+
+        rs = stmt.executeQuery("SELECT Id, Subject, Who.Id, Who.LastName, Who.Type FROM Task where Who.Id = '" + id + "' limit 1");
+        assertEquals(5, rs.getMetaData().getColumnCount());
+        assertTrue(rs.next());
+        assertEquals("Glooper", rs.getString("Subject"));
+        assertEquals(id, rs.getString("Who.Id"));
+        assertEquals("Contact", rs.getString("Who.Type"));
+        assertEquals("Bob", rs.getString("Who.LastName"));
+    }
+
+
 
     // "Type" is a bit of a weird column name, because there's an implicit column called
     // "Type" in all results that we want to ignore.

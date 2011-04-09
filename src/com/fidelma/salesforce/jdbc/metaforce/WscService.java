@@ -44,8 +44,8 @@ public class WscService {
      */
     public ResultSetFactory createResultSetFactory() throws ConnectionException {
 
-        // Map a table to a map of columns and their related lookup object
-        Map<String, Map<String, String>> relationshipMap = new HashMap<String, Map<String, String>>();
+        // Map a table to a map of columns and their related lookup object(s!)
+        Map<String, Map<String, List<String>>> relationshipMap = new HashMap<String, Map<String, List<String>>>();
 
         ResultSetFactory factory = new ResultSetFactory();
         Map<String, String> childParentReferenceNames = new HashMap<String, String>();
@@ -62,9 +62,9 @@ public class WscService {
                     ChildRelationship[] crs = sob.getChildRelationships();
                     if (crs != null) {
                         for (ChildRelationship cr : crs) {
-                            Map<String, String> lookupColumns = relationshipMap.get(cr.getChildSObject());
+                            Map<String, List<String>> lookupColumns = relationshipMap.get(cr.getChildSObject());
                             if (lookupColumns == null) {
-                                lookupColumns = new HashMap<String, String>();
+                                lookupColumns = new HashMap<String, List<String>>();
                                 relationshipMap.put(cr.getChildSObject(), lookupColumns);
                             }
 
@@ -75,7 +75,12 @@ public class WscService {
 //                                            cr.getField() + " " +
 //                                            cr.getChildSObject());
                             if (typesSet.contains(cr.getChildSObject())) {
-                                lookupColumns.put(cr.getField(), sob.getName());
+                                List<String> references = lookupColumns.get(cr.getField());
+                                if (references == null) {
+                                    references = new ArrayList<String>();
+                                }
+                                references.add(sob.getName());
+                                lookupColumns.put(cr.getField(), references);
                                 String qualified = cr.getChildSObject() + '.' + cr.getField();
                                 childParentReferenceNames.put(qualified, cr.getRelationshipName());
                                 childCascadeDeletes.put(qualified, cr.isCascadeDelete());
@@ -110,7 +115,7 @@ public class WscService {
         return factory;
     }
 
-    private void recordColumn(Map<String, Map<String, String>> relationshipMap, Map<String, String> childParentReferenceNames, Map<String, Boolean> childCascadeDeletes, Set<String> typesSet, DescribeSObjectResult sob, List<Column> columns, Field field) {
+    private void recordColumn(Map<String, Map<String, List<String>>> relationshipMap, Map<String, String> childParentReferenceNames, Map<String, Boolean> childCascadeDeletes, Set<String> typesSet, DescribeSObjectResult sob, List<Column> columns, Field field) {
         Column column = new Column(field.getName(), getType(field));
         columns.add(column);
 
@@ -130,11 +135,25 @@ public class WscService {
             String childParentReferenceName = childParentReferenceNames.get(qualified);
             Boolean cascadeDelete = childCascadeDeletes.get(qualified);
 
-            Map<String, String> lookupColumns = relationshipMap.get(sob.getName());
+            Map<String, List<String>> lookupColumns = relationshipMap.get(sob.getName());
             if (lookupColumns != null) {
-                column.setRelationshipType(lookupColumns.get(field.getName()));
-                column.setComments("Relationship: " + column.getRelationshipType());
+                List<String> rels = lookupColumns.get(field.getName());
 
+                if (rels != null) {
+                    column.setRelationshipType(rels.get(0));
+                    String comment;
+                    if (rels.size() > 1) {
+                        comment = "Relationships: ";
+                        for (String rel : rels) {
+                            comment += rel + ". ";
+                        }
+                        column.setHasMultipleRelationships(true);
+                    } else {
+                        comment = "Relationship: " + column.getRelationshipType();
+                    }
+
+                    column.setComments(comment);
+                }
             } else if (childParentReferenceName != null && cascadeDelete != null) {
                 column.setComments("Referenced: " + childParentReferenceName + (cascadeDelete ? " (cascade delete)" : ""));
             }

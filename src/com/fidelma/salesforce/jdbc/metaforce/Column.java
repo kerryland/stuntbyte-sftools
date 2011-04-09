@@ -20,6 +20,7 @@ public class Column {
     private String label;
     private String relationshipType;
     private String aDefault;
+    private boolean hasMultipleRelationships;
 
     public Column(String name, String type) {
         this.name = name;
@@ -144,5 +145,13 @@ public class Column {
 
     public String getDefault() {
         return aDefault;
+    }
+
+    public void setHasMultipleRelationships(boolean hasMultipleRelationships) {
+        this.hasMultipleRelationships = hasMultipleRelationships;
+    }
+
+    public boolean hasMultipleRelationships() {
+        return hasMultipleRelationships;
     }
 }

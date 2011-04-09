@@ -62,14 +62,14 @@ public class SfResultSetMetaData implements ResultSetMetaData {
         }
     }
 
-    private Column keepDrilling(StringTokenizer tok, String type, Column column, Boolean aggregate) {
+    private Column keepDrilling(StringTokenizer tok, String type, Column column, Boolean aggregate) throws SQLException {
         while (tok.hasMoreTokens()) {
             String col = tok.nextToken();
             String lookup = col;
             if (col.toLowerCase().endsWith("__r")) {
                 lookup = col.substring(0, col.length()-1) + "c";
             }
-            try {
+//            try {
                 Table t = rsf.getTable(type);
                 try {
                     column = null;
@@ -87,12 +87,13 @@ public class SfResultSetMetaData implements ResultSetMetaData {
                     }
 
                 } catch (SQLException e) {
-                    // make something up
 
-                    if (!aggregate) {
+//                    if (!aggregate) {
+                    if (!aggregate && (column != null && !column.hasMultipleRelationships())) {
                         throw new SQLException("Attempted to invent column data for " + lookup + " : " + e.getMessage());
                     }
 
+                    // make something up
                     // TODO: Maybe we could figure out the data type for an aggregate result, but it would be hard!
                     column = new Column(lookup, "string");
                     column.setLabel(lookup);
@@ -102,10 +103,10 @@ public class SfResultSetMetaData implements ResultSetMetaData {
                     return column;
                 }
 
-            } catch (SQLException e) {
-                System.out.println("Borked table?");
-                e.printStackTrace();
-            }
+//            } catch (SQLException e) {
+//                System.out.println("Borked table?");
+//                e.printStackTrace();
+//            }
         }
         return column;
     }
