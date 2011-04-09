@@ -88,6 +88,8 @@ public class SelectEngineTests {
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery("select FirstName, LastName, CreatedDate, CreatedBy.name from Lead where lastName = '" + surname + "'");
 
+        assertEquals(-1, stmt.getUpdateCount());
+
         int foundCount = 0;
         while (rs.next()) {
             foundCount++;
@@ -474,7 +476,14 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         }
         assertEquals(1, foundCount);
 
+        // Meta data...
+        rs = conn.getMetaData().getExportedKeys(null, null, "bbb__c");
+        assertTrue(rs.next());
 
+        assertEquals("bbb__c", rs.getString("PKTABLE_NAME"));
+        assertEquals("Id", rs.getString("PKCOLUMN_NAME"));
+        assertEquals("aaa__c", rs.getString("FKTABLE_NAME"));
+        assertEquals("bbb__c", rs.getString("FKCOLUMN_NAME"));
     }
 
 
@@ -522,6 +531,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
                 " AnnualRevenue=475000, " +
                 " NumberOfEmployees=6 where LastName = '" + surname + "'");
         assertEquals(1, count);
+        assertEquals(1, stmt.getUpdateCount());
 
         ResultSet rs = stmt.executeQuery("select FirstName, Phone, Lastname, AnnualRevenue, NumberOfEmployees" +
                 " from Lead where lastName = '" + surname + "'");
@@ -581,13 +591,17 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
 
         int count = stmt.executeUpdate(soql);
         assertEquals(1, count);
+        ResultSet rs = stmt.getGeneratedKeys();
+        assertTrue(rs.next());
+        String id = rs.getString("Id");
 
-        ResultSet rs = stmt.executeQuery("select Company, FirstName, Phone, Lastname, AnnualRevenue, NumberOfEmployees" +
+        rs = stmt.executeQuery("select Id, Company, FirstName, Phone, Lastname, AnnualRevenue, NumberOfEmployees" +
                 " from Lead where lastName = '" + surname + "' and Firstname = 'wibbleXYZ'");
 
         int foundCount = 0;
         while (rs.next()) {
             foundCount++;
+            assertEquals(id, rs.getString("Id"));
             assertEquals("CoCo", rs.getString("Company"));
             assertEquals("wibbleXYZ", rs.getString("FirstName"));
             assertEquals(surname, rs.getString("LastName"));
@@ -682,6 +696,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
 
             String pick = rs.getString("picklist__c");
             assertEquals("PickMe", pick);
+            
 //            Array ar = rs.getArray("picklist__c");
 //            assertEquals("string", ar.getBaseTypeName());
 //            assertEquals(Types.VARCHAR, ar.getBaseType());
@@ -774,8 +789,14 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("picklist", rsm.getColumnTypeName(13));
         assertEquals(Types.VARCHAR, rsm.getColumnType(13));
 
-
-//         multipicklist__c, \n" +  // 14
+        assertEquals("multipicklist", rsm.getColumnLabel(14));
+        assertEquals("multipicklist__c", rsm.getColumnName(14));
+        assertEquals("", rsm.getCatalogName(14));
+        assertEquals("java.lang.String", rsm.getColumnClassName(14));
+        assertEquals(4099, rsm.getColumnDisplaySize(14));    // TODO-4099, really?
+        assertEquals("multipicklist", rsm.getColumnTypeName(14));
+        assertEquals(Types.VARCHAR, rsm.getColumnType(14));
+        
 //        "textarea__c,             // 15
 //      textarearich__c,            // 16
 //      url__c " +                  // 17
@@ -786,25 +807,27 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
 
     @Test
     public void testSelectStar() throws Exception {
+        int colCount = 28;
+
         Statement stmt = conn.createStatement();
         int count = stmt.executeUpdate("insert into aaa__c(name, number4dp__c) values ('selectStar', 1)");
         assertEquals(1, count);
         ResultSet rs = stmt.executeQuery("select * from aaa__c where name='selectStar'");
-        assertEquals(27, rs.getMetaData().getColumnCount());
+        assertEquals(colCount, rs.getMetaData().getColumnCount());
         assertTrue(rs.next());
         assertEquals("selectStar", rs.getString("name"));
         assertEquals("1.0", rs.getBigDecimal("number4dp__c").toPlainString());
 
         // Try alias.
         rs = stmt.executeQuery("select a.* from aaa__c a where a.name='selectStar'");
-        assertEquals(27, rs.getMetaData().getColumnCount());
+        assertEquals(colCount, rs.getMetaData().getColumnCount());
         assertTrue(rs.next());
         assertEquals("selectStar", rs.getString("name"));
         assertEquals("1.0", rs.getBigDecimal("number4dp__c").toPlainString());
 
         // Try quoted table.
         rs = stmt.executeQuery("select a.* from \"aaa__c\" a where a.name='selectStar'");
-        assertEquals(27, rs.getMetaData().getColumnCount());
+        assertEquals(colCount, rs.getMetaData().getColumnCount());
         assertTrue(rs.next());
         assertEquals("selectStar", rs.getString("name"));
         assertEquals("1.0", rs.getBigDecimal("number4dp__c").toPlainString());

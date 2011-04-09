@@ -20,6 +20,7 @@ public class Insert {
     private SimpleParser al;
     private ResultSetFactory metaDataFactory;
     private PartnerConnection pc;
+    private String generatedId;
 
     public Insert(SimpleParser al,
                   ResultSetFactory metaDataFactory,
@@ -89,7 +90,7 @@ public class Insert {
             int i = 0;
             for (String key : columns) {
                 String val = values.get(i++);
-                Integer dataType = metaDataFactory.lookupJdbcType(tableData.getColumn(key).getType());
+                Integer dataType = ResultSetFactory.lookupJdbcType(tableData.getColumn(key).getType());
                 Object value = TypeHelper.dataTypeConvert(val, dataType);
 
                 sObject.setField(key, value);
@@ -104,6 +105,8 @@ public class Insert {
                         sb.append(error.getMessage()).append(". ");
                     }
                     throw new SQLException(sb.toString());
+                } else {
+                    generatedId = saveResult.getId();
                 }
             }
         } catch (SQLException e) {
@@ -116,4 +119,7 @@ public class Insert {
         return 1;
     }
 
+    public String getGeneratedId() {
+        return generatedId;
+    }
 }

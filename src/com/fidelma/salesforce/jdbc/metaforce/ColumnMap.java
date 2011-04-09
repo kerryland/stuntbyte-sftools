@@ -13,6 +13,10 @@ public class ColumnMap<K, V> extends HashMap<K, V> {
 
 	@Override
 	public V put(K key, V value) {
+        if (key instanceof String) {
+            String k2 = (String) key;
+            key = (K) k2.toUpperCase();
+        }
 		columnNames.add(columnPostion++, key);
 		return super.put(key, value);
 	};

@@ -15,6 +15,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -572,11 +573,33 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws SQLException {
-        return new SfResultSet(); // TODO: Could use Id
+        List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
+        ColumnMap<String, Object> row = new ColumnMap<String, Object>();
+        row.put("SCOPE", DatabaseMetaData.bestRowSession);
+        row.put("COLUMN_NAME", "Id");
+        row.put("DATA_TYPE", Types.VARCHAR);
+        row.put("TYPE_NAME", "id");
+        row.put("COLUMN_SIZE", "18");
+        row.put("BUFFER_LENGTH", null);
+        row.put("DECIMAL_DIGITS", null);
+        row.put("PSEUDO_COLUMN", DatabaseMetaData.bestRowNotPseudo);
+        maps.add(row);
+        return new ForceResultSet(maps);
     }
 
     public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
-        return new SfResultSet(); // TODO: Could use LastModifiedDate
+        List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
+        ColumnMap<String, Object> row = new ColumnMap<String, Object>();
+        row.put("SCOPE", null);
+        row.put("COLUMN_NAME", "LastModifiedDAte");
+        row.put("DATA_TYPE", Types.TIMESTAMP);
+        row.put("TYPE_NAME", "datetime");
+        row.put("COLUMN_SIZE", "24");
+        row.put("BUFFER_LENGTH", 24);
+        row.put("DECIMAL_DIGITS", null);
+        row.put("PSEUDO_COLUMN", DatabaseMetaData.bestRowNotPseudo);
+        maps.add(row);
+        return new ForceResultSet(maps);
     }
 
     public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable, String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException {
@@ -597,17 +620,8 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
-        List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
-
-        // TODO: This is totally incomplete
-        ColumnMap<String, Object> row = new ColumnMap<String, Object>();
-        row.put("PKTABLE_CAT", null);
-        row.put("PKTABLE_SCHEM", null);
-
-        maps.add(row);
-        return new ForceResultSet(maps);
+        return metaDataFactory.getExportedKeys(table);
     }
-
 
     public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {
         return metaDataFactory.getIndexInfo(table);

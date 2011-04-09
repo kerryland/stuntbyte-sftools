@@ -121,6 +121,7 @@ public class WscService {
         column.setPrecision(field.getPrecision());
         column.setScale(field.getScale());
         column.setDefault(field.getDefaultValueFormula());
+        column.setNillable(field.isNillable());
 
         if ("reference".equals(field.getType().toString())) {
             // MasterDetail vs Reference apparently not
@@ -143,7 +144,7 @@ public class WscService {
 
         // Booleans have this as false so not too
         // helpful; leave off
-        column.setNillable(false);
+//        column.setNillable(false);
 
         // NB Not implemented; see comment in
         // ResultSetFactory class

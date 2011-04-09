@@ -267,31 +267,60 @@ public class ResultSetFactory {
     /**
      * Provide table (object) relationship information.
      */
-    public ResultSet getImportedKeys(String tableName) {
+    public ResultSet getImportedKeys(String tableName) throws SQLException {
 
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
+        Table table = getTable(tableName);
+
+        for (Column column : table.getColumns()) {
+            if (column.getReferencedTable() != null && column.getReferencedColumn() != null) {
+                ColumnMap<String, Object> map = new ColumnMap<String, Object>();
+                map.put("PKTABLE_CAT", null);
+                map.put("PKTABLE_SCHEM", null);
+                map.put("PKTABLE_NAME", column.getReferencedTable());
+                map.put("PKCOLUMN_NAME", column.getReferencedColumn());
+                map.put("FKTABLE_CAT", null);
+                map.put("FKTABLE_SCHEM", null);
+                map.put("FKTABLE_NAME", tableName);
+                map.put("FKCOLUMN_NAME", column.getName());
+                map.put("KEY_SEQ", counter);
+                map.put("UPDATE_RULE", 0);
+                map.put("DELETE_RULE", 0);
+                map.put("FK_NAME", "FakeFK" + counter);
+                map.put("PK_NAME", "FakePK" + counter);
+                map.put("DEFERRABILITY", 0);
+                counter++;
+                maps.add(map);
+            }
+        }
+        return new ForceResultSet(maps);
+    }
+
+    public ResultSet getExportedKeys(String tableName) throws SQLException {
+        List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
+
         for (Table table : tables) {
-            if (table.getName().equalsIgnoreCase(tableName)) {
-                for (Column column : table.getColumns()) {
-                    if (column.getReferencedTable() != null && column.getReferencedColumn() != null) {
-                        ColumnMap<String, Object> map = new ColumnMap<String, Object>();
-                        map.put("PKTABLE_CAT", null);
-                        map.put("PKTABLE_SCHEM", null);
-                        map.put("PKTABLE_NAME", column.getReferencedTable());
-                        map.put("PKCOLUMN_NAME", column.getReferencedColumn());
-                        map.put("FKTABLE_CAT", null);
-                        map.put("FKTABLE_SCHEM", null);
-                        map.put("FKTABLE_NAME", tableName);
-                        map.put("FKCOLUMN_NAME", column.getName());
-                        map.put("KEY_SEQ", counter);
-                        map.put("UPDATE_RULE", 0);
-                        map.put("DELETE_RULE", 0);
-                        map.put("FK_NAME", "FakeFK" + counter);
-                        map.put("PK_NAME", "FakePK" + counter);
-                        map.put("DEFERRABILITY", 0);
-                        counter++;
-                        maps.add(map);
-                    }
+            for (Column column : table.getColumns()) {
+                if (tableName.equalsIgnoreCase(column.getReferencedTable())) {
+                    ColumnMap<String, Object> map = new ColumnMap<String, Object>();
+                    map.put("PKTABLE_CAT", null);
+                    map.put("PKTABLE_SCHEM", null);
+                    map.put("PKTABLE_NAME", column.getReferencedTable());
+                    map.put("PKCOLUMN_NAME", column.getReferencedColumn());
+
+                    map.put("FKTABLE_CAT", null);
+                    map.put("FKTABLE_SCHEM", null);
+                    map.put("FKTABLE_NAME", table.getName());
+                    map.put("FKCOLUMN_NAME", column.getName());
+
+                    map.put("KEY_SEQ", counter);
+                    map.put("UPDATE_RULE", DatabaseMetaData.importedKeyRestrict);
+                    map.put("DELETE_RULE", DatabaseMetaData.importedKeySetNull);
+                    map.put("FK_NAME", "FakeFK" + counter);
+                    map.put("PK_NAME", "FakePK" + counter);
+                    map.put("DEFERRABILITY", 0);
+                    counter++;
+                    maps.add(map);
                 }
             }
         }
