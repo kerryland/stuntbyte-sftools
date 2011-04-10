@@ -219,7 +219,7 @@ public class ResultSetFactory {
                         map.put("BUFFER_LENGTH", 0);
                         map.put("DECIMAL_DIGITS", column.getPrecision());
                         map.put("NUM_PREC_RADIX", typeInfo != null ? typeInfo.radix : 10);
-//                        map.put("NULLABLE",  column.isNillable() ? 1 : 0);
+                        map.put("NULLABLE", column.isNillable() ? DatabaseMetaData.columnNullable : DatabaseMetaData.columnNoNulls);
                         map.put("REMARKS", column.getComments());
                         map.put("COLUMN_DEF", column.getDefault());
                         map.put("SQL_DATA_TYPE", null);
@@ -232,7 +232,6 @@ public class ResultSetFactory {
                         map.put("SCOPE_TABLE", null);
                         map.put("SOURCE_DATA_TYPE", column.getType());
 
-                        map.put("NULLABLE", column.isNillable() ? DatabaseMetaData.columnNullable : DatabaseMetaData.columnNoNulls);
 
                         // The Auto column is obtained by SchemaSpy via ResultSetMetaData so awkward to support
 
