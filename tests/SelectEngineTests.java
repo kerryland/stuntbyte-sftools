@@ -884,12 +884,10 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals(name, rs.getString("name"));
         assertEquals("Blue", rs.getString("Type"));
 
-
-        // TODO
-//        rs = stmt.executeQuery("select Name, \"Type\" from Account where name='" + name + "'");
-//        assertTrue(rs.next());
-//        assertEquals(name, rs.getString("name"));
-//        assertEquals("Blue", rs.getString("Type"));
+        rs = stmt.executeQuery("select Name, \"Type\" from Account where name='" + name + "'");
+        assertTrue(rs.next());
+        assertEquals(name, rs.getString("name"));
+        assertEquals("Blue", rs.getString("Type"));
     }
 
 

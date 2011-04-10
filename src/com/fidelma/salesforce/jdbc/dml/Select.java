@@ -38,10 +38,11 @@ public class Select {
             if (parseSelects.size() > 1) {
                 throw new SQLFeatureNotSupportedException("Parent --> Child subqueries not supported via JDBC");
             }
-            ParseSelect parseSelect = parseSelects.get(parseSelects.size()-1);
+            ParseSelect parseSelect = parseSelects.get(parseSelects.size() - 1);
 
             table = parseSelect.getDrivingTable();
 
+            sql = removeQuotedColumns(sql, parseSelect);
             sql = removeQuotedTableName(sql);
             sql = patchCountStar(sql, parseSelect.getColumns());
 
@@ -111,13 +112,28 @@ public class Select {
     // DBVisualizer likes to put quotes around the table name
     // for no obvious reason. This undoes that, kinda crudely....
     private String removeQuotedTableName(String sql) {
+        return replace(sql, "from " + table, "from \"" + table + "\"");
+    }
+
+    // SQL Workbench likes to put quotes around some column names, like "Type",
+    // for no obvious reason. This undoes that, kinda crudely....
+    private String removeQuotedColumns(String sql, ParseSelect parseSelect) {
         String upper = sql.toUpperCase();
-        String check = "FROM \"" + table.toUpperCase() + "\"";
-        int pos = upper.indexOf(check);
-        if (pos != -1) {
-            sql = sql.substring(0, pos) + " from " + table + sql.substring(pos + check.length());
+        for (ParseColumn parseColumn : parseSelect.getColumns()) {
+            sql = replace(sql, parseColumn.getName(), "\"" + parseColumn.getName() + "\"");
         }
         return sql;
     }
+
+    private String replace(String sql, String replace, String check) {
+        String upper = sql.toUpperCase();
+        check = check.toUpperCase();
+        int pos = upper.indexOf(check);
+        if (pos != -1) {
+            sql = sql.substring(0, pos) + replace + sql.substring(pos + check.length());
+        }
+        return sql;
+    }
+
 
 }
