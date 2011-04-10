@@ -11,6 +11,8 @@ import com.sforce.soap.partner.RecordTypeInfo;
 import com.sforce.ws.ConnectionException;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -105,6 +107,14 @@ public class WscService {
                             recordColumn(relationshipMap, childParentReferenceNames, childCascadeDeletes, typesSet, sob, columns, field);
                         }
                     }
+
+                    Collections.sort(columns, new Comparator<Column>() {
+                        public int compare(Column o1, Column o2) {
+                            String t1 = ((Column) o1).getName();
+                            String t2 = ((Column) o2).getName();
+                            return t1.compareTo(t2);
+                        }
+                    });
 
                     Table table = new Table(sob.getName(), getRecordTypes(sob.getRecordTypeInfos()), columns);
                     factory.addTable(table);
