@@ -74,9 +74,9 @@ public class SfResultSet implements java.sql.ResultSet {
     public SfResultSet(SfStatement statement,
                        PartnerConnection pc,
                        QueryResult qr,
-                       ParseSelect parseSelect) throws SQLException {
-        this.statement = statement;
+                       List<ParseSelect> parseSelects) throws SQLException {
 
+        this.statement = statement;
         SfConnection conn = (SfConnection) statement.getConnection();
         ResultSetFactory rsf = (conn).getMetaDataFactory();
         boolean useLabels = Boolean.parseBoolean(conn.getClientInfo("useLabels"));
@@ -92,9 +92,16 @@ public class SfResultSet implements java.sql.ResultSet {
 
         if (records.length > 0) {
             generateResultFields(null, records[0], columnsInResult);
-            finaliseColumnList(columnsInResult, parseSelect.getColumns());
 
-            metaData = new SfResultSetMetaData(parseSelect.getDrivingTable(), rsf, records[0], columnsInResult, useLabels);
+            String drivingTable = null;
+            List<ParseColumn> cols = new ArrayList<ParseColumn>();
+            for (ParseSelect parseSelect : parseSelects) {
+                cols.addAll(parseSelect.getColumns());
+                drivingTable = parseSelect.getDrivingTable();
+            }
+            finaliseColumnList(columnsInResult, cols);
+
+            metaData = new SfResultSetMetaData(drivingTable, rsf, records[0], columnsInResult, useLabels);
         } else {
             metaData = new SfResultSetMetaData();
         }
@@ -135,11 +142,9 @@ public class SfResultSet implements java.sql.ResultSet {
         if (parent.hasChildren()) {
             Iterator<XmlObject> children = parent.getChildren();
 
-            if (parentName != null) {
-                parentName += "." + parent.getName().getLocalPart();
-            } else {
-                parentName = parent.getName().getLocalPart();
-            }
+//            boolean recordsRoot = parentName.equals("records") || parentName.endsWith(".records");
+
+            parentName = calculateParentName(parentName, parent);
 
             int childPos = 0;
             while (children.hasNext()) {
@@ -159,11 +164,27 @@ public class SfResultSet implements java.sql.ResultSet {
                 columnName = parent.getName().getLocalPart();
             }
 
-            columnName = columnName.substring(8);
             if (!columnsInResult.contains(columnName)) {
                 columnsInResult.add(columnName);
             }
         }
+    }
+
+    private String calculateParentName(String parentName, XmlObject parent) {
+        if (parentName != null) {
+            parentName += "." + parent.getName().getLocalPart();
+        } else {
+            parentName = parent.getName().getLocalPart();
+        }
+
+        if (parentName != null) {
+            if (parentName.equals("records")) {
+                parentName = null;
+            } else if (parentName.endsWith(".records")) {
+                parentName = parentName.substring(0, parentName.length() - ".records".length());
+            }
+        }
+        return parentName;
     }
 
     private void finaliseColumnList(List<String> columnsInResult, List<ParseColumn> columnsInSql) {
@@ -316,8 +337,6 @@ public class SfResultSet implements java.sql.ResultSet {
     public boolean isClosed() throws SQLException {
         return closed;
     }
-
-
 
 
     public int findColumn(String columnLabel) throws SQLException {

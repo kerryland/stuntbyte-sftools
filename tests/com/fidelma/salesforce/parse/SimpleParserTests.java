@@ -3,6 +3,8 @@ package com.fidelma.salesforce.parse;
 import com.fidelma.salesforce.jdbc.SfResultSet;
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -13,7 +15,8 @@ public class SimpleParserTests {
     public void testTableAlias() throws Exception {
         String sql = "select a.Company, a.* from Lead a";
         SimpleParser p = new SimpleParser(sql);
-        ParseSelect ps = p.extractColumnsFromSoql();
+        List<ParseSelect> pses = p.extractColumnsFromSoql();
+        ParseSelect ps = pses.get(0);
         assertEquals("Lead", ps.getDrivingTable());
 
         for (ParseColumn col : ps.getColumns()) {
@@ -42,7 +45,9 @@ public class SimpleParserTests {
                 "max(lastName) " +
                 "from Lead where lastName = 'Smith' group by company";
         SimpleParser p = new SimpleParser(sql);
-        ParseSelect ps = p.extractColumnsFromSoql();
+        List<ParseSelect> pses = p.extractColumnsFromSoql();
+        ParseSelect ps = pses.get(0);
+
         assertEquals("Lead", ps.getDrivingTable());
 
 //        for (ParseColumn col : ps.getColumns()) {

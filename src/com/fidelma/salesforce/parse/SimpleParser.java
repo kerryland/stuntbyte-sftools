@@ -9,19 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
- * User: kerry
- * Date: 26/03/11
- * Time: 7:03 AM
- * To change this template use File | Settings | File Templates.
  */
 public class SimpleParser {
 
-    private String commandString;
     private LexicalAnalyzer al;
 
     public SimpleParser(String commandString) {
-        this.commandString = commandString;
         al = new LexicalAnalyzer(
                 new ByteArrayInputStream(
                         commandString.getBytes()), null);
@@ -66,48 +59,60 @@ public class SimpleParser {
         return token.getValue();
     }
 
-    public ParseSelect extractColumnsFromSoql() throws Exception {
-        List<ParseColumn> result = new ArrayList<ParseColumn>();
+    public List<ParseSelect> extractColumnsFromSoql() throws Exception {
+        List<ParseSelect> selects = new ArrayList<ParseSelect>();
+        extractColumnsFromSoql(selects);
+        return selects;
+    }
 
+    private void extractColumnsFromSoql(List<ParseSelect> selects) throws Exception {
+        List<ParseColumn> result = new ArrayList<ParseColumn>();
         SimpleParser la = this;
         la.getToken("SELECT");
         LexicalToken token = la.getToken();
         int expr = 0;
+        boolean prevTokenComma = false;
 
         while ((token != null) && (!token.getValue().equalsIgnoreCase("FROM"))) {
             if (token.getValue().equals("(")) {
+                if (!prevTokenComma) {
+                    token = swallowUntilMatchingBracket(la);
+                } else {
+                    extractColumnsFromSoql(selects);
+                    token = swallowUntilMatchingBracket(la);
+                }
 
-                token = swallowUntilMatchingBracket(la);
-
-//                System.out.println("Swallowed bracket until " + token.getValue());
                 if ((token != null) && (!token.getValue().equalsIgnoreCase("FROM") && (!(token.getValue().equals(","))))) {
                     ParseColumn pc = new ParseColumn(token.getValue().toUpperCase());
                     pc.setAlias(true);
                     pc.setFunction(true);
                     pc.setFunctionName(result.get(result.size() - 1).getName());
 
-//                   System.out.println("Splatting " + result.get(result.size()-1).getName() + " with " + pc.getName());
                     result.set(result.size() - 1, pc);
                     token = la.getToken();
                 } else if (result.size() > 0) {
-//                    System.out.println("Functionising " + result.get(result.size()-1).getName());
                     ParseColumn prevPc = result.get(result.size() - 1);
                     prevPc.setFunction(true);
                     prevPc.setFunctionName(prevPc.getName());
                     prevPc.setName("EXPR" + (expr++));
                 }
+                prevTokenComma = false;
+            } else if (token.getValue().equals(")")) {
+                token = la.getToken();
+                break;
+
             } else if (token.getValue().equals(",")) {
                 token = la.getToken();
+                prevTokenComma = true;
             } else {
                 String x = token.getValue().trim();
                 if (x.length() > 0) {
                     ParseColumn pc = new ParseColumn(x.toUpperCase());
-//                    System.out.println("Boring store of " + x);
                     result.add(pc);
                 }
                 token = la.getToken();
+                prevTokenComma = false;
             }
-
         }
 
         String table = handleColumnAlias(result, token);
@@ -116,7 +121,7 @@ public class SimpleParser {
         parseSelect.setDrivingTable(table);
         parseSelect.setColumns(result);
 
-        return parseSelect;
+        selects.add(parseSelect);
     }
 
     private String handleColumnAlias(List<ParseColumn> result, LexicalToken token) throws Exception {
@@ -157,7 +162,7 @@ public class SimpleParser {
                 }
             }
         } else {
-            throw new SQLException("Missing FROM clause");
+            throw new SQLException("Missing FROM clause. Found " + token);
         }
         return table;
     }

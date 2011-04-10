@@ -4,7 +4,6 @@ import com.fidelma.salesforce.jdbc.SfConnection;
 import com.fidelma.salesforce.jdbc.SfResultSet;
 import com.fidelma.salesforce.jdbc.SfStatement;
 import com.fidelma.salesforce.jdbc.metaforce.Column;
-import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.parse.ParseColumn;
 import com.fidelma.salesforce.parse.ParseSelect;
@@ -15,6 +14,7 @@ import com.sforce.ws.ConnectionException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
 
 /**
@@ -34,7 +34,11 @@ public class Select {
         try {
             SimpleParser la = new SimpleParser(sql);
 
-            ParseSelect parseSelect = la.extractColumnsFromSoql();
+            List<ParseSelect> parseSelects = la.extractColumnsFromSoql();
+            if (parseSelects.size() > 1) {
+                throw new SQLFeatureNotSupportedException("Parent --> Child subqueries not supported via JDBC");
+            }
+            ParseSelect parseSelect = parseSelects.get(parseSelects.size()-1);
 
             table = parseSelect.getDrivingTable();
 
@@ -47,11 +51,10 @@ public class Select {
             }
 
             try {
-
                 pc.setQueryOptions(statement.getFetchSize());
                 QueryResult qr = pc.query(sql);
 
-                return new SfResultSet(statement, pc, qr, parseSelect);
+                return new SfResultSet(statement, pc, qr, parseSelects);
 
             } finally {
                 pc.setQueryOptions(oldBatchSize);
@@ -59,6 +62,10 @@ public class Select {
 
         } catch (ConnectionException e) {
             throw new SQLException(e);
+
+        } catch (SQLException e) {
+            throw e;
+
         } catch (Exception e) {
             throw new SQLException(e);
         }

@@ -21,6 +21,9 @@ public class ParseSelect {
     }
 
     public void setColumns(List<ParseColumn> columns) {
+        for (ParseColumn column : columns) {
+            column.setTable(drivingTable);
+        }
         this.columns = columns;
     }
 }

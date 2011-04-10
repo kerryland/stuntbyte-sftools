@@ -8,6 +8,7 @@ public class ParseColumn {
     private boolean isAlias;
     private boolean isFunction;
     private String functionName;
+    private String table;
 
     public ParseColumn(String name) {
         this.name = name;
@@ -43,5 +44,13 @@ public class ParseColumn {
 
     public String getFunctionName() {
         return functionName;
+    }
+
+    public void setTable(String table) {
+        this.table = table;
+    }
+
+    public String getTable() {
+        return table;
     }
 }

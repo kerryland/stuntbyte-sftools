@@ -14,6 +14,7 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
+import java.util.prefs.BackingStoreException;
 
 import static org.junit.Assert.*;
 
@@ -206,20 +207,23 @@ public class SelectEngineTests {
         assertEquals("Mike", rs.getString("expr1"));
     }
 
-    /*
+
     @Test
     public void testSubquery() throws Exception {
-        Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("SELECT Account.Name, " +
-                "(SELECT Contact.LastName FROM Account.Contacts) lname FROM Account limit 1");
-        assertEquals(2, rs.getMetaData().getColumnCount());
-        assertTrue(rs.next());
+        try {
+            String sql = "SELECT Account.Name, x.Type," +
+                    " (SELECT b.LastName FROM Account.Contacts b order by Contact.FirstName), BillingCity \n" +
+                    "  FROM Account x limit 10";
 
-        assertEquals("MikeCo", rs.getString("Account.Name"));
-        assertEquals(surname, rs.getString("expr0"));
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+            fail("Should have thrown an exception");
 
+        } catch (SQLFeatureNotSupportedException e) {
+            // Good!
+        }
     }
-    */
+
     /*
 
 http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_select.htm
@@ -696,7 +700,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
 
             String pick = rs.getString("picklist__c");
             assertEquals("PickMe", pick);
-            
+
 //            Array ar = rs.getArray("picklist__c");
 //            assertEquals("string", ar.getBaseTypeName());
 //            assertEquals(Types.VARCHAR, ar.getBaseType());
@@ -796,7 +800,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals(4099, rsm.getColumnDisplaySize(14));    // TODO-4099, really?
         assertEquals("multipicklist", rsm.getColumnTypeName(14));
         assertEquals(Types.VARCHAR, rsm.getColumnType(14));
-        
+
 //        "textarea__c,             // 15
 //      textarearich__c,            // 16
 //      url__c " +                  // 17
@@ -840,8 +844,12 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         ResultSet rs = stmt.getGeneratedKeys();
         rs.next();
         String id = rs.getString("Id");
+        deleteMe.add(id);
 
         stmt.executeUpdate("insert into Task(Subject, WhoId) values ('Glooper', '" + id + "')");
+        rs = stmt.getGeneratedKeys();
+        rs.next();
+        deleteMe.add(rs.getString("Id"));
 
         rs = stmt.executeQuery("SELECT Id, Subject, Who.Id, Who.LastName, Who.Type FROM Task where Who.Id = '" + id + "' limit 1");
         assertEquals(5, rs.getMetaData().getColumnCount());
@@ -853,15 +861,13 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
     }
 
 
-
     // "Type" is a bit of a weird column name, because there's an implicit column called
     // "Type" in all results that we want to ignore.
     // This makes sure that we can select the "Type" column from Account.
     @Test
     public void testSelectType() throws Exception {
-        String name = "A" + System.currentTimeMillis();
         Statement stmt = conn.createStatement();
-
+        String name = "A" + System.currentTimeMillis();
         int count = stmt.executeUpdate("insert into Account(name, Type) values ('" + name + "', 'Blue')");
         assertEquals(1, count);
 
