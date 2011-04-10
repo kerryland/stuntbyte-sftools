@@ -74,7 +74,7 @@ public class Select {
     }
 
     private String patchWhereZeroEqualsOne(String sql) {
-        return replace(sql, "WHERE ID = null", "WHERE 0 = 1");
+        return replace(sql, " ID = null", " 0 = 1");
     }
 
     private String patchCountStar(String sql, List<ParseColumn> columnsInSql) throws SQLException {
