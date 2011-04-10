@@ -44,6 +44,7 @@ public class Select {
 
             sql = removeQuotedColumns(sql, parseSelect);
             sql = removeQuotedTableName(sql);
+            sql = patchWhereZeroEqualsOne(sql);
             sql = patchCountStar(sql, parseSelect.getColumns());
 
             Integer oldBatchSize = 2000;
@@ -70,6 +71,10 @@ public class Select {
         } catch (Exception e) {
             throw new SQLException(e);
         }
+    }
+
+    private String patchWhereZeroEqualsOne(String sql) {
+        return replace(sql, "WHERE ID = null", "WHERE 0 = 1");
     }
 
     private String patchCountStar(String sql, List<ParseColumn> columnsInSql) throws SQLException {

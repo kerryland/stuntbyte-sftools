@@ -128,6 +128,17 @@ public class SelectEngineTests {
         assertFalse(rs.next());
     }
 
+    // Open Office likes saying WHERE 0 = 1, which SF doesn't understand. Let's patch it.
+    @Test
+    public void testNoRowsZeroEqualsOne() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("select FirstName, LastName, CreatedBy.name " +
+                "from Lead where 0 = 1");
+        assertTrue(rs.getMetaData() != null);
+        assertEquals(0, rs.getMetaData().getColumnCount());
+        assertFalse(rs.next());
+    }
+
 
     @Test
     public void testCount() throws Exception {
