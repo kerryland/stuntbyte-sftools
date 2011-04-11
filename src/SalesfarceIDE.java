@@ -543,7 +543,10 @@ public class SalesfarceIDE {
                         Matcher m = linePat.matcher(stack);
 
                         String failname = findFile(src, nm.group(1), filename);
-                        String method = nm.group(2);
+                        String method = "";
+                        if (nm.groupCount() > 1) {
+                            method = nm.group(2);
+                        }
 
                         int line = -1;
                         int column = -1;
