@@ -506,6 +506,34 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         }
         assertEquals(1, foundCount);
 
+        // And again, with columns rearranged
+        rs = stmt.executeQuery(
+                "select " +
+                        "bbb__r.ccc__r.ddd__r.name," +
+                        "bbb__r.ccc__r.name, " +
+                        "bbb__r.name, " +
+                        "name " +
+                        " from aaa__c " +
+                        "where id = '" + aaa.getId() + "'");
+
+        assertEquals(4, rs.getMetaData().getColumnCount());
+
+        assertEquals("Name", rs.getMetaData().getColumnName(4));
+        assertEquals("bbb__r.name", rs.getMetaData().getColumnName(3));
+        assertEquals("bbb__r.ccc__r.name", rs.getMetaData().getColumnName(2));
+        assertEquals("bbb__r.ccc__r.ddd__r.name", rs.getMetaData().getColumnName(1));
+
+        foundCount = 0;
+        while (rs.next()) {
+            foundCount++;
+            assertEquals("aaa Name", rs.getString("Name"));
+            assertEquals(null, rs.getString("bbb__r.Name"));
+            assertEquals(null, rs.getString("bbb__r.ccc__r.Name"));
+            assertEquals(null, rs.getString("bbb__r.ccc__r.ddd__r.Name"));
+        }
+        assertEquals(1, foundCount);
+
+
         // Meta data...
         rs = conn.getMetaData().getExportedKeys(null, null, "bbb__c");
         assertTrue(rs.next());
