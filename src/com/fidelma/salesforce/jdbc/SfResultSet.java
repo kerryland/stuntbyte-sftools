@@ -215,6 +215,7 @@ public class SfResultSet implements java.sql.ResultSet {
             }
         }
 
+        /*
         // TODO: Remove this -- does it make a difference?
         if (!done.isEmpty()) {
             for (int i = 0; i < columnsInSql.size(); i++) {
@@ -230,7 +231,7 @@ public class SfResultSet implements java.sql.ResultSet {
                 }
             }
         }
-
+          */
         // This is so that when Salesforce decides to not bother
         // mentioning null columns in the result set, we still show
         // something!

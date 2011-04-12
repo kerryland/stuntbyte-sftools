@@ -83,7 +83,7 @@ public class SimpleParser {
                 }
 
                 if ((token != null) && (!token.getValue().equalsIgnoreCase("FROM") && (!(token.getValue().equals(","))))) {
-                    ParseColumn pc = new ParseColumn(token.getValue().toUpperCase());
+                    ParseColumn pc = new ParseColumn(token.getValue());
                     pc.setAlias(true);
                     pc.setFunction(true);
                     pc.setFunctionName(result.get(result.size() - 1).getName());
@@ -107,7 +107,7 @@ public class SimpleParser {
             } else {
                 String x = token.getValue().trim();
                 if (x.length() > 0) {
-                    ParseColumn pc = new ParseColumn(x.toUpperCase());
+                    ParseColumn pc = new ParseColumn(x);
                     result.add(pc);
                 }
                 token = la.getToken();
@@ -138,10 +138,10 @@ public class SimpleParser {
                 if (alias != null) {
                     String prefix = alias.toUpperCase() + ".";
                     for (ParseColumn column : result) {
-                        if (column.getName().equals(prefix)) {
+                        if (column.getName().toUpperCase().equals(prefix)) {
 
                         } else {
-                            if (column.getName().startsWith(prefix)) {
+                            if (column.getName().toUpperCase().startsWith(prefix)) {
                                 String x = column.getName().substring(prefix.length()).trim();
                                 if (x.length() != 0) {
                                     column.setName(x);

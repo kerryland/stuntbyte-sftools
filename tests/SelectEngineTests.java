@@ -17,6 +17,7 @@ import java.util.Date;
 import java.util.prefs.BackingStoreException;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  */
@@ -139,6 +140,14 @@ public class SelectEngineTests {
         assertFalse(rs.next());
     }
 
+    @Test
+    public void testComments() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("----\nselect lastName from Lead where lastName = '" + surname + "' group by lastName");
+        assertEquals(1, rs.getMetaData().getColumnCount());
+        assertTrue(rs.next());
+        assertEquals(surname, rs.getString(1));
+    }
 
     @Test
     public void testCount() throws Exception {
@@ -470,23 +479,29 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         }
         assertEquals(1, foundCount);
 
-        // Remove DDD -- we should still get 4 columns returned!
-        pc.delete(new String[]{ddd.getId()});
+        // Remove BBB, CCC and DDD -- we should still get 4 columns returned!
+        pc.delete(new String[]{ddd.getId(), ccc.getId(), bbb.getId()});
         rs = stmt.executeQuery(
                 "select name, " +
                         "bbb__r.name, " +
-                        "bbb__r.ccc__r.Name, " +
-                        "bbb__r.ccc__r.ddd__r.Name " +
+                        "bbb__r.ccc__r.name, " +
+                        "bbb__r.ccc__r.ddd__r.name " +
                         " from aaa__c " +
                         "where id = '" + aaa.getId() + "'");
 
         assertEquals(4, rs.getMetaData().getColumnCount());
+
+        assertEquals("Name", rs.getMetaData().getColumnName(1));
+        assertEquals("bbb__r.name", rs.getMetaData().getColumnName(2));
+        assertEquals("bbb__r.ccc__r.name", rs.getMetaData().getColumnName(3));
+        assertEquals("bbb__r.ccc__r.ddd__r.name", rs.getMetaData().getColumnName(4));
+
         foundCount = 0;
         while (rs.next()) {
             foundCount++;
             assertEquals("aaa Name", rs.getString("Name"));
-            assertEquals("bbb Name", rs.getString("bbb__r.Name"));
-            assertEquals("ccc Name", rs.getString("bbb__r.ccc__r.Name"));
+            assertEquals(null, rs.getString("bbb__r.Name"));
+            assertEquals(null, rs.getString("bbb__r.ccc__r.Name"));
             assertEquals(null, rs.getString("bbb__r.ccc__r.ddd__r.Name"));
         }
         assertEquals(1, foundCount);

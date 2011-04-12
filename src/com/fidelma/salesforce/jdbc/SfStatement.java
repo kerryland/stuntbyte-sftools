@@ -12,6 +12,9 @@ import com.fidelma.salesforce.parse.SimpleParser;
 import com.sforce.soap.partner.*;
 import com.sforce.ws.ConnectionException;
 
+import java.io.IOException;
+import java.io.LineNumberReader;
+import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -38,12 +41,33 @@ public class SfStatement implements java.sql.Statement {
 
     public ResultSet executeQuery(String sql) throws SQLException {
         generatedId = null;
+        sql = stripComments(sql);
         Select select = new Select(this, pc);
         return select.execute(sql);
     }
 
+    private String stripComments(String sql) {
+        LineNumberReader r = new LineNumberReader(new StringReader(sql));
+        String line = null;
+        StringBuilder result = new StringBuilder();
+        try {
+            line = r.readLine();
+            while (line != null) {
+                if (!line.startsWith("--")) {
+                    result.append(line);
+                    result.append("\n");
+                }
+                line = r.readLine();
+            }
+        } catch (IOException e) {
+            // meh -- will. not. happen
+        }
+        return result.toString();
+    }
+
     public int executeUpdate(String sql) throws SQLException {
         try {
+            sql = stripComments(sql);
             generatedId = null;
             SimpleParser al = new SimpleParser(sql);
             LexicalToken token = al.getToken();
