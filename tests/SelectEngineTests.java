@@ -3,6 +3,7 @@ import com.fidelma.salesforce.misc.TypeHelper;
 import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.sobject.SObject;
+import junit.framework.Assert;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -361,7 +362,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("Type", rs.getString("COLUMN_NAME"));
     }
 
-    /*
+     /*
     @Test
     public void testRegression() throws Exception {
 
@@ -377,13 +378,14 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
                 , info);
 
         String soql = "select \n" +
-                "Presence_Category__r.Name,\n" +
-                "Localist_Product__r.Main_Category__r.Name,\n" +
-                "Localist_Product__r.Account__r.Primary_Category__r.Name\n" +
-                "from Localist_Product_Category_Member__c\n" +
-                "where Localist_Product__r.Main_Category__r.Name = '' " +
-                //     "order by id " +
-                "limit 1";
+                "Main_Category__r.Name,\n " +
+                "Main_Category__c,\n" +
+                "count(id)\n" +
+                " from localist_product__c  \n" +
+                "where Main_Category__c != null\n" +
+                "and (First_Level_Category_Group__c = null or Second_Level_Category_Group__c = null)\n" +
+                "group by  Main_Category__c,\n" +
+                "Main_Category__r.Name";
 
 
         Statement stmt = conn.createStatement();
@@ -394,28 +396,30 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         ResultSet rs = stmt.executeQuery(soql);
         assertEquals(3, rs.getMetaData().getColumnCount());
 
-        String col = rs.getMetaData().getColumnName(1);
-        String lab = rs.getMetaData().getColumnLabel(1);
+        System.out.println(rs.getMetaData().getColumnName(1) + " " + rs.getMetaData().getColumnLabel(1));
+        System.out.println(rs.getMetaData().getColumnName(2) + " " + rs.getMetaData().getColumnLabel(2));
+        System.out.println(rs.getMetaData().getColumnName(3) + " " + rs.getMetaData().getColumnLabel(3));
 
-        System.out.println("LAB IS " + lab);
-        System.out.println("COL IS " + col);
+//        System.out.println("LAB IS " + lab);
+//        System.out.println("COL IS " + col);
         while (rs.next()) {
-//            System.out.println("1>" + rs.getString("Preferred_Contact_Medium__r.Email_Address__c"));
-            System.out.println("1>" + rs.getString(col));
+            System.out.println("1>" + rs.getString("Main_Category__c"));
+            System.out.println("1>" + rs.getString("Main_Category__r.Name"));
+            System.out.println("1>" + rs.getInt("expr0"));
             System.out.println("2>" + rs.getString(1));
             System.out.println("2>" + rs.getString(2));
-            System.out.println("2>" + rs.getString(3));
+            System.out.println("2>" + rs.getInt(3));
         }
 
     }
-        */
 
+      */
     // Given aaa.bbb__r.ccc__r.ddd__r.name
 
     @Test
     public void testRelationship() throws Exception {
 
-        SfConnection sfConnection = (SfConnection) conn;
+        SfConnection sfConnection = conn;
         PartnerConnection pc = sfConnection.getHelper().getPartnerConnection();
 
         String id;
@@ -478,6 +482,30 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
             assertEquals("ddd Name", rs.getString("bbb__r.ccc__r.ddd__r.Name"));
         }
         assertEquals(1, foundCount);
+
+
+        String soql = "select \n" +
+                "bbb__r.Name,\n " +
+                "bbb__c,\n" +
+                "count(id)\n" +
+                " from aaa__c where bbb__c = '" + bbb.getId() + "' " +
+                "group by bbb__c,\n" +
+                "bbb__r.Name " +
+                "order by bbb__r.name  \n";
+
+        rs = stmt.executeQuery(soql);
+        assertEquals(3, rs.getMetaData().getColumnCount());
+
+        assertEquals("bbb__r.Name", rs.getMetaData().getColumnName(1));
+        assertEquals("bbb__c", rs.getMetaData().getColumnName(2));
+        assertEquals("expr0", rs.getMetaData().getColumnName(3));
+
+        assertTrue(rs.next());
+
+        assertEquals("bbb Name", rs.getString("bbb__r.Name"));
+        assertEquals(bbb.getId(), rs.getString("bbb__c"));
+        assertEquals(1, rs.getInt("expr0"));
+
 
         // Remove BBB, CCC and DDD -- we should still get 4 columns returned!
         pc.delete(new String[]{ddd.getId(), ccc.getId(), bbb.getId()});

@@ -47,7 +47,6 @@ import java.util.Set;
 // http://wiki.developerforce.com/index.php/Introduction_to_the_Force.com_Web_Services_Connector
 public class SfResultSet implements java.sql.ResultSet {
     private SObject[] records;
-    private SfConnection connection;
     private PartnerConnection pc;
     private QueryResult qr;
     private int maxRows;
@@ -142,8 +141,6 @@ public class SfResultSet implements java.sql.ResultSet {
         if (parent.hasChildren()) {
             Iterator<XmlObject> children = parent.getChildren();
 
-//            boolean recordsRoot = parentName.equals("records") || parentName.endsWith(".records");
-
             parentName = calculateParentName(parentName, parent);
 
             int childPos = 0;
@@ -187,6 +184,7 @@ public class SfResultSet implements java.sql.ResultSet {
         return parentName;
     }
 
+
     private void finaliseColumnList(List<String> columnsInResult, List<ParseColumn> columnsInSql) {
         List<String> newColumnsInResult = new ArrayList<String>(columnsInSql.size());
 
@@ -196,7 +194,12 @@ public class SfResultSet implements java.sql.ResultSet {
             done.add(i);
         }
 
-        // Do column name matches
+
+        // Salesforce doesn't always return columns in the same order that we requested
+        // them, so we have to trawl through the results and try to figure out how
+        // to match them up.
+
+        // First pass -- match exact column names, and match "function" SQL to expression results
         for (int i = 0; i < columnsInSql.size(); i++) {
             ParseColumn inSQl = columnsInSql.get(i);
 
@@ -205,6 +208,8 @@ public class SfResultSet implements java.sql.ResultSet {
                 if ((inSQl != null) && (inResult != null)) {
                     if ((inSQl.getName().equalsIgnoreCase(inResult)) ||
                             (inSQl.isFunction() && inResult.toUpperCase().startsWith("EXPR"))) {
+                        columnNameCaseMap.put(columnsInSql.get(i).getName().toUpperCase(), columnsInResult.get(j));
+
                         newColumnsInResult.set(i, columnsInResult.get(j));
                         columnsInResult.set(j, null);
                         columnsInSql.set(i, null);
@@ -215,14 +220,19 @@ public class SfResultSet implements java.sql.ResultSet {
             }
         }
 
-        /*
-        // TODO: Remove this -- does it make a difference?
+        // Second pass -- match any left over columns that end with what we're expecting
+        // (sometimes Salesforce doesn't bother to give us the relationship table names
+        // used in our query)
         if (!done.isEmpty()) {
             for (int i = 0; i < columnsInSql.size(); i++) {
                 if (newColumnsInResult.get(i) == null) {
                     for (int j = 0; j < columnsInResult.size(); j++) {
-                        if (columnsInResult.get(j) != null) {
-                            newColumnsInResult.set(i, columnsInResult.get(j));
+                        if ((columnsInResult.get(j) != null) &&
+                                (columnsInSql.get(i).getName().toUpperCase().endsWith("." + columnsInResult.get(j).toUpperCase())))
+                        {
+                            columnNameCaseMap.put(columnsInSql.get(i).getName().toUpperCase(), columnsInResult.get(j));
+
+                            newColumnsInResult.set(i, columnsInSql.get(i).getName());
                             columnsInResult.set(j, null);
                             columnsInSql.set(i, null);
                             done.remove(i);
@@ -231,26 +241,20 @@ public class SfResultSet implements java.sql.ResultSet {
                 }
             }
         }
-          */
-        // This is so that when Salesforce decides to not bother
-        // mentioning null columns in the result set, we still show
-        // something!
+
+        // Third pass -- invent columns that Salesforce hasn't even bothered to
+        // return at all. It does this sometimes for null values.
         if (!done.isEmpty()) {
             for (int i = 0; i < columnsInSql.size(); i++) {
                 if (newColumnsInResult.get(i) == null) {
                     newColumnsInResult.set(i, columnsInSql.get(i).getName());
+                    columnNameCaseMap.put(columnsInSql.get(i).getName().toUpperCase(), columnsInSql.get(i).getName());
                     done.remove(i);
                 }
             }
         }
 
         assert done.isEmpty();
-
-        for (String col : newColumnsInResult) {
-            if (col != null) {
-                columnNameCaseMap.put(col.toUpperCase(), col);
-            }
-        }
 
         columnsInResult.clear();
         columnsInResult.addAll(newColumnsInResult);
@@ -259,7 +263,7 @@ public class SfResultSet implements java.sql.ResultSet {
 
 
     private Object drillToChild(XmlObject parent, String columnLabel) throws SQLException {
-        Object result = null;
+        Object result;
 
         int dotPos = columnLabel.indexOf(".");
         if (dotPos != -1) {
@@ -268,7 +272,6 @@ public class SfResultSet implements java.sql.ResultSet {
             }
             String parentName = columnLabel.substring(0, dotPos);
 
-            String childName = columnLabel.substring(dotPos + 1);
             XmlObject child = (XmlObject) parent.getField(parentName);
             if (child == null) {
                 return null;
@@ -311,9 +314,11 @@ public class SfResultSet implements java.sql.ResultSet {
         }
 
         String realColumnName = columnNameCaseMap.get(columnLabel.toUpperCase());
+
         if (realColumnName == null) {
             wasNull = true;
             result = null;  // ??
+//            System.out.println("Don't know about column " + columnLabel);
 //            throw new SQLException("Don't know about column " + columnLabel);
         } else {
             SObject obj = records[ptr];
