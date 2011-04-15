@@ -90,6 +90,10 @@ public class SelectEngineTests {
     public void testSelectStatement() throws Exception {
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery("select FirstName, LastName, CreatedDate, CreatedBy.name from Lead where lastName = '" + surname + "'");
+        ResultSetMetaData rsmd = rs.getMetaData();
+
+        assertEquals(DatabaseMetaData.columnNullable, rsmd.isNullable(1));
+        assertEquals(DatabaseMetaData.columnNoNulls, rsmd.isNullable(2));
 
         assertEquals(-1, stmt.getUpdateCount());
 
@@ -360,6 +364,15 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         rs = meta.getColumns(null, null, "Account", "Type");
         assertTrue(rs.next());
         assertEquals("Type", rs.getString("COLUMN_NAME"));
+
+        rs = meta.getColumns(null, null, "User", "AccountId");
+        assertTrue(rs.next());
+        assertEquals(DatabaseMetaData.columnNullable, rs.getInt("NULLABLE"));
+        assertEquals("YES", rs.getString("IS_NULLABLE"));
+        rs = meta.getColumns(null, null, "User", "Id");
+        assertTrue(rs.next());
+        assertEquals(DatabaseMetaData.columnNoNulls, rs.getInt("NULLABLE"));
+        assertEquals("NO", rs.getString("IS_NULLABLE"));
     }
 
      /*

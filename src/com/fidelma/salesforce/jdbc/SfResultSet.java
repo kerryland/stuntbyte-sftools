@@ -481,6 +481,8 @@ public class SfResultSet implements java.sql.ResultSet {
             return (Boolean) o;
         } else if (o instanceof String) {
             return Boolean.valueOf((String) o);
+        } else if (o instanceof Number) {
+            return ((Number) o).intValue() == 1;
         } else {
             throw new SQLException("No type conversion to int available for " + o);
         }

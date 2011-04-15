@@ -226,7 +226,8 @@ public class ResultSetFactory {
                         map.put("SQL_DATETIME_SUB", null);
                         map.put("CHAR_OCTET_LENGTH", 0);
                         map.put("ORDINAL_POSITION", ordinal++);
-                        map.put("IS_NULLABLE", "");
+//                        map.put("IS_NULLABLE", "");
+                        map.put("IS_NULLABLE", column.isNillable() ? "YES" : "NO");
                         map.put("SCOPE_CATLOG", null);
                         map.put("SCOPE_SCHEMA", null);
                         map.put("SCOPE_TABLE", null);
