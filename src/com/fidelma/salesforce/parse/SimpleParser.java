@@ -31,16 +31,13 @@ public class SimpleParser {
         }
     }
 
-//    private LexicalToken readIf(LexicalToken.Type type) throws SQLException {
-//        LexicalToken token = al.getToken();
-//        if (token == null) {
-//            throw new SQLException("SOQL Command ended unexpected");
-//        }
-//        if (!token.getType().equals(type)) {
-//            throw new SQLException("Expected " + type.name());
-//        }
-//        return token;
-//    }
+    public String readIf() throws SQLException {
+        LexicalToken token = al.getToken();
+        if (token == null) {
+            throw new SQLException("SOQL Command ended unexpected");
+        }
+        return token.getValue();
+    }
 
 
     public LexicalToken getToken() throws Exception {

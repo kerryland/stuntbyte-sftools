@@ -1,3 +1,4 @@
+import com.fidelma.salesforce.misc.Deployer;
 import com.fidelma.salesforce.misc.LoginHelper;
 import com.sforce.soap.apex.*;
 import com.sforce.soap.metadata.AsyncRequestState;
@@ -30,7 +31,6 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.LineNumberReader;
-import java.io.PrintWriter;
 import java.io.StringReader;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -116,7 +116,7 @@ public class SalesfarceIDE {
 
     private void doIt(String filename, String arg) throws Exception {
         Properties prop = loadConfig();
-        String src = prop.getProperty("src.dir");
+        String srcDirectory = prop.getProperty("src.dir");
         String debugFile = prop.getProperty("debug.file");
         String crcFile = prop.getProperty("crc.file");
 
@@ -128,11 +128,11 @@ public class SalesfarceIDE {
 
         try {
             if (arg.equals("-download")) {
-                downloadFile(src, filename, new File(crcFile));
+                downloadFile(srcDirectory, filename, new File(crcFile));
                 return;
             }
             if (arg.equals("-downloadall")) {
-                downloadFiles(src, new File(crcFile));
+                downloadFiles(srcDirectory, new File(crcFile));
                 return;
             }
 
@@ -142,7 +142,7 @@ public class SalesfarceIDE {
             }
 
             if (arg.equals("-runtests")) {
-                runTests(src + "/classes");
+                runTests(srcDirectory + "/classes");
                 return;
             }
 
@@ -191,10 +191,12 @@ public class SalesfarceIDE {
                 }
             }
 
+            Deployer deployer = new Deployer();
+
             if (filename.endsWith(".trigger") || filename.endsWith(".cls")) {
-                compileAndUploadCode(filename, prop, src, debugFile, sourceCode, runTests);
+                compileAndUploadCode(filename, prop, srcDirectory, debugFile, sourceCode, runTests);
             } else {
-                uploadNonCode(filename, src, sourceCode.toString());
+                uploadNonCode(filename, srcDirectory, sourceCode.toString());
             }
 
             // Get latest CRCs
@@ -261,9 +263,9 @@ public class SalesfarceIDE {
     }
 
 
-    private void uploadNonCode(String filename, String src, String code) throws Exception {
+    private void uploadNonCode(String filename, String srcDirectory, String code) throws Exception {
         File deploymentFile = File.createTempFile("SFDC", "zip");
-        createDeploymentFile(filename, src, code, deploymentFile);
+        createDeploymentFile(filename, srcDirectory, code, deploymentFile);
         deployZip(deploymentFile);
     }
 
@@ -355,7 +357,7 @@ public class SalesfarceIDE {
     }
 
 
-    private void createDeploymentFile(String filename, String src, String code, File deploymentFile) throws IOException {
+    private void createDeploymentFile(String filename, String srcDirectory, String apexCode, File deploymentFile) throws IOException {
         ZipOutputStream out = new ZipOutputStream(new FileOutputStream(deploymentFile));
 
         String fileAndDirectory = determineDirectory(filename).replace("\\", "/");
@@ -379,7 +381,7 @@ public class SalesfarceIDE {
         out.write(packageXml.getBytes());
         out.closeEntry();
 
-        FileInputStream meta = new FileInputStream(new File(src, fileAndDirectory + "-meta.xml"));
+        FileInputStream meta = new FileInputStream(new File(srcDirectory, fileAndDirectory + "-meta.xml"));
 
         int bytes = meta.read();
         out.putNextEntry(new ZipEntry(fileAndDirectory + "-meta.xml"));
@@ -390,7 +392,7 @@ public class SalesfarceIDE {
         out.closeEntry();
 
         out.putNextEntry(new ZipEntry(fileAndDirectory));
-        out.write(code.getBytes());
+        out.write(apexCode.getBytes());
         out.closeEntry();
         out.close();
     }

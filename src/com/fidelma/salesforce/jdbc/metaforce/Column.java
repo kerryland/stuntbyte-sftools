@@ -15,8 +15,8 @@ public class Column {
     private boolean calculated;
     private boolean autoIncrement;
     private boolean caseSensitive;
-    private int precision;
-    private int scale;
+    private Integer precision;
+    private Integer scale;
     private String label;
     private String relationshipType;
     private String aDefault;
@@ -107,19 +107,19 @@ public class Column {
         return caseSensitive;
     }
 
-    public void setPrecision(int precision) {
+    public void setPrecision(Integer precision) {
         this.precision = precision;
     }
 
-    public int getPrecision() {
+    public Integer getPrecision() {
         return precision;
     }
 
-    public void setScale(int scale) {
+    public void setScale(Integer scale) {
         this.scale = scale;
     }
 
-    public int getScale() {
+    public Integer getScale() {
         return scale;
     }
 

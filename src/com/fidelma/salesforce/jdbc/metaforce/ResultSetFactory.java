@@ -66,7 +66,7 @@ public class ResultSetFactory {
             new TypeInfo("double", Types.DOUBLE, 17, -324, 306, 10),
             new TypeInfo("_double", Types.DOUBLE, 17, -324, 306, 10),
             new TypeInfo("percent", Types.DOUBLE, 17, -324, 306, 10),
-            new TypeInfo("currency", Types.DOUBLE, 17, -324, 306, 10), // double for currency seems crazy!
+            new TypeInfo("currency", Types.DOUBLE, 17, -324, 306, 10), // TODO: double for currency seems crazy!
             new TypeInfo("date", Types.DATE, 10, 0, 0, 0),
             new TypeInfo("time", Types.TIME, 10, 0, 0, 0),
             new TypeInfo("datetime", Types.TIMESTAMP, 10, 0, 0, 0),

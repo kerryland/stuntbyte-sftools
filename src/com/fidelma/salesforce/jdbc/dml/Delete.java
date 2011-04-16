@@ -19,12 +19,10 @@ public class Delete {
 
     private static int MAX_DELETES_PER_CALL = 200;
     private SimpleParser al;
-    private ResultSetFactory metaDataFactory;
     private PartnerConnection pc;
 
-    public Delete(SimpleParser al, ResultSetFactory metaDataFactory, PartnerConnection pc) {
+    public Delete(SimpleParser al, PartnerConnection pc) {
         this.al = al;
-        this.metaDataFactory = metaDataFactory;
         this.pc = pc;
     }
 

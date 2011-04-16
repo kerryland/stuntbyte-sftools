@@ -1,5 +1,6 @@
 package com.fidelma.salesforce.jdbc;
 
+import com.fidelma.salesforce.jdbc.ddl.CreateTable;
 import com.fidelma.salesforce.jdbc.dml.Delete;
 import com.fidelma.salesforce.jdbc.dml.Insert;
 import com.fidelma.salesforce.jdbc.dml.Select;
@@ -16,12 +17,10 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,8 +82,14 @@ public class SfStatement implements java.sql.Statement {
                 generatedId = insert.getGeneratedId();
 
             } else if (token.getValue().equalsIgnoreCase("DELETE")) {
-                Delete delete = new Delete(al, sfConnection.getMetaDataFactory(), pc);
+                Delete delete = new Delete(al, pc);
                 updateCount = delete.execute();
+
+            } else if (token.getValue().equalsIgnoreCase("CREATE")) {
+                al.read("TABLE");
+
+                CreateTable createTable = new CreateTable(al, pc);
+                createTable.execute();
 
             } else if (token.getValue().equalsIgnoreCase("COMMIT")) {
             } else if (token.getValue().equalsIgnoreCase("ROLLBACK")) {
