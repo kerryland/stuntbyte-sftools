@@ -43,12 +43,23 @@ public class Deployer {
 
     public void uploadNonCode(String nonCodeType, String filename, String srcDirectory, String code, DeploymentEventListener listener) throws Exception {
         File deploymentFile = File.createTempFile("SFDC", "zip");
-        createDeploymentFile(nonCodeType, filename, srcDirectory, code, deploymentFile);
+        createDeploymentFile(nonCodeType, filename, srcDirectory, code, deploymentFile, "package.xml");
+        deployZip(deploymentFile, listener);
+    }
+
+    public void dropNonCode(String nonCodeType, String filename, DeploymentEventListener listener) throws Exception {
+        File deploymentFile = File.createTempFile("SFDC", "zip");
+        createDeploymentFile(nonCodeType, filename, null, null, deploymentFile, "destructiveChanges.xml");
         deployZip(deploymentFile, listener);
     }
 
 
-    private void createDeploymentFile(String nonCodeType, String filename, String srcDirectory, String apexCode, File deploymentFile) throws IOException {
+    private void createDeploymentFile(String nonCodeType,
+                                      String filename,
+                                      String srcDirectory,
+                                      String apexCode,
+                                      File deploymentFile,
+                                      String packageXmlName) throws IOException {
         ZipOutputStream out = new ZipOutputStream(new FileOutputStream(deploymentFile));
 
         String fileAndDirectory = determineDirectory(filename).replace("\\", "/");
@@ -66,9 +77,23 @@ public class Deployer {
                         "    <version>" + WSDL_VERSION + "</version>\n" +
                         "</Package>";
 
-        out.putNextEntry(new ZipEntry("package.xml"));
+        out.putNextEntry(new ZipEntry(packageXmlName));
         out.write(packageXml.getBytes());
         out.closeEntry();
+
+        // Destructive changes need an empty package.xml
+        if (packageXmlName.equals("destructiveChanges.xml")) {
+            packageXml =
+                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                            "<Package xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n" +
+                            "    <version>" + WSDL_VERSION + "</version>\n" +
+                            "</Package>";
+
+            out.putNextEntry(new ZipEntry("package.xml"));
+            out.write(packageXml.getBytes());
+            out.closeEntry();
+        }
+
 
         // TODO: What about creating meta for a new class?
         if (srcDirectory != null) {
@@ -86,9 +111,11 @@ public class Deployer {
             }
         }
 
-        out.putNextEntry(new ZipEntry(fileAndDirectory));
-        out.write(apexCode.getBytes());
-        out.closeEntry();
+        if (apexCode != null) {
+            out.putNextEntry(new ZipEntry(fileAndDirectory));
+            out.write(apexCode.getBytes());
+            out.closeEntry();
+        }
         out.close();
     }
 

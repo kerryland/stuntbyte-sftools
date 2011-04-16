@@ -6,7 +6,10 @@ import com.fidelma.salesforce.parse.SimpleParser;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.math.BigDecimal;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -43,14 +46,25 @@ public class CreateTableTests {
 
     @Test
     public void testCreateStatement() throws Exception {
-
         String sql = "create table wibble__c(Spang__c integer, Namero__c VARCHAR, price__c decimal(16,2))";
-        SimpleParser al = new SimpleParser(sql);
-        al.read("create");
-        al.read("table");
+//        conn.createStatement().execute(sql);
+//
+//        PreparedStatement pstmt = conn.prepareStatement("insert into wibble__c(Spang__c, Namero__c, price__c) values (?,?,?)");
+//        pstmt.setInt(1, 70);
+//        pstmt.setString(2, "Seventy");
+//        pstmt.setBigDecimal(3, new BigDecimal("70.77"));
+//        pstmt.execute();
 
-        CreateTable ct = new CreateTable(al, null, conn.getHelper().getMetadataConnection());
-        ct.execute();
+        // TODO: Improve this test
+        // TODO: Refresh caches after create and drop table
+        // TODO: Implement alter table add
+        // TODO: Implement alter table drop column
+        // TODO: Decide if we should throw away the __c nonsense....
 
+        sql = "create table wibble__c(Hoover__c integer)";
+        conn.createStatement().execute(sql);
+
+
+//        conn.createStatement().execute("drop table wibble__c");
     }
 }

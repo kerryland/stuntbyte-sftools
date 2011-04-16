@@ -1,6 +1,7 @@
 package com.fidelma.salesforce.jdbc;
 
 import com.fidelma.salesforce.jdbc.ddl.CreateTable;
+import com.fidelma.salesforce.jdbc.ddl.DropTable;
 import com.fidelma.salesforce.jdbc.dml.Delete;
 import com.fidelma.salesforce.jdbc.dml.Insert;
 import com.fidelma.salesforce.jdbc.dml.Select;
@@ -91,8 +92,14 @@ public class SfStatement implements java.sql.Statement {
             } else if (token.getValue().equalsIgnoreCase("CREATE")) {
                 al.read("TABLE");
 
-                CreateTable createTable = new CreateTable(al, pc, metadataConnection);
+                CreateTable createTable = new CreateTable(al, metadataConnection);
                 createTable.execute();
+
+            } else if (token.getValue().equalsIgnoreCase("DROP")) {
+                al.read("TABLE");
+
+                DropTable dropTable = new DropTable(al, metadataConnection);
+                dropTable.execute();
 
             } else if (token.getValue().equalsIgnoreCase("COMMIT")) {
             } else if (token.getValue().equalsIgnoreCase("ROLLBACK")) {

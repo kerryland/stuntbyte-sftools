@@ -35,12 +35,10 @@ import java.util.List;
  */
 public class CreateTable {
     private SimpleParser al;
-    private PartnerConnection pc;
     private MetadataConnection metadataConnection;
 
-    public CreateTable(SimpleParser al, PartnerConnection pc, MetadataConnection metadataConnection) {
+    public CreateTable(SimpleParser al, MetadataConnection metadataConnection) {
         this.al = al;
-        this.pc = pc;
         this.metadataConnection = metadataConnection;
     }
 
@@ -143,6 +141,8 @@ public class CreateTable {
         }
 
         createMetadataXml(table);
+
+        // TODO: Update local cache of table and column information
     }
 
 
