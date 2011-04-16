@@ -10,6 +10,7 @@ import com.fidelma.salesforce.jdbc.metaforce.ForceResultSet;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
 import com.fidelma.salesforce.misc.LoginHelper;
 import com.fidelma.salesforce.parse.SimpleParser;
+import com.sforce.soap.metadata.MetadataConnection;
 import com.sforce.soap.partner.*;
 import com.sforce.ws.ConnectionException;
 
@@ -30,12 +31,14 @@ public class SfStatement implements java.sql.Statement {
 
     private SfConnection sfConnection;
     private PartnerConnection pc;
+    private MetadataConnection metadataConnection;
     private int updateCount = -1;
     private String generatedId;
 
     public SfStatement(SfConnection sfConnection, LoginHelper helper) throws ConnectionException, SQLException {
         this.sfConnection = sfConnection;
         pc = helper.getPartnerConnection();
+        metadataConnection = helper.getMetadataConnection();
     }
 
     public ResultSet executeQuery(String sql) throws SQLException {
@@ -88,7 +91,7 @@ public class SfStatement implements java.sql.Statement {
             } else if (token.getValue().equalsIgnoreCase("CREATE")) {
                 al.read("TABLE");
 
-                CreateTable createTable = new CreateTable(al, pc);
+                CreateTable createTable = new CreateTable(al, pc, metadataConnection);
                 createTable.execute();
 
             } else if (token.getValue().equalsIgnoreCase("COMMIT")) {

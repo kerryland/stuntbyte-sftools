@@ -1,43 +1,37 @@
 import com.fidelma.salesforce.misc.Deployer;
+import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.misc.LoginHelper;
-import com.sforce.soap.apex.*;
-import com.sforce.soap.metadata.AsyncRequestState;
-import com.sforce.soap.metadata.AsyncResult;
-import com.sforce.soap.metadata.DeployMessage;
-import com.sforce.soap.metadata.DeployOptions;
-import com.sforce.soap.metadata.DeployResult;
+import com.sforce.soap.apex.CodeCoverageResult;
+import com.sforce.soap.apex.CompileAndTestRequest;
+import com.sforce.soap.apex.CompileAndTestResult;
+import com.sforce.soap.apex.CompileClassResult;
+import com.sforce.soap.apex.CompileTriggerResult;
+import com.sforce.soap.apex.LogCategory;
+import com.sforce.soap.apex.LogCategoryLevel;
+import com.sforce.soap.apex.LogInfo;
+import com.sforce.soap.apex.LogType;
+import com.sforce.soap.apex.RunTestFailure;
+import com.sforce.soap.apex.RunTestsRequest;
+import com.sforce.soap.apex.RunTestsResult;
+import com.sforce.soap.apex.SoapConnection;
 import com.sforce.soap.metadata.FileProperties;
 import com.sforce.soap.metadata.ListMetadataQuery;
 import com.sforce.soap.metadata.MetadataConnection;
 import com.sforce.soap.metadata.Package;
 import com.sforce.soap.metadata.PackageTypeMembers;
-import com.sforce.soap.metadata.RetrieveMessage;
 import com.sforce.soap.metadata.RetrieveRequest;
-import com.sforce.soap.metadata.RetrieveResult;
 import com.sforce.soap.partner.DescribeSObjectResult;
 import com.sforce.soap.partner.Field;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -46,8 +40,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 /**
  * ctags --extra=+f --langmap=java:.cls.trigger --recurse=yes
@@ -64,10 +56,13 @@ import java.util.zip.ZipOutputStream;
  */
 public class SalesfarceIDE {
 
-    private static final double WSDL_VERSION = 20D;
+
     private double apiversion = 20d;
 
     private LoginHelper loginHelper;
+    private Deployer deployer;
+    private SimpleListener listener = new SimpleListener();
+
 //    private PrintWriter messageLog;
 
 
@@ -111,6 +106,7 @@ public class SalesfarceIDE {
         String password = prop.getProperty("sf.password");
 
         loginHelper = new LoginHelper(server, username, password);
+        deployer = new Deployer(loginHelper.getMetadataConnection());
         return prop;
     }
 
@@ -174,7 +170,7 @@ public class SalesfarceIDE {
             p.setTypes(new PackageTypeMembers[]{mems});
             RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
 
-            File result = retrieveZip(retrieveRequest);
+            File result = deployer.retrieveZip(retrieveRequest, listener);
             ZipFile zip = new ZipFile(result);
             CrcResults crcResults = pullCrcs(zip, crcs, filenameNoPath);
 
@@ -191,16 +187,18 @@ public class SalesfarceIDE {
                 }
             }
 
-            Deployer deployer = new Deployer();
-
             if (filename.endsWith(".trigger") || filename.endsWith(".cls")) {
                 compileAndUploadCode(filename, prop, srcDirectory, debugFile, sourceCode, runTests);
             } else {
-                uploadNonCode(filename, srcDirectory, sourceCode.toString());
+
+                String partFilename = new File(filename).getName();
+                String aTypeName = determineTypeName(partFilename);
+
+                deployer.uploadNonCode(aTypeName, filename, srcDirectory, sourceCode.toString(), listener);
             }
 
             // Get latest CRCs
-            result = retrieveZip(retrieveRequest);
+            result = deployer.retrieveZip(retrieveRequest, listener);
             zip = new ZipFile(result);
             crcResults = pullCrcs(zip, crcs, filenameNoPath);
 
@@ -210,10 +208,33 @@ public class SalesfarceIDE {
 //        System.out.println("STORED CRC OF " + crcResults.serverCrc);
         } finally {
 //            messageLog.close();
-
-
         }
     }
+
+
+    public String detemineApexType(String filename) {
+        // Grab the directory name
+        String directoryName = new File(filename).getParentFile().getName();
+
+        // Fix "classes", because it's special
+        if (directoryName.equals("classes")) {
+            return "ApexClass";
+        }
+
+        // Chop off the last letter
+        String typeName = directoryName.substring(0, directoryName.length() - 1);
+        typeName = determineTypeName(typeName);
+        return typeName;
+    }
+
+
+    private String determineTypeName(String filename) {
+        String name = filename.substring(filename.lastIndexOf(".") + 1);
+        String niceCase = name.substring(0, 1).toUpperCase() +
+                name.substring(1);
+        return "Apex" + niceCase;
+    }
+
 
     private CrcResults pullCrcs(ZipFile zip, Properties crcs, String filenameNoPath) {
         Enumeration ents = zip.entries();
@@ -247,169 +268,56 @@ public class SalesfarceIDE {
         return noSuffix;
     }
 
-    private String detemineApexType(String filename) {
-        // Grab the directory name
-        String directoryName = new File(filename).getParentFile().getName();
-
-        // Fix "classes", because it's special
-        if (directoryName.equals("classes")) {
-            return "ApexClass";
-        }
-
-        // Chop off the last letter
-        String typeName = directoryName.substring(0, directoryName.length() - 1);
-        typeName = determineTypeName(typeName);
-        return typeName;
-    }
 
 
-    private void uploadNonCode(String filename, String srcDirectory, String code) throws Exception {
-        File deploymentFile = File.createTempFile("SFDC", "zip");
-        createDeploymentFile(filename, srcDirectory, code, deploymentFile);
-        deployZip(deploymentFile);
-    }
+//    private void uploadNonCode(String filename, String srcDirectory, String code) throws Exception {
+//        File deploymentFile = File.createTempFile("SFDC", "zip");
+//        createDeploymentFile(filename, srcDirectory, code, deploymentFile);
+//        deployZip(deploymentFile);
+//    }
 
 
-    private static final long ONE_SECOND = 1000;
-    // maximum number of attempts to deploy the zip file
 
-    private static final int MAX_NUM_POLL_REQUESTS = 50;
+//    private void createDeploymentFile(String filename, String srcDirectory, String apexCode, File deploymentFile) throws IOException {
+//        ZipOutputStream out = new ZipOutputStream(new FileOutputStream(deploymentFile));
+//
+//        String fileAndDirectory = determineDirectory(filename).replace("\\", "/");
+//
+//        filename = new File(filename).getName();
+//        String nonSuffixedFilename = filename.substring(0, filename.lastIndexOf("."));
+//
+//        String typeName = determineTypeName(filename);
+//
+//        String packageXml =
+//                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+//                        "<Package xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n" +
+//                        "    <types>\n" +
+//                        "        <members>" + nonSuffixedFilename + "</members>\n" +
+//                        "        <name>" + typeName + "</name>\n" +
+//                        "    </types>\n" +
+//                        "    <version>" + WSDL_VERSION + "</version>\n" +
+//                        "</Package>";
+//
+//        out.putNextEntry(new ZipEntry("package.xml"));
+//        out.write(packageXml.getBytes());
+//        out.closeEntry();
+//
+//        FileInputStream meta = new FileInputStream(new File(srcDirectory, fileAndDirectory + "-meta.xml"));
+//
+//        int bytes = meta.read();
+//        out.putNextEntry(new ZipEntry(fileAndDirectory + "-meta.xml"));
+//        while (bytes != -1) {
+//            out.write(bytes);
+//            bytes = meta.read();
+//        }
+//        out.closeEntry();
+//
+//        out.putNextEntry(new ZipEntry(fileAndDirectory));
+//        out.write(apexCode.getBytes());
+//        out.closeEntry();
+//        out.close();
+//    }
 
-    private void deployZip(File zipFile) throws Exception {
-
-//           System.out.println("FILE IS " + zipFile.getAbsolutePath());
-        MetadataConnection metadatabinding = loginHelper.getMetadataConnection();
-
-        byte zipBytes[] = readZipFile(zipFile);
-        DeployOptions deployOptions = new DeployOptions();
-
-        deployOptions.setPerformRetrieve(false);
-        deployOptions.setRollbackOnError(true);
-        deployOptions.setSinglePackage(true);
-
-//           deployOptions.setAllowMissingFiles(true);
-
-        // TODO: What about the base64 encoding of zipBytes?
-
-//           zipBytes = (new Base64().encode(new String(zipBytes))).getBytes("UTF-8");
-
-        AsyncResult asyncResult = metadatabinding.deploy(zipBytes, deployOptions);
-
-        // Wait for the deploy to complete
-
-        int poll = 0;
-        long waitTimeMilliSecs = ONE_SECOND;
-        while (!asyncResult.isDone()) {
-            Thread.sleep(waitTimeMilliSecs);
-            // double the wait time for the next iteration
-
-            waitTimeMilliSecs *= 2;
-            if (poll++ > MAX_NUM_POLL_REQUESTS) {
-                throw new Exception("Request timed out. If this is a large set " +
-                        "of metadata components, check that the time allowed by " +
-                        "MAX_NUM_POLL_REQUESTS is sufficient.");
-            }
-            asyncResult = metadatabinding.checkStatus(
-                    new String[]{asyncResult.getId()})[0];
-//               System.out.println("Status is: " + asyncResult.getState());
-        }
-
-        if (asyncResult.getState() != AsyncRequestState.Completed) {
-            throw new Exception(asyncResult.getStatusCode() + " msg: " +
-                    asyncResult.getMessage());
-        }
-
-        DeployResult result = metadatabinding.checkDeployStatus(asyncResult.getId());
-        if (!result.isSuccess()) {
-            DeployMessage[] errors = result.getMessages();
-
-            for (DeployMessage error : errors) {
-                message("ERROR: " + error.getProblem());
-            }
-//               printErrors(result);            TODO
-            throw new Exception("The files were not successfully deployed");
-        }
-
-        message("The file " + zipFile.getName() + " was successfully deployed");
-    }
-
-    /**
-     * Read in the zip file contents into a byte array.
-     *
-     * @return byte[]
-     * @throws Exception - if cannot find the zip file to deploy
-     */
-    private byte[] readZipFile(File deployZip)
-            throws Exception {
-        if (!deployZip.exists() || !deployZip.isFile())
-            throw new Exception("Cannot find the zip file to deploy. Looking for " +
-                    deployZip.getAbsolutePath());
-
-        FileInputStream fos = new FileInputStream(deployZip);
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        int readbyte = -1;
-        while ((readbyte = fos.read()) != -1) {
-            bos.write(readbyte);
-        }
-        fos.close();
-        bos.close();
-        return bos.toByteArray();
-    }
-
-
-    private void createDeploymentFile(String filename, String srcDirectory, String apexCode, File deploymentFile) throws IOException {
-        ZipOutputStream out = new ZipOutputStream(new FileOutputStream(deploymentFile));
-
-        String fileAndDirectory = determineDirectory(filename).replace("\\", "/");
-
-        filename = new File(filename).getName();
-        String nonSuffixedFilename = filename.substring(0, filename.lastIndexOf("."));
-
-        String typeName = determineTypeName(filename);
-
-        String packageXml =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<Package xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n" +
-                        "    <types>\n" +
-                        "        <members>" + nonSuffixedFilename + "</members>\n" +
-                        "        <name>" + typeName + "</name>\n" +
-                        "    </types>\n" +
-                        "    <version>" + WSDL_VERSION + "</version>\n" +
-                        "</Package>";
-
-        out.putNextEntry(new ZipEntry("package.xml"));
-        out.write(packageXml.getBytes());
-        out.closeEntry();
-
-        FileInputStream meta = new FileInputStream(new File(srcDirectory, fileAndDirectory + "-meta.xml"));
-
-        int bytes = meta.read();
-        out.putNextEntry(new ZipEntry(fileAndDirectory + "-meta.xml"));
-        while (bytes != -1) {
-            out.write(bytes);
-            bytes = meta.read();
-        }
-        out.closeEntry();
-
-        out.putNextEntry(new ZipEntry(fileAndDirectory));
-        out.write(apexCode.getBytes());
-        out.closeEntry();
-        out.close();
-    }
-
-    private String determineTypeName(String filename) {
-        String name = filename.substring(filename.lastIndexOf(".") + 1);
-        String niceCase = name.substring(0, 1).toUpperCase() +
-                name.substring(1);
-        return "Apex" + niceCase;
-    }
-
-    private String determineDirectory(String filename) {
-        File parent = new File(filename).getParentFile();
-        File child = new File(parent.getName(), new File(filename).getName());
-
-        return child.getPath();
-    }
 
 
     private void compileAndUploadCode(String filename, Properties prop, String src, String debugFile, StringBuilder sourceCode, boolean runTests) throws ConnectionException, IOException {
@@ -582,9 +490,9 @@ public class SalesfarceIDE {
         Package p = createPackage(metadataType, files);
         RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
 
-        File result = retrieveZip(retrieveRequest);
+        File result = deployer.retrieveZip(retrieveRequest, listener);
         // Find our file and rewrite the local one
-        unzipFile(srcDir, result);
+        deployer.unzipFile(srcDir, result);
 
         updateCrcs(crcs, result);
         crcs.store(new FileWriter(crcFile), "Generated file");
@@ -608,9 +516,9 @@ public class SalesfarceIDE {
             Package p = createPackage(metadataType, files);
             RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
 
-            File result = retrieveZip(retrieveRequest);
+            File result = deployer.retrieveZip(retrieveRequest, listener);
             updateCrcs(crcs, result);
-            unzipFile(srcDir, result);
+            deployer.unzipFile(srcDir, result);
         }
 
         crcs.store(new FileWriter(crcFile), "Generated file");
@@ -705,112 +613,6 @@ public class SalesfarceIDE {
     }
 
 
-    private File retrieveZip(RetrieveRequest retrieveRequest) throws RemoteException, Exception {
-//        RetrieveRequest retrieveRequest = new RetrieveRequest();
-//        retrieveRequest.setApiVersion(WSDL_VERSION);
-//        setUnpackaged(retrieveRequest);
-
-        File resultsFile = File.createTempFile("SFDC", "DOWN");
-//        System.out.println("RETREIVED TO " + resultsFile.getAbsolutePath());
-
-        MetadataConnection metadatabinding = loginHelper.getMetadataConnection();
-
-        AsyncResult asyncResult = metadatabinding.retrieve(retrieveRequest);
-        // Wait for the retrieve to complete
-
-        int poll = 0;
-        long waitTimeMilliSecs = ONE_SECOND;
-        while (!asyncResult.isDone()) {
-            Thread.sleep(waitTimeMilliSecs);
-            // double the wait time for the next iteration
-
-            waitTimeMilliSecs *= 2;
-            if (poll++ > MAX_NUM_POLL_REQUESTS) {
-                throw new Exception("Request timed out.  If this is a large set " +
-                        "of metadata components, check that the time allowed " +
-                        "by MAX_NUM_POLL_REQUESTS is sufficient.");
-            }
-            asyncResult = metadatabinding.checkStatus(
-                    new String[]{asyncResult.getId()})[0];
-//            System.out.println("Status is: " + asyncResult.getState());
-        }
-
-        if (asyncResult.getState() != AsyncRequestState.Completed) {
-            throw new Exception(asyncResult.getStatusCode() + " msg: " +
-                    asyncResult.getMessage());
-        }
-
-        RetrieveResult result = metadatabinding.checkRetrieveStatus(asyncResult.getId());
-
-        // Print out any warning messages
-
-        StringBuilder buf = new StringBuilder();
-        if (result.getMessages() != null) {
-            for (RetrieveMessage rm : result.getMessages()) {
-                buf.append(rm.getFileName() + " - " + rm.getProblem());
-            }
-        }
-        if (buf.length() > 0) {
-            message("Retrieve warnings:\n" + buf);
-        }
-
-        // Write the zip to the file system
-
-//        System.out.println("Writing results to zip file");
-        ByteArrayInputStream bais = new ByteArrayInputStream(result.getZipFile());
-        FileOutputStream os = new FileOutputStream(resultsFile);
-        try {
-            ReadableByteChannel src = Channels.newChannel(bais);
-            FileChannel dest = os.getChannel();
-            copy(src, dest);
-
-//            System.out.println("Results written to " + resultsFile.getAbsolutePath());
-        } finally {
-            os.close();
-        }
-
-        return resultsFile;
-    }
-
-
-    private void unzipFile(String srcDir, File zipFile) throws Exception {
-        BufferedOutputStream out = null;
-        ZipInputStream in = new ZipInputStream(new BufferedInputStream(new FileInputStream(zipFile)));
-        ZipEntry entry;
-        while ((entry = in.getNextEntry()) != null) {
-            int count;
-            byte data[] = new byte[1000];
-            File outputFile = new File(srcDir, entry.getName());
-//            outputFile.createNewFile();
-            outputFile.getParentFile().mkdirs();
-            out = new BufferedOutputStream(new
-                    FileOutputStream(outputFile), 1000);
-            while ((count = in.read(data, 0, 1000)) != -1) {
-                out.write(data, 0, count);
-            }
-            out.flush();
-            out.close();
-        }
-    }
-
-    /**
-     * Helper method to copy from a readable channel to a writable channel,
-     * using an in-memory buffer.
-     */
-
-    private void copy(ReadableByteChannel src, WritableByteChannel dest)
-            throws IOException {
-        // use an in-memory byte buffer
-
-        ByteBuffer buffer = ByteBuffer.allocate(8092);
-        while (src.read(buffer) != -1) {
-            buffer.flip();
-            while (buffer.hasRemaining()) {
-                dest.write(buffer);
-            }
-            buffer.clear();
-        }
-    }
 
 
     private void doDiff() throws Exception {
@@ -946,5 +748,12 @@ public class SalesfarceIDE {
     private void message(String val) {
         System.out.println(val);
 //        messageLog.println(val);
+    }
+
+    private class SimpleListener implements DeploymentEventListener {
+
+        public void heyListen(String message) {
+            message(message);
+        }
     }
 }

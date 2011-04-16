@@ -3,12 +3,13 @@ package com.fidelma.salesforce.jdbc.dml;
 import com.fidelma.salesforce.jdbc.SfConnection;
 import com.fidelma.salesforce.jdbc.ddl.CreateTable;
 import com.fidelma.salesforce.parse.SimpleParser;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 /**
  */
@@ -22,7 +23,7 @@ public class CreateTableTests {
 
     @BeforeClass
     public static void oneTimeSetUp() throws Exception {
-        /*
+
         Class.forName("com.fidelma.salesforce.jdbc.SfDriver");
 
         Properties info = new Properties();
@@ -36,21 +37,19 @@ public class CreateTableTests {
         conn = (SfConnection) DriverManager.getConnection(
                 "jdbc:sfdc:https://login.salesforce.com"
                 , info);
-                */
+
     }
 
 
     @Test
     public void testCreateStatement() throws Exception {
-//        SfConnection sfConnection = conn;
-//        PartnerConnection pc = sfConnection.getHelper().getPartnerConnection();
 
-        String sql = "create table wibble(ID integer, Name VARCHAR)";
+        String sql = "create table wibble__c(Spang__c integer, Namero__c VARCHAR, price__c decimal(16,2))";
         SimpleParser al = new SimpleParser(sql);
         al.read("create");
         al.read("table");
 
-        CreateTable ct = new CreateTable(al, null);
+        CreateTable ct = new CreateTable(al, null, conn.getHelper().getMetadataConnection());
         ct.execute();
 
     }
