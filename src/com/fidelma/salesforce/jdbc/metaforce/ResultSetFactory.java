@@ -232,6 +232,7 @@ public class ResultSetFactory {
                         map.put("SCOPE_SCHEMA", null);
                         map.put("SCOPE_TABLE", null);
                         map.put("SOURCE_DATA_TYPE", column.getType());
+                        // TODO: IS_AUTOINCREMENT
 
 
                         // The Auto column is obtained by SchemaSpy via ResultSetMetaData so awkward to support

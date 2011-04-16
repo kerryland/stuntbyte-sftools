@@ -30,6 +30,7 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.LineNumberReader;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -67,31 +68,37 @@ public class SalesfarceIDE {
     private double apiversion = 20d;
 
     private LoginHelper loginHelper;
+//    private PrintWriter messageLog;
 
-
-    /*
-
-    ARGS:
-
-    -downloadAll == download 'everything' (TODO: As defined somewhere, and in one zip!)
-    -download    == download just this file
-    -force       == force upload, regardless of crc
-
-     */
 
     public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
+            usage();
+            System.exit(1);
+        }
+
+        String argument = "";
         String filename = args[0];
+        if (args[0].startsWith("-")) {
+            argument = args[0];
+            if (args.length > 1) {
+                filename = args[1];
+            }
+        }
         SalesfarceIDE ide = new SalesfarceIDE();
 
-//        for (String arg : args) {
-//            System.out.println("ARG: " + arg);
-//        }
+        ide.doIt(filename, argument);
+    }
 
-        String arg = "";
-        if (args.length > 1) {
-            arg = args[args.length - 1];
-        }
-        ide.doIt(filename, arg);
+    private static void usage() {
+        String msg =
+                "ARGS:\n" +
+                "\n" +
+                "    <filename>           == upload and compile/test file\n" +
+                "    -downloadall         == download 'everything'\n" +
+                "    -download <filename> == download just this file\n" +
+                "    -force    <filename> == force upload, regardless of crc";
+        System.err.println(msg);
     }
 
 
@@ -114,89 +121,96 @@ public class SalesfarceIDE {
         String crcFile = prop.getProperty("crc.file");
 
         String filenameNoPath = new File(filename).getName();
+//        File messageLogFile = File.createTempFile("vim", "log");
+//        messageLogFile.deleteOnExit();
 
-        if (arg.equals("-download")) {
-            downloadFile(src, filename, new File(crcFile));
-            return;
-        }
-        if (arg.equals("-downloadall")) {
-            downloadFiles(src, new File(crcFile));
-            return;
-        }
+//        messageLog = new PrintWriter(messageLogFile);
 
-        if (arg.equals("-diff")) {
-            doDiff();
-            return;
-        }
-
-        if (arg.equals("-runtests")) {
-            runTests(src + "/classes");
-            return;
-        }
-
-
-        StringBuilder sourceCode = new StringBuilder();
-        {
-            LineNumberReader read = new LineNumberReader(new FileReader(filename));
-            String line = read.readLine();
-            while (line != null) {
-                sourceCode.append(line).append('\n');
-                line = read.readLine();
+        try {
+            if (arg.equals("-download")) {
+                downloadFile(src, filename, new File(crcFile));
+                return;
             }
-        }
+            if (arg.equals("-downloadall")) {
+                downloadFiles(src, new File(crcFile));
+                return;
+            }
 
-        // Download latest for checksum
-        Properties crcs = new Properties();
-        crcs.load(new FileReader(crcFile));
+            if (arg.equals("-diff")) {
+                doDiff();
+                return;
+            }
 
-        PackageTypeMembers mems = new PackageTypeMembers();
+            if (arg.equals("-runtests")) {
+                runTests(src + "/classes");
+                return;
+            }
 
-        String typeName = detemineApexType(filename);
+            StringBuilder sourceCode = new StringBuilder();
+            {
+                LineNumberReader read = new LineNumberReader(new FileReader(filename));
+                String line = read.readLine();
+                while (line != null) {
+                    sourceCode.append(line).append('\n');
+                    line = read.readLine();
+                }
+            }
 
-        mems.setName(typeName);
-        String noSuffix = getNoSuffix(filename);
-        mems.setMembers(new String[]{noSuffix});
+            // Download latest for checksum
+            Properties crcs = new Properties();
+            crcs.load(new FileReader(crcFile));
+
+            PackageTypeMembers mems = new PackageTypeMembers();
+
+            String typeName = detemineApexType(filename);
+
+            mems.setName(typeName);
+            String noSuffix = getNoSuffix(filename);
+            mems.setMembers(new String[]{noSuffix});
 
 //        System.out.println("DOWNLOADING " + typeName + " - " + mems.getMembers()[0]);
 
-        Package p = new Package();
-        p.setTypes(new PackageTypeMembers[]{mems});
-        RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
+            Package p = new Package();
+            p.setTypes(new PackageTypeMembers[]{mems});
+            RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
 
-        File result = retrieveZip(retrieveRequest);
-        ZipFile zip = new ZipFile(result);
-        CrcResults crcResults = pullCrcs(zip, crcs, filenameNoPath);
+            File result = retrieveZip(retrieveRequest);
+            ZipFile zip = new ZipFile(result);
+            CrcResults crcResults = pullCrcs(zip, crcs, filenameNoPath);
 
-        boolean runTests = true;
+            boolean runTests = true;
 
-        if ((crcResults.serverCrc != null) && (crcResults.localCrc != null) && (!crcResults.serverCrc.equals(crcResults.localCrc))) {
-            if (arg.equals("-force")) {
-                System.out.println("Saving even though checksums mismatch");
-                runTests = false;
+            if ((crcResults.serverCrc != null) && (crcResults.localCrc != null) && (!crcResults.serverCrc.equals(crcResults.localCrc))) {
+                if (arg.equals("-force")) {
+                    message("Saving even though checksums mismatch");
+                    runTests = false;
 
-            } else {
-                err(filename, -1, -1, "E", "Code NOT saved due to checksum issue. Use -download to get latest or -force to force upload");
-                return;
+                } else {
+                    err(filename, -1, -1, "E", "Code NOT saved due to checksum issue. Use -download to get latest or -force to force upload");
+                    return;
+                }
             }
-        }
 
-        if (filename.endsWith(".trigger") || filename.endsWith(".cls")) {
-            compileAndUploadCode(filename, prop, src, debugFile, sourceCode, runTests);
-        } else {
-            uploadNonCode(filename, src, sourceCode.toString());
-        }
+            if (filename.endsWith(".trigger") || filename.endsWith(".cls")) {
+                compileAndUploadCode(filename, prop, src, debugFile, sourceCode, runTests);
+            } else {
+                uploadNonCode(filename, src, sourceCode.toString());
+            }
 
-        // Get latest CRCs
-        result = retrieveZip(retrieveRequest);
-        zip = new ZipFile(result);
-        crcResults = pullCrcs(zip, crcs, filenameNoPath);
+            // Get latest CRCs
+            result = retrieveZip(retrieveRequest);
+            zip = new ZipFile(result);
+            crcResults = pullCrcs(zip, crcs, filenameNoPath);
 
-        // Store checksum locally
-        crcs.setProperty(crcResults.crcKey, String.valueOf(crcResults.serverCrc));
-        crcs.store(new FileWriter(crcFile), "Automatically generated for " + crcResults.crcKey);
+            // Store checksum locally
+            crcs.setProperty(crcResults.crcKey, String.valueOf(crcResults.serverCrc));
+            crcs.store(new FileWriter(crcFile), "Automatically generated for " + crcResults.crcKey);
 //        System.out.println("STORED CRC OF " + crcResults.serverCrc);
+        } finally {
+//            messageLog.close();
 
 
+        }
     }
 
     private CrcResults pullCrcs(ZipFile zip, Properties crcs, String filenameNoPath) {
@@ -248,11 +262,8 @@ public class SalesfarceIDE {
 
 
     private void uploadNonCode(String filename, String src, String code) throws Exception {
-
         File deploymentFile = File.createTempFile("SFDC", "zip");
-
         createDeploymentFile(filename, src, code, deploymentFile);
-
         deployZip(deploymentFile);
     }
 
@@ -262,8 +273,7 @@ public class SalesfarceIDE {
 
     private static final int MAX_NUM_POLL_REQUESTS = 50;
 
-    private void deployZip(File zipFile)
-            throws RemoteException, Exception {
+    private void deployZip(File zipFile) throws Exception {
 
 //           System.out.println("FILE IS " + zipFile.getAbsolutePath());
         MetadataConnection metadatabinding = loginHelper.getMetadataConnection();
@@ -312,13 +322,13 @@ public class SalesfarceIDE {
             DeployMessage[] errors = result.getMessages();
 
             for (DeployMessage error : errors) {
-                System.out.println("ERROR: " + error.getProblem());
+                message("ERROR: " + error.getProblem());
             }
 //               printErrors(result);            TODO
             throw new Exception("The files were not successfully deployed");
         }
 
-        System.out.println("The file " + zipFile.getName() + " was successfully deployed");
+        message("The file " + zipFile.getName() + " was successfully deployed");
     }
 
     /**
@@ -327,7 +337,6 @@ public class SalesfarceIDE {
      * @return byte[]
      * @throws Exception - if cannot find the zip file to deploy
      */
-
     private byte[] readZipFile(File deployZip)
             throws Exception {
         if (!deployZip.exists() || !deployZip.isFile())
@@ -347,12 +356,9 @@ public class SalesfarceIDE {
 
 
     private void createDeploymentFile(String filename, String src, String code, File deploymentFile) throws IOException {
-        String parentName = new File(filename).getParentFile().getName() + "/";
-
         ZipOutputStream out = new ZipOutputStream(new FileOutputStream(deploymentFile));
 
         String fileAndDirectory = determineDirectory(filename).replace("\\", "/");
-
 
         filename = new File(filename).getName();
         String nonSuffixedFilename = filename.substring(0, filename.lastIndexOf("."));
@@ -369,17 +375,11 @@ public class SalesfarceIDE {
                         "    <version>" + WSDL_VERSION + "</version>\n" +
                         "</Package>";
 
-//        System.out.println(packageXml);
         out.putNextEntry(new ZipEntry("package.xml"));
         out.write(packageXml.getBytes());
         out.closeEntry();
 
-
-//        out.putNextEntry(new ZipEntry(parentName));
-//        out.closeEntry();
-
         FileInputStream meta = new FileInputStream(new File(src, fileAndDirectory + "-meta.xml"));
-
 
         int bytes = meta.read();
         out.putNextEntry(new ZipEntry(fileAndDirectory + "-meta.xml"));
@@ -397,11 +397,8 @@ public class SalesfarceIDE {
 
     private String determineTypeName(String filename) {
         String name = filename.substring(filename.lastIndexOf(".") + 1);
-//        System.out.println("TYPE=" + name);
         String niceCase = name.substring(0, 1).toUpperCase() +
                 name.substring(1);
-        // System.out.println("LETTER=" + letter   );
-        //String nicename = (name.substring(1,1).toUpperCase()) + name.substring(2);
         return "Apex" + niceCase;
     }
 
@@ -452,7 +449,6 @@ public class SalesfarceIDE {
                 String cat = keyName.substring("log.category.".length());
                 String level = prop.getProperty(keyName);
 
-//                System.out.println("cat=" + cat + "=" + level);
                 LogInfo li = new LogInfo();
                 li.setCategory(LogCategory.valueOf(cat));
                 li.setLevel(LogCategoryLevel.valueOf(level));
@@ -506,39 +502,31 @@ public class SalesfarceIDE {
                 }
             }
         }
-        // \\s.*
         Pattern linePat = Pattern.compile(".* line ([0-9]*).*column ([0-9]*).*");
         Pattern namePat = Pattern.compile("^\\w.*\\.(\\w.*)\\.(\\w.*)\\:.*");
-
 
         RunTestsResult testResult = compileTestResult.getRunTestsResult();
 
 
         if (testResult.getNumTestsRun() > 0) {
-
-
             RunTestFailure[] fails = testResult.getFailures();
 
             if (fails.length == 0) {
-                System.out.println("TESTS PASS!");
+                message("TESTS PASS!");
             }
 
             Pattern trigPat = Pattern.compile("Trigger.(\\w.*)..*");
 
             for (RunTestFailure fail : fails) {
-
-//                System.out.println(fail.toString());
-//                System.out.println(">>>> " + fail.getStackTrace() + "<<<<");
-
                 LineNumberReader rr = new LineNumberReader(new StringReader(fail.getMessage() + "\n" + fail.getStackTrace()));
                 String stack = rr.readLine();
                 while (stack != null) {
 
                     Matcher nm = trigPat.matcher(stack);
-                     if (!nm.matches()) {
-                         nm = namePat.matcher(stack);
-                     }
-                    
+                    if (!nm.matches()) {
+                        nm = namePat.matcher(stack);
+                    }
+
                     if (nm.matches()) {
                         Matcher m = linePat.matcher(stack);
 
@@ -568,7 +556,7 @@ public class SalesfarceIDE {
         }
 
         if (compileTestResult.isSuccess()) {
-            System.out.println("COMPILED OK!");
+//            message("COMPILED OK!");
         }
     }
 
@@ -579,7 +567,7 @@ public class SalesfarceIDE {
             crcs.load(new FileReader(crcFile));
         }
 
-        System.out.println("DOWNLOAD FILE IS " + filename);
+//        System.out.println("DOWNLOAD FILE IS " + filename);
         String metadataType = detemineApexType(filename);
 //        String metadataType = determineTypeName(filename);
 
@@ -688,7 +676,7 @@ public class SalesfarceIDE {
 
     private void err(String filename, int line, int col, String ew, String msg) {
         String err = filename + ">" + line + ":" + col + ":" + ew + ":0:" + msg;
-        System.out.println(err);
+        message(err);
     }
 
     private String findFile(String src, final String searchname, String compileFile) {
@@ -707,8 +695,6 @@ public class SalesfarceIDE {
 
     private File[] findDiskFile(String src, String subdir, final String searchname) {
         File root = new File(src, subdir);
-
-
         return root.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
                 return (name.startsWith(searchname + "."));
@@ -763,7 +749,7 @@ public class SalesfarceIDE {
             }
         }
         if (buf.length() > 0) {
-            System.out.println("Retrieve warnings:\n" + buf);
+            message("Retrieve warnings:\n" + buf);
         }
 
         // Write the zip to the file system
@@ -777,8 +763,7 @@ public class SalesfarceIDE {
             copy(src, dest);
 
 //            System.out.println("Results written to " + resultsFile.getAbsolutePath());
-        }
-        finally {
+        } finally {
             os.close();
         }
 
@@ -956,4 +941,8 @@ public class SalesfarceIDE {
         }
     }
 
+    private void message(String val) {
+        System.out.println(val);
+//        messageLog.println(val);
+    }
 }
