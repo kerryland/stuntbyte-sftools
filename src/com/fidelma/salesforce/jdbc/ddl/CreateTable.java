@@ -1,6 +1,7 @@
 package com.fidelma.salesforce.jdbc.ddl;
 
 import com.fidelma.salesforce.jdbc.metaforce.Column;
+import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.misc.Deployer;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
@@ -35,10 +36,12 @@ import java.util.List;
  */
 public class CreateTable {
     private SimpleParser al;
+    private ResultSetFactory metaDataFactory;
     private MetadataConnection metadataConnection;
 
-    public CreateTable(SimpleParser al, MetadataConnection metadataConnection) {
+    public CreateTable(SimpleParser al, ResultSetFactory metaDataFactory, MetadataConnection metadataConnection) {
         this.al = al;
+        this.metaDataFactory = metaDataFactory;
         this.metadataConnection = metadataConnection;
     }
 
@@ -47,90 +50,122 @@ public class CreateTable {
 
         // TODO: IF NOT EXISTS
 
-        List<Column> columns = new ArrayList<Column>();
-        Table table = new Table(tableName, null, columns);
+        Table table = new Table(tableName, null);
 
         al.read("(");
 
         String columnName = al.readIf();
         while (!(columnName == null)) {
 
-            String dataType = publicTypeToSalesforceType(al.readIf());
-
-            // TODO: Validate supported datatypes
-
-
-            Column col = new Column(columnName, dataType);
-
-            System.out.println("COLUMN is " + columnName + " " + col.getType());
-            // TODO: Lots!
-            columns.add(col);
-
-            /*
-             <xsd:simpleType name="FieldType">
-    xsd:restriction base="xsd:string">
-     <xsd:enumeration value="AutoNumber"/>
-     <xsd:enumeration value="Lookup"/>
-     <xsd:enumeration value="MasterDetail"/>
-     <xsd:enumeration value="Checkbox"/>
-     <xsd:enumeration value="Currency"/>
-     <xsd:enumeration value="Date"/>
-     <xsd:enumeration value="DateTime"/>
-     <xsd:enumeration value="Email"/>
-     <xsd:enumeration value="Number"/>
-     <xsd:enumeration value="Percent"/>
-     <xsd:enumeration value="Phone"/>
-     <xsd:enumeration value="Picklist"/>
-     <xsd:enumeration value="MultiselectPicklist"/>
-     <xsd:enumeration value="Text"/>
-     <xsd:enumeration value="TextArea"/>
-     <xsd:enumeration value="LongTextArea"/>
-     <xsd:enumeration value="Url"/>
-     <xsd:enumeration value="EncryptedText"/>
-     <xsd:enumeration value="Summary"/>
-     <xsd:enumeration value="Hierarchy"/>
-    </xsd:restriction>
-             */
-
             String value;
-            if (
-                    dataType.equalsIgnoreCase("CURRENCY") ||
-                    dataType.equalsIgnoreCase("PERCENT") || //?
-                    dataType.equalsIgnoreCase("NUMBER") ||
-                    dataType.equalsIgnoreCase("INTEGER")) {
+            if (columnName.equalsIgnoreCase("primary")) {
+                al.read("key");
+                al.read("(");
+                al.getValue(); // TODO: Do I care?
+                al.read(")");
                 value = al.getValue();
-                System.out.println("After " + dataType + " got " + value);
 
-                int precision = 18;
-                int scale = 0;
-                if (value.equals("(")) {
-                    precision = getInteger(al.getValue());
+            } else {
+
+                String dataType = publicTypeToSalesforceType(al.readIf());
+
+                // TODO: Validate supported datatypes
+
+
+                Column col = new Column(columnName, dataType);
+
+                System.out.println("COLUMN is " + columnName + " " + col.getType());
+                // TODO: Lots!
+
+                /*
+
+   AutoNumber
+   Lookup
+   MasterDetail
+   Checkbox
+   Currency
+   Date
+   DateTime
+   Email
+   Number
+   Percent
+   Phone
+   Picklist
+   MultiselectPicklist
+   Text
+   TextArea
+   LongTextArea
+   Url
+   EncryptedText
+   Summary
+   Hierarchy
+
+                */
+
+                if (
+                        dataType.equalsIgnoreCase("CURRENCY") ||
+                                dataType.equalsIgnoreCase("PERCENT") || //?
+                                dataType.equalsIgnoreCase("NUMBER") ||
+                                dataType.equalsIgnoreCase("INTEGER")) {
+                    value = al.getValue();
+                    System.out.println("After " + dataType + " got " + value);
+
+                    int precision = 18;
+                    int scale = 0;
+                    if (value.equals("(")) {
+                        precision = getInteger(al.getValue());
+
+                        value = al.getValue();
+                        if (value.equals(",")) {
+                            scale = getInteger(al.getValue());
+                            value = al.getValue();
+                        }
+                        al.read(")");
+                    }
+//                col.setLength(precision);
+                    col.setPrecision(precision);
+                    col.setScale(scale);
+
+                } else if (dataType.equalsIgnoreCase("TEXT") ||
+                        dataType.equalsIgnoreCase("TEXTAREA")) {
 
                     value = al.getValue();
-                    if (value.equals(",")) {
-                        scale = getInteger(al.getValue());
+                    int length = 20; // TODO: What's the default?
+
+                    if (value.equals("(")) {
+                        length = getInteger(al.getValue());
+                        al.read(")");
                         value = al.getValue();
                     }
-                    al.read(")");
-                }
-//                col.setLength(precision);
-                col.setPrecision(precision);
-                col.setScale(scale);
-
-            } else if (dataType.equalsIgnoreCase("TEXT") ||
-                    dataType.equalsIgnoreCase("TEXTAREA")) {
-
-                value = al.getValue();
-                int length = 20; // TODO: What's the default?
-
-                if (value.equals("(")) {
-                    length = getInteger(al.getValue());
-                    al.read(")");
+                    col.setLength(length);
+                } else {
                     value = al.getValue();
                 }
-                col.setLength(length);
-            } else {
-                value = al.getValue();
+
+                boolean autoGeneratedIdColumn = false;
+
+                if (value.equalsIgnoreCase("null")) {
+                    col.setNillable(true);
+                    value = al.getValue();
+
+                } else if (value.equalsIgnoreCase("not")) {
+                    al.getToken("null");
+                    col.setNillable(true);
+                    value = al.getValue();
+
+                } else if (value.equalsIgnoreCase("generated")) {
+                    al.getToken("by");
+                    al.getToken("default");
+                    al.getToken("as");
+                    al.getToken("identity");
+                    value = al.getValue();
+
+                    autoGeneratedIdColumn = true;
+                }
+
+                if (!autoGeneratedIdColumn) {
+                    table.addColumn(col);
+                }
             }
 
             if (!value.equals(",") && !value.equals(")")) {
@@ -142,7 +177,7 @@ public class CreateTable {
 
         createMetadataXml(table);
 
-        // TODO: Update local cache of table and column information
+        metaDataFactory.addTable(table);
     }
 
 

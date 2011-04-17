@@ -1,6 +1,7 @@
 package com.fidelma.salesforce.jdbc.metaforce;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,14 +14,16 @@ public class Table {
     private List<Column> columns;
     private Map<String, Column> columnMap = new HashMap<String, Column>();
 
-    public Table(String name, String comments, List<Column> columns) {
+    public Table(String name, String comments) {
         this.name = name;
         this.comments = comments;
-        this.columns = columns;
-        for (Column c : columns) {
-            c.setTable(this);
-            columnMap.put(c.getName().toUpperCase(), c);
-        }
+        this.columns = new ArrayList<Column>();
+    }
+
+    public void addColumn(Column column) {
+        column.setTable(this);
+        columns.add(column);
+        columnMap.put(column.getName().toUpperCase(), column);
     }
 
     public String getName() {

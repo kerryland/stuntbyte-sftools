@@ -92,6 +92,13 @@ public class ResultSetFactory {
         tableMap.put(table.getName().toUpperCase(), table);
     }
 
+    public void removeTable(String tableName) throws SQLException {
+        Table table = getTable(tableName);
+        tables.remove(table);
+        tableMap.remove(tableName.toUpperCase());
+    }
+
+
     public Table getTable(String tableName) throws SQLException {
         Table result = tableMap.get(tableName.toUpperCase());
         if (result == null) {

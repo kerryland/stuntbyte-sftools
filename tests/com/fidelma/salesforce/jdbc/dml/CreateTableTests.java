@@ -46,14 +46,16 @@ public class CreateTableTests {
 
     @Test
     public void testCreateStatement() throws Exception {
+        conn.createStatement().execute("drop table wibble__c if exists");
+
         String sql = "create table wibble__c(Spang__c integer, Namero__c VARCHAR, price__c decimal(16,2))";
-//        conn.createStatement().execute(sql);
-//
-//        PreparedStatement pstmt = conn.prepareStatement("insert into wibble__c(Spang__c, Namero__c, price__c) values (?,?,?)");
-//        pstmt.setInt(1, 70);
-//        pstmt.setString(2, "Seventy");
-//        pstmt.setBigDecimal(3, new BigDecimal("70.77"));
-//        pstmt.execute();
+        conn.createStatement().execute(sql);
+
+        PreparedStatement pstmt = conn.prepareStatement("insert into wibble__c(Spang__c, Namero__c, price__c) values (?,?,?)");
+        pstmt.setInt(1, 70);
+        pstmt.setString(2, "Seventy");
+        pstmt.setBigDecimal(3, new BigDecimal("70.77"));
+        pstmt.execute();
 
         // TODO: Improve this test
         // TODO: Refresh caches after create and drop table
@@ -65,6 +67,6 @@ public class CreateTableTests {
         conn.createStatement().execute(sql);
 
 
-//        conn.createStatement().execute("drop table wibble__c");
+        conn.createStatement().execute("drop table wibble__c");
     }
 }

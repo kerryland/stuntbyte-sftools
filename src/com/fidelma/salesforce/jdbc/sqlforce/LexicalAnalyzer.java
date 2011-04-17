@@ -235,7 +235,6 @@ public class LexicalAnalyzer {
 	 *
 	 * A bit of sloppiness in the date is allowed (and fixed up) by the scanner. See the code.
 	 *
-	 * @param year The year part of the date (already scanned).
 	 * @param yearPlusT the year plus a T (e.g. 2010-05-17T)
 	 * @return a salesforce dateTime.
 	 */
@@ -707,5 +706,16 @@ public class LexicalAnalyzer {
 		}
 		return src;
 	}
+
+    public String unparsedString() {
+        StringBuilder sb = new StringBuilder();
+        Character ch = read();
+        while (ch != null) {
+            sb.append(ch);
+            ch = read();
+        }
+
+        return sb.toString();
+    }
 }
 

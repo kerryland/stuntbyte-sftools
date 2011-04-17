@@ -18,9 +18,7 @@ public class SfConnection implements java.sql.Connection {
 
     private String server;
     private String username;
-    private String password;
 
-    private String sessionId;
     private LoginHelper helper;
     private ResultSetFactory metaDataFactory;
     private Properties info;
@@ -32,7 +30,6 @@ public class SfConnection implements java.sql.Connection {
     public SfConnection(String server, String username, String password, Properties info) {
         this.server = server;
         this.username = username;
-        this.password = password;
         this.info = info;
         helper = new LoginHelper(server, username, password);
 

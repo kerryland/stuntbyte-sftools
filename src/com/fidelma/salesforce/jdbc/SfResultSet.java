@@ -1,9 +1,9 @@
 package com.fidelma.salesforce.jdbc;
 
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
-import com.fidelma.salesforce.parse.ParseColumn;
+import com.fidelma.salesforce.parse.ParsedColumn;
 import com.fidelma.salesforce.misc.TypeHelper;
-import com.fidelma.salesforce.parse.ParseSelect;
+import com.fidelma.salesforce.parse.ParsedSelect;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.QueryResult;
 import com.sforce.soap.partner.sobject.SObject;
@@ -73,7 +73,7 @@ public class SfResultSet implements java.sql.ResultSet {
     public SfResultSet(SfStatement statement,
                        PartnerConnection pc,
                        QueryResult qr,
-                       List<ParseSelect> parseSelects) throws SQLException {
+                       List<ParsedSelect> parsedSelects) throws SQLException {
 
         this.statement = statement;
         SfConnection conn = (SfConnection) statement.getConnection();
@@ -93,10 +93,10 @@ public class SfResultSet implements java.sql.ResultSet {
             generateResultFields(null, records[0], columnsInResult);
 
             String drivingTable = null;
-            List<ParseColumn> cols = new ArrayList<ParseColumn>();
-            for (ParseSelect parseSelect : parseSelects) {
-                cols.addAll(parseSelect.getColumns());
-                drivingTable = parseSelect.getDrivingTable();
+            List<ParsedColumn> cols = new ArrayList<ParsedColumn>();
+            for (ParsedSelect parsedSelect : parsedSelects) {
+                cols.addAll(parsedSelect.getColumns());
+                drivingTable = parsedSelect.getDrivingTable();
             }
             finaliseColumnList(columnsInResult, cols);
 
@@ -185,7 +185,7 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
 
-    private void finaliseColumnList(List<String> columnsInResult, List<ParseColumn> columnsInSql) {
+    private void finaliseColumnList(List<String> columnsInResult, List<ParsedColumn> columnsInSql) {
         List<String> newColumnsInResult = new ArrayList<String>(columnsInSql.size());
 
         Set<Integer> done = new HashSet<Integer>();
@@ -201,14 +201,19 @@ public class SfResultSet implements java.sql.ResultSet {
 
         // First pass -- match exact column names, and match "function" SQL to expression results
         for (int i = 0; i < columnsInSql.size(); i++) {
-            ParseColumn inSQl = columnsInSql.get(i);
+            ParsedColumn inSQl = columnsInSql.get(i);
 
             for (int j = 0; j < columnsInResult.size(); j++) {
                 String inResult = columnsInResult.get(j);
                 if ((inSQl != null) && (inResult != null)) {
                     if ((inSQl.getName().equalsIgnoreCase(inResult)) ||
                             (inSQl.isFunction() && inResult.toUpperCase().startsWith("EXPR"))) {
-                        columnNameCaseMap.put(columnsInSql.get(i).getName().toUpperCase(), columnsInResult.get(j));
+
+                        if (columnsInSql.get(i).getAliasName() != null) {
+                            columnNameCaseMap.put(columnsInSql.get(i).getAliasName().toUpperCase(), columnsInResult.get(j));
+                        } else {
+                            columnNameCaseMap.put(columnsInSql.get(i).getName().toUpperCase(), columnsInResult.get(j));
+                        }
 
                         newColumnsInResult.set(i, columnsInResult.get(j));
                         columnsInResult.set(j, null);
@@ -230,7 +235,12 @@ public class SfResultSet implements java.sql.ResultSet {
                         if ((columnsInResult.get(j) != null) &&
                                 (columnsInSql.get(i).getName().toUpperCase().endsWith("." + columnsInResult.get(j).toUpperCase())))
                         {
-                            columnNameCaseMap.put(columnsInSql.get(i).getName().toUpperCase(), columnsInResult.get(j));
+
+                            if (columnsInSql.get(i).getAliasName() != null) {
+                                columnNameCaseMap.put(columnsInSql.get(i).getAliasName().toUpperCase(), columnsInResult.get(j));
+                            } else {
+                                columnNameCaseMap.put(columnsInSql.get(i).getName().toUpperCase(), columnsInResult.get(j));
+                            }
 
                             newColumnsInResult.set(i, columnsInSql.get(i).getName());
                             columnsInResult.set(j, null);
@@ -248,7 +258,13 @@ public class SfResultSet implements java.sql.ResultSet {
             for (int i = 0; i < columnsInSql.size(); i++) {
                 if (newColumnsInResult.get(i) == null) {
                     newColumnsInResult.set(i, columnsInSql.get(i).getName());
-                    columnNameCaseMap.put(columnsInSql.get(i).getName().toUpperCase(), columnsInSql.get(i).getName());
+
+                    if (columnsInSql.get(i).getAliasName() != null) {
+                        columnNameCaseMap.put(columnsInSql.get(i).getAliasName().toUpperCase(), columnsInSql.get(i).getName());
+                    } else {
+                        columnNameCaseMap.put(columnsInSql.get(i).getName().toUpperCase(), columnsInSql.get(i).getName());
+                    }
+
                     done.remove(i);
                 }
             }

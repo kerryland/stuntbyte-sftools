@@ -3,14 +3,15 @@ package com.fidelma.salesforce.parse;
 /**
  * Holds info about columns found while parsing a SELECT
  */
-public class ParseColumn {
+public class ParsedColumn {
     private String name;
     private boolean isAlias;
     private boolean isFunction;
     private String functionName;
     private String table;
+    private String aliasName;
 
-    public ParseColumn(String name) {
+    public ParsedColumn(String name) {
         this.name = name;
     }
 
@@ -52,5 +53,13 @@ public class ParseColumn {
 
     public String getTable() {
         return table;
+    }
+
+    public void setAliasName(String aliasName) {
+        this.aliasName = aliasName;
+    }
+
+    public String getAliasName() {
+        return aliasName;
     }
 }

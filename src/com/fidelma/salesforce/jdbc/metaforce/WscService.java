@@ -100,23 +100,27 @@ public class WscService {
                 for (DescribeSObjectResult sob : sobs) {
                     Field[] fields = sob.getFields();
 
-                    List<Column> columns = new ArrayList<Column>(fields.length);
+                    Table table = new Table(sob.getName(), getRecordTypes(sob.getRecordTypeInfos()));
 
                     for (Field field : fields) {
                         if (keep(field)) {
-                            recordColumn(relationshipMap, childParentReferenceNames, childCascadeDeletes, typesSet, sob, columns, field);
+                            Column col = recordColumn(relationshipMap,
+                                    childParentReferenceNames,
+                                    childCascadeDeletes,
+                                    typesSet, sob, field);
+                            table.addColumn(col);
                         }
                     }
 
-                    Collections.sort(columns, new Comparator<Column>() {
+                    Collections.sort(table.getColumns(), new Comparator<Column>() {
                         public int compare(Column o1, Column o2) {
-                            String t1 = ((Column) o1).getName();
-                            String t2 = ((Column) o2).getName();
+                            String t1 = o1.getName();
+                            String t2 = o2.getName();
                             return t1.compareTo(t2);
                         }
                     });
 
-                    Table table = new Table(sob.getName(), getRecordTypes(sob.getRecordTypeInfos()), columns);
+
                     factory.addTable(table);
                 }
             }
@@ -125,10 +129,13 @@ public class WscService {
         return factory;
     }
 
-    private void recordColumn(Map<String, Map<String, List<String>>> relationshipMap, Map<String, String> childParentReferenceNames, Map<String, Boolean> childCascadeDeletes, Set<String> typesSet, DescribeSObjectResult sob, List<Column> columns, Field field) {
+    private Column recordColumn(Map<String, Map<String, List<String>>> relationshipMap,
+                                Map<String, String> childParentReferenceNames,
+                                Map<String, Boolean> childCascadeDeletes,
+                                Set<String> typesSet,
+                                DescribeSObjectResult sob,
+                                Field field) {
         Column column = new Column(field.getName(), getType(field));
-        columns.add(column);
-
         column.setLabel(field.getLabel());
         column.setLength(getLength(field));
         column.setAutoIncrement(field.getAutoNumber());
@@ -188,6 +195,8 @@ public class WscService {
                 }
             }
         }
+
+        return column;
     }
 
     private String getType(Field field) {

@@ -89,7 +89,9 @@ public class SelectEngineTests {
     @Test
     public void testSelectStatement() throws Exception {
         Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("select FirstName, LastName, CreatedDate, CreatedBy.name from Lead where lastName = '" + surname + "'");
+        ResultSet rs = stmt.executeQuery(
+                "select FirstName, LastName, CreatedDate, CreatedBy.name" +
+                        " from Lead where lastName = '" + surname + "'");
         ResultSetMetaData rsmd = rs.getMetaData();
 
         assertEquals(DatabaseMetaData.columnNullable, rsmd.isNullable(1));
@@ -118,6 +120,32 @@ public class SelectEngineTests {
 
             int firstNameColumn = rs.findColumn("FirstName");
             assertEquals("Mike", rs.getString(firstNameColumn));
+        }
+
+        assertEquals(1, foundCount);
+    }
+
+    @Test
+    public void testSelectAsStatement() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(
+                "select FirstName as fn, LastName as ln, CreatedDate, CreatedBy.name as cn" +
+                        " from Lead where lastName = '" + surname + "'");
+        ResultSetMetaData rsmd = rs.getMetaData();
+
+        // TODO: What about select FirstName as LastName, LastName as FirstName"
+        assertEquals(DatabaseMetaData.columnNullable, rsmd.isNullable(1));
+        assertEquals(DatabaseMetaData.columnNoNulls, rsmd.isNullable(2));
+
+        assertEquals(-1, stmt.getUpdateCount());
+
+        int foundCount = 0;
+        while (rs.next()) {
+            foundCount++;
+            assertEquals("Mike", rs.getString("fn"));
+            assertEquals("Mike", rs.getString("FN"));
+            assertEquals(surname, rs.getString("ln"));
+            assertEquals("Kerry Sainsbury", rs.getString("cn"));
         }
 
         assertEquals(1, foundCount);
