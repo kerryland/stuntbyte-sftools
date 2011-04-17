@@ -5,6 +5,7 @@ import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
 
 import java.io.ByteArrayInputStream;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,15 +80,17 @@ public class SimpleParser {
 
         while ((token != null) && (!token.getValue().equalsIgnoreCase("FROM"))) {
             if (token.getValue().equals("(")) {
+                parsedSelect.addToSql("(");
 
-                if (!prevTokenComma) {
-                    // TODO: addToSql?
-                    token = swallowUntilMatchingBracket(parsedSelect, la);
-                } else {
-                    parsedSelect.addToSql("(");
-                    extractColumnsFromSoql(parsedSelect, selects);
-                    token = swallowUntilMatchingBracket(parsedSelect, la);
-                }
+//                token = la.getToken();
+//                if ((token != null)) {
+//                    } else if (token.equals(")")) {
+//                        parsedSelect.addToSql(")");
+//                    } else {
+                        token = swallowUntilMatchingBracket(parsedSelect, la);
+//                        System.out.println("AFTER SWALLOW " + token.getValue());
+//                    }
+//                }
 
                 if ((token != null) && (!token.getValue().equalsIgnoreCase("FROM") && (!(token.getValue().equals(","))))) {
                     ParsedColumn pc = new ParsedColumn(token.getValue());
@@ -111,6 +114,7 @@ public class SimpleParser {
                     prevPc.setName("EXPR" + (expr++));
                 }
                 prevTokenComma = false;
+
             } else if (token.getValue().equals(")")) {
                 parsedSelect.addToSql(token.getValue());
                 token = la.getToken();
@@ -130,6 +134,7 @@ public class SimpleParser {
 
 // TODO: Handle AS properly
                 if (maybeAs != null) {
+                    System.out.println("MAYBEAS IS " + maybeAs.getValue());
                     if (maybeAs.getValue().equalsIgnoreCase("AS")) {
                         aliasName = la.getValue();
                         token = la.getToken();
@@ -228,11 +233,21 @@ public class SimpleParser {
     }
 
     private LexicalToken swallowUntilMatchingBracket(ParsedSelect parsedSelect, SimpleParser la) throws Exception {
-        parsedSelect.addToSql("(");
+//        if (parsedSelect != null) {
+//            parsedSelect.addToSql("(");
+//        }
         LexicalToken token = la.getToken();
+        System.out.println("IMMEDIATELY: " + token);
+
+        if ((token.getValue().equalsIgnoreCase("SELECT"))) {
+            throw new SQLFeatureNotSupportedException("We don't support subselects");
+        }
+
 
         while ((token != null) && (!token.getValue().equals(")"))) {
-            parsedSelect.addToSql(token.getValue());
+            if (parsedSelect != null) {
+                parsedSelect.addToSql(token.getValue());
+            }
 
             if (token.getValue().equals("(")) {
                 token = swallowUntilMatchingBracket(parsedSelect, la);
@@ -241,7 +256,9 @@ public class SimpleParser {
             }
         }
         if (token != null) {
-            parsedSelect.addToSql(token.getValue());
+            if (parsedSelect != null) {
+                parsedSelect.addToSql(token.getValue());
+            }
             token = la.getToken();
         }
         return token;

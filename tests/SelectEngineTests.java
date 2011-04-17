@@ -270,6 +270,10 @@ public class SelectEngineTests {
 
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(sql);
+//            assertEquals(3, rs.getMetaData().getColumnCount());
+//            assertEquals("Account.Name", rs.getMetaData().getColumnName(1));
+//            assertEquals("Type", rs.getMetaData().getColumnName(2));
+//            assertEquals("BillingCity", rs.getMetaData().getColumnName(3));
             fail("Should have thrown an exception");
 
         } catch (SQLFeatureNotSupportedException e) {
