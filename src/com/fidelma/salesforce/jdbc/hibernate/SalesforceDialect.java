@@ -25,35 +25,44 @@ import java.sql.Types;
 public class SalesforceDialect extends org.hibernate.dialect.Dialect {
     public SalesforceDialect() {
 
-            super();
+        super();
 
-            registerColumnType(Types.VARCHAR, "string");
-            registerColumnType(Types.BIGINT, "int");
+        getDefaultProperties().setProperty( Environment.VERSION, DEFAULT_BATCH_SIZE );
 
-                                               /*
+        registerColumnType(Types.VARCHAR, "Text");
+        registerColumnType(Types.BIGINT, "Number");
+        registerColumnType(Types.CHAR, "Text");
+        registerColumnType(Types.DATE, "Date");
+        registerColumnType(Types.TIMESTAMP, "DateTime");
+        registerColumnType(Types.DECIMAL, "Number");
+        registerColumnType(Types.DOUBLE, "Number");
+        registerColumnType(Types.FLOAT, "Number");
+        registerColumnType(Types.INTEGER, "Number");
 
-            registerColumnType( Types.BIGINT, "bigint" );
-            registerColumnType( Types.BINARY, "binary" );
-            registerColumnType( Types.BIT, "bit" );
-            registerColumnType( Types.CHAR, "char(1)" );
-            registerColumnType( Types.DATE, "date" );
-            registerColumnType( Types.DECIMAL, "decimal" );
-            registerColumnType( Types.DOUBLE, "double" );
-            registerColumnType( Types.FLOAT, "float" );
-            registerColumnType( Types.INTEGER, "integer" );
-            registerColumnType( Types.LONGVARBINARY, "longvarbinary" );
-            registerColumnType( Types.LONGVARCHAR, "longvarchar" );
-            registerColumnType( Types.SMALLINT, "smallint" );
-            registerColumnType( Types.TINYINT, "tinyint" );
-            registerColumnType( Types.TIME, "time" );
-            registerColumnType( Types.TIMESTAMP, "timestamp" );
-            registerColumnType( Types.VARCHAR, "varchar($l)" );
-            registerColumnType( Types.VARBINARY, "varbinary($l)" );
-            registerColumnType( Types.NUMERIC, "numeric" );
+        /*
 
-            registerColumnType( Types.BLOB, "longvarbinary" );
-            registerColumnType( Types.CLOB, "longvarchar" );
-            */
+        registerColumnType( Types.BIGINT, "bigint" );
+        registerColumnType( Types.BINARY, "binary" );
+        registerColumnType( Types.BIT, "bit" );
+        registerColumnType( Types.CHAR, "char(1)" );
+        registerColumnType( Types.DATE, "date" );
+        registerColumnType( Types.DECIMAL, "decimal" );
+        registerColumnType( Types.DOUBLE, "double" );
+        registerColumnType( Types.FLOAT, "float" );
+        registerColumnType( Types.INTEGER, "integer" );
+        registerColumnType( Types.LONGVARBINARY, "longvarbinary" );
+        registerColumnType( Types.LONGVARCHAR, "longvarchar" );
+        registerColumnType( Types.SMALLINT, "smallint" );
+        registerColumnType( Types.TINYINT, "tinyint" );
+        registerColumnType( Types.TIME, "time" );
+        registerColumnType( Types.TIMESTAMP, "timestamp" );
+        registerColumnType( Types.VARCHAR, "varchar($l)" );
+        registerColumnType( Types.VARBINARY, "varbinary($l)" );
+        registerColumnType( Types.NUMERIC, "numeric" );
+
+        registerColumnType( Types.BLOB, "longvarbinary" );
+        registerColumnType( Types.CLOB, "longvarchar" );
+        */
 
 //            registerFunction( "ascii", new StandardSQLFunction( "ascii", Hibernate.INTEGER ) );
 //            registerFunction( "char", new StandardSQLFunction( "char", Hibernate.CHARACTER ) );
@@ -95,9 +104,7 @@ public class SalesforceDialect extends org.hibernate.dialect.Dialect {
 
 
         // http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_select_date_functions.htm
-              registerFunction( "CALENDAR_MONTH", new StandardSQLFunction( "year", Hibernate.INTEGER ) );
-
-
+        registerFunction("CALENDAR_MONTH", new StandardSQLFunction("year", Hibernate.INTEGER));
 
 
 //            registerFunction( "abs", new StandardSQLFunction( "abs" ) );
@@ -124,75 +131,75 @@ public class SalesforceDialect extends org.hibernate.dialect.Dialect {
 //            registerFunction( "ceiling", new StandardSQLFunction( "ceiling" ) );
 //            registerFunction( "floor", new StandardSQLFunction( "floor" ) );
 
-            // Multi-param dialect functions...
+        // Multi-param dialect functions...
 //            registerFunction( "mod", new StandardSQLFunction( "mod", Hibernate.INTEGER ) );
 
-            // function templates
+        // function templates
 //            registerFunction( "concat", new VarArgsSQLFunction( Hibernate.STRING, "(", "||", ")" ) );
 
 //            getDefaultProperties().setProperty( Environment.STATEMENT_BATCH_SIZE, DEFAULT_BATCH_SIZE );
-        }
+    }
 
-        public String getAddColumnString() {
-            return "add column";
-        }
+    public String getAddColumnString() {
+        return "add column";
+    }
 
-        public boolean supportsIdentityColumns() {
-            return true;
-        }
+    public boolean supportsIdentityColumns() {
+        return true;
+    }
 
-        public String getIdentityColumnString() {
-            return "generated by default as identity"; //not null is implicit
+    public String getIdentityColumnString() {
+        return "generated by default as identity"; //not null is implicit
 //            return ""; //not null is implicit
-        }
+    }
 
-        public String getIdentitySelectString() {
+    public String getIdentitySelectString() {
 //            return "call identity()";
-            return "wtf";
-        }
+        return "wtf";
+    }
 
-        public String getIdentityInsertString() {
-            return "null";
-        }
+    public String getIdentityInsertString() {
+        return "null";
+    }
 
-        public String getForUpdateString() {
-            return "";
-        }
+    public String getForUpdateString() {
+        return "";
+    }
 
-        public boolean supportsUnique() {
-            return false;
-        }
+    public boolean supportsUnique() {
+        return false;
+    }
 
-        public boolean supportsLimit() {
-            return true;
-        }
+    public boolean supportsLimit() {
+        return true;
+    }
 
-        public String getLimitString(String sql, boolean hasOffset) {
-            return new StringBuffer( sql.length() + 10 )
-                    .append(sql).append(" limit ?")
+    public String getLimitString(String sql, boolean hasOffset) {
+        return new StringBuffer(sql.length() + 10)
+                .append(sql).append(" limit ?")
 //                    .insert(sql.toLowerCase().indexOf("select") + 6, hasOffset ? " limit ? ?" : " top ?")
-                    .toString();
-        }
+                .toString();
+    }
 
-        public boolean bindLimitParametersFirst() {
-            return true;
-        }
+    public boolean bindLimitParametersFirst() {
+        return true;
+    }
 
-        public boolean supportsIfExistsAfterTableName() {
-            return true;
-        }
+    public boolean supportsIfExistsAfterTableName() {
+        return true;
+    }
 
-        public boolean supportsColumnCheck() {
-            return false;
-        }
+    public boolean supportsColumnCheck() {
+        return false;
+    }
 
-        public boolean supportsSequences() {
-            return false;
-        }
+    public boolean supportsSequences() {
+        return false;
+    }
 
-        public boolean supportsPooledSequences() {
-            return false;
-        }
+    public boolean supportsPooledSequences() {
+        return false;
+    }
 
 //        protected String getCreateSequenceString(String sequenceName) {
 //            return "create sequence " + sequenceName;
@@ -211,7 +218,7 @@ public class SalesforceDialect extends org.hibernate.dialect.Dialect {
 //        }
 
 //        public String getQuerySequencesString() {
-            // this assumes schema support, which is present in 1.8.0 and later...
+    // this assumes schema support, which is present in 1.8.0 and later...
 //            return "select sequence_name from information_schema.system_sequences";
 //        }
 
@@ -219,84 +226,81 @@ public class SalesforceDialect extends org.hibernate.dialect.Dialect {
 //            return EXTRACTER;
 //        }
 
-        private static ViolatedConstraintNameExtracter EXTRACTER = new TemplatedViolatedConstraintNameExtracter() {
-
-            /**
-             * Extract the name of the violated constraint from the given SQLException.
-             *
-             * @param sqle The exception that was the result of the constraint violation.
-             * @return The extracted constraint name.
-             */
-            public String extractConstraintName(SQLException sqle) {
-                String constraintName = null;
-
-                int errorCode = JDBCExceptionHelper.extractErrorCode(sqle);
-
-                if ( errorCode == -8 ) {
-                    constraintName = extractUsingTemplate(
-                            "Integrity constraint violation ", " table:", sqle.getMessage()
-                    );
-                }
-                else if ( errorCode == -9 ) {
-                    constraintName = extractUsingTemplate(
-                            "Violation of unique index: ", " in statement [", sqle.getMessage()
-                    );
-                }
-                else if ( errorCode == -104 ) {
-                    constraintName = extractUsingTemplate(
-                            "Unique constraint violation: ", " in statement [", sqle.getMessage()
-                    );
-                }
-                else if ( errorCode == -177 ) {
-                    constraintName = extractUsingTemplate(
-                            "Integrity constraint violation - no parent ", " table:", sqle.getMessage()
-                    );
-                }
-
-                return constraintName;
-            }
-
-        };
+    private static ViolatedConstraintNameExtracter EXTRACTER = new TemplatedViolatedConstraintNameExtracter() {
 
         /**
-         * HSQL does not really support temp tables; just take advantage of the
-         * fact that it is a single user db...
+         * Extract the name of the violated constraint from the given SQLException.
+         *
+         * @param sqle The exception that was the result of the constraint violation.
+         * @return The extracted constraint name.
          */
-        public boolean supportsTemporaryTables() {
-            return false;
-        }
+        public String extractConstraintName(SQLException sqle) {
+            String constraintName = null;
 
-        public boolean supportsCurrentTimestampSelection() {
-            return false;
-        }
+            int errorCode = JDBCExceptionHelper.extractErrorCode(sqle);
 
-        public LockingStrategy getLockingStrategy(Lockable lockable, LockMode lockMode) {
-            // HSQLDB only supports READ_UNCOMMITTED transaction isolation
-            return new ReadUncommittedLockingStrategy( lockable, lockMode );
-        }
-
-        public static class ReadUncommittedLockingStrategy extends SelectLockingStrategy {
-            public ReadUncommittedLockingStrategy(Lockable lockable, LockMode lockMode) {
-                super( lockable, lockMode );
+            if (errorCode == -8) {
+                constraintName = extractUsingTemplate(
+                        "Integrity constraint violation ", " table:", sqle.getMessage()
+                );
+            } else if (errorCode == -9) {
+                constraintName = extractUsingTemplate(
+                        "Violation of unique index: ", " in statement [", sqle.getMessage()
+                );
+            } else if (errorCode == -104) {
+                constraintName = extractUsingTemplate(
+                        "Unique constraint violation: ", " in statement [", sqle.getMessage()
+                );
+            } else if (errorCode == -177) {
+                constraintName = extractUsingTemplate(
+                        "Integrity constraint violation - no parent ", " table:", sqle.getMessage()
+                );
             }
 
-            public void lock(Serializable id, Object version, Object object, SessionImplementor session)
-                    throws StaleObjectStateException, JDBCException {
-                if ( getLockMode().greaterThan( LockMode.READ ) ) {
+            return constraintName;
+        }
+
+    };
+
+    /**
+     * HSQL does not really support temp tables; just take advantage of the
+     * fact that it is a single user db...
+     */
+    public boolean supportsTemporaryTables() {
+        return false;
+    }
+
+    public boolean supportsCurrentTimestampSelection() {
+        return false;
+    }
+
+    public LockingStrategy getLockingStrategy(Lockable lockable, LockMode lockMode) {
+        // HSQLDB only supports READ_UNCOMMITTED transaction isolation
+        return new ReadUncommittedLockingStrategy(lockable, lockMode);
+    }
+
+    public static class ReadUncommittedLockingStrategy extends SelectLockingStrategy {
+        public ReadUncommittedLockingStrategy(Lockable lockable, LockMode lockMode) {
+            super(lockable, lockMode);
+        }
+
+        public void lock(Serializable id, Object version, Object object, SessionImplementor session)
+                throws StaleObjectStateException, JDBCException {
+            if (getLockMode().greaterThan(LockMode.READ)) {
 //                    log.warn( "HSQLDB supports only READ_UNCOMMITTED isolation" );
-                }
-                super.lock( id, version, object, session );
             }
-        }
-
-
-        // Overridden informational metadata ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        public boolean supportsEmptyInList() {
-            return false;
-        }
-
-        public boolean supportsLobValueChangePropogation() {
-            return false;
+            super.lock(id, version, object, session);
         }
     }
+
+
+    // Overridden informational metadata ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    public boolean supportsEmptyInList() {
+        return false;
+    }
+
+    public boolean supportsLobValueChangePropogation() {
+        return false;
+    }
+}

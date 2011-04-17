@@ -83,7 +83,8 @@ public class TypeHelper {
         }
 
         if (dataType == Types.DECIMAL) {
-            return new BigDecimal(value);
+//            return new BigDecimal(value);
+            return value;
         }
 
         if (dataType == Types.DATE) {

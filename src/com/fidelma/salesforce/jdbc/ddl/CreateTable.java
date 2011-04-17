@@ -67,7 +67,8 @@ public class CreateTable {
 
             } else {
 
-                String dataType = publicTypeToSalesforceType(al.readIf());
+//                String dataType = publicTypeToSalesforceType(al.readIf());
+                String dataType = al.readIf();
 
                 // TODO: Validate supported datatypes
 
@@ -177,7 +178,14 @@ public class CreateTable {
 
         createMetadataXml(table);
 
+        patchDataTypes(table.getColumns());
         metaDataFactory.addTable(table);
+    }
+
+    private void patchDataTypes(List<Column> columns) {
+        for (Column column : columns) {
+            column.setType(publicTypeToSalesforceType(column.getType()));
+        }
     }
 
 
@@ -187,11 +195,8 @@ public class CreateTable {
 
     // Convert a public-facing datatype, such as VARCHAR, to the Salesforce metadata api equivalent
     private String publicTypeToSalesforceType(String datatype) {
-        if (datatype.equalsIgnoreCase("varchar")) return "Text";
-        if (datatype.equalsIgnoreCase("char")) return "Text";
-        if (datatype.equalsIgnoreCase("integer")) return "Number";
-        if (datatype.equalsIgnoreCase("decimal")) return "Number";
-        if (datatype.equalsIgnoreCase("numeric")) return "Number";
+        if (datatype.equalsIgnoreCase("Text")) return "string";
+        if (datatype.equalsIgnoreCase("Number")) return "decimal";
         return datatype.toLowerCase();
     }
 
@@ -207,9 +212,9 @@ public class CreateTable {
 
         addElement(document, rootElement, "label", table.getName());
         addElement(document, rootElement, "pluralLabel", table.getName() + "s");
-        addElement(document, rootElement, "enableFeeds", "false");
+//        addElement(document, rootElement, "enableFeeds", "false");
         addElement(document, rootElement, "deploymentStatus", "Deployed");
-        addElement(document, rootElement, "sharingModel", "Private");
+        addElement(document, rootElement, "sharingModel", "ReadWrite");
 
         Element nameField = document.createElement("nameField");
         rootElement.appendChild(nameField);

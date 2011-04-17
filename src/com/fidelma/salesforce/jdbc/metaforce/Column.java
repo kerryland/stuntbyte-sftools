@@ -154,4 +154,8 @@ public class Column {
     public boolean hasMultipleRelationships() {
         return hasMultipleRelationships;
     }
+
+    public void setType(String type) {
+        this.type = type;
+    }
 }
