@@ -246,7 +246,7 @@ public class SelectEngineTests {
     @Test
     public void testSimpleAggregate() throws Exception {
         Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("select company, max(lastName), min(lastName) small, Max(firstName) from Lead where lastName = '" + surname + "' group by company");
+        ResultSet rs = stmt.executeQuery("select company, max(lastName), min(lastName) small, Max(firstName) as maxname from Lead where lastName = '" + surname + "' group by company");
         assertEquals(4, rs.getMetaData().getColumnCount());
         assertTrue(rs.next());
         assertEquals("MikeCo", rs.getString(1));
@@ -257,7 +257,7 @@ public class SelectEngineTests {
         assertEquals("MikeCo", rs.getString("Company"));
         assertEquals(surname, rs.getString("expr0"));
         assertEquals(surname, rs.getString("small"));
-        assertEquals("Mike", rs.getString("expr1"));
+        assertEquals("Mike", rs.getString("maxname"));
     }
 
 

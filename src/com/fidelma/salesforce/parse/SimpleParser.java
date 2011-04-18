@@ -76,25 +76,23 @@ public class SimpleParser {
 
         LexicalToken token = la.getToken();
         int expr = 0;
-        boolean prevTokenComma = false;
 
         while ((token != null) && (!token.getValue().equalsIgnoreCase("FROM"))) {
             if (token.getValue().equals("(")) {
                 parsedSelect.addToSql("(");
-
-//                token = la.getToken();
-//                if ((token != null)) {
-//                    } else if (token.equals(")")) {
-//                        parsedSelect.addToSql(")");
-//                    } else {
-                        token = swallowUntilMatchingBracket(parsedSelect, la);
-//                        System.out.println("AFTER SWALLOW " + token.getValue());
-//                    }
-//                }
+                token = swallowUntilMatchingBracket(parsedSelect, la);
 
                 if ((token != null) && (!token.getValue().equalsIgnoreCase("FROM") && (!(token.getValue().equals(","))))) {
-                    ParsedColumn pc = new ParsedColumn(token.getValue());
+                    String aliasName;
+                    if (token.getValue().equalsIgnoreCase("AS")) {
+                        aliasName = la.getValue();
+                    } else {
+                        aliasName = token.getValue();
+                    }
+
+                    ParsedColumn pc = new ParsedColumn(aliasName);
                     pc.setAlias(true);
+                    pc.setAliasName(aliasName);
                     pc.setFunction(true);
                     pc.setFunctionName(result.get(result.size() - 1).getName());
 
@@ -105,15 +103,11 @@ public class SimpleParser {
                     token = la.getToken();
 
                 } else if (result.size() > 0) {
-//                    if (token != null) {
-//                        parsedSelect.addToSql(token.getValue());
-//                    }
                     ParsedColumn prevPc = result.get(result.size() - 1);
                     prevPc.setFunction(true);
                     prevPc.setFunctionName(prevPc.getName());
                     prevPc.setName("EXPR" + (expr++));
                 }
-                prevTokenComma = false;
 
             } else if (token.getValue().equals(")")) {
                 parsedSelect.addToSql(token.getValue());
@@ -123,18 +117,15 @@ public class SimpleParser {
             } else if (token.getValue().equals(",")) {
                 parsedSelect.addToSql(token.getValue());
                 token = la.getToken();
-                prevTokenComma = true;
             } else {
-                System.out.println("\nBlurged with " + token.getValue());
                 String columnName = token.getValue().trim();
                 String aliasName = null;
 
                 token = la.getToken();
+
                 LexicalToken maybeAs = token;
 
-// TODO: Handle AS properly
                 if (maybeAs != null) {
-                    System.out.println("MAYBEAS IS " + maybeAs.getValue());
                     if (maybeAs.getValue().equalsIgnoreCase("AS")) {
                         aliasName = la.getValue();
                         token = la.getToken();
@@ -152,24 +143,11 @@ public class SimpleParser {
                     parsedSelect.addToSql(columnName);
                 }
 
-                prevTokenComma = false;
             }
         }
-//        parsedSelect.addToSql("<COLUMNS>");
 
         String table = handleTableAlias(parsedSelect, result, token);
 
-//        List<ParsedColumn> columns = parsedSelect.getColumns();
-//        boolean first = true;
-//        String
-//        for (ParsedColumn column : columns) {
-//            if (!first) {
-//                parsedSelect.addToSql(", ");
-//            }
-//            parsedSelect.addToSql(column.getName());
-//            System.out.println("COL! = " + column.getName());
-//            first = false;
-//        }
         parsedSelect.addToSql(al.unparsedString());
         parsedSelect.setDrivingTable(table);
         parsedSelect.setColumns(result);
@@ -189,12 +167,9 @@ public class SimpleParser {
             table = la.getValue();
             parsedSelect.addToSql(table);
 
-            System.out.println("TABLE=" + table);
-
             // TODO: Handle quotes    ?
             if (table != null) {
                 String alias = la.getValue();  // might be WHERE
-                System.out.println("ALIAS=" + alias);
 
                 if (alias != null) {
                     String prefix = alias.toUpperCase() + ".";
@@ -204,19 +179,13 @@ public class SimpleParser {
                         } else {
                             if (column.getName().toUpperCase().startsWith(prefix)) {
                                 String columnName = column.getName().substring(prefix.length()).trim();
-                                System.out.println("1 adding " + columnName);
                                 if (columnName.length() != 0) {
                                     column.setName(columnName);
                                     adjustedColumnList.add(column);
                                 }
 
                             } else {
-                                System.out.println("2 adding " + column.getName());
                                 adjustedColumnList.add(column);
-                                // TODO: What is this for?
-//                                if (!column.equals("")) {
-//                                    fresh.add(column);
-//                                }
                             }
                         }
                     }
@@ -233,11 +202,7 @@ public class SimpleParser {
     }
 
     private LexicalToken swallowUntilMatchingBracket(ParsedSelect parsedSelect, SimpleParser la) throws Exception {
-//        if (parsedSelect != null) {
-//            parsedSelect.addToSql("(");
-//        }
         LexicalToken token = la.getToken();
-        System.out.println("IMMEDIATELY: " + token);
 
         if ((token.getValue().equalsIgnoreCase("SELECT"))) {
             throw new SQLFeatureNotSupportedException("We don't support subselects");

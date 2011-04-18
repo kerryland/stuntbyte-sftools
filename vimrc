@@ -85,4 +85,4 @@ map <F12> :%s,static /\*testMethod\*/ void,static testMethod void,<CR> " Enable 
 execute "map ,d :!" . runIde . " -download %<CR>"
 execute "map ,da :!" . runIde . " -downloadall<CR>"
 execute "map ,uf :!" . runIde . " -upload %<CR>"
-execute "map ,tag :!" . runIde . " -upload %<CR>"
+execute "map ,tag :!ant tag<CR>"

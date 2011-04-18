@@ -39,11 +39,7 @@ public class Select {
                 throw new SQLFeatureNotSupportedException("Parent --> Child subqueries not supported via JDBC");
             }
             ParsedSelect parsedSelect = parsedSelects.get(parsedSelects.size() - 1);
-            System.out.println("PARSED " + sql + "\nTO     " + parsedSelect.getParsedSql());
-
-
             sql = parsedSelect.getParsedSql();
-
 
             table = parsedSelect.getDrivingTable();
 
