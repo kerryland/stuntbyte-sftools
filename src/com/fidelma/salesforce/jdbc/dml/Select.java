@@ -136,22 +136,6 @@ public class Select {
         return sql;
     }
 
-    private String removeAsColumns(String sql, ParsedSelect parsedSelect) {
-        String upper = sql.toUpperCase();
-        String freshSql = sql;
-        for (ParsedColumn parsedColumn : parsedSelect.getColumns()) {
-            System.out.println("Parsed column " + parsedColumn.getName() + " has alias " + parsedColumn.getAliasName());
-            if (parsedColumn.getAliasName() != null) {
-                String replaceMe = " AS " + parsedColumn.getAliasName().toUpperCase();
-                int asPos = upper.indexOf(replaceMe);
-                assert asPos != -1;
-                freshSql = freshSql.substring(0, asPos) + sql.substring(asPos + replaceMe.length());
-            }
-        }
-        System.out.println("Parsed to " + freshSql);
-        return freshSql;
-    }
-
 
     private String replace(String sql, String replace, String check) {
         String upper = sql.toUpperCase();

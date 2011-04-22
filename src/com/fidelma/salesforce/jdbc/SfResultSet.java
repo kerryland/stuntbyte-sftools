@@ -393,7 +393,8 @@ public class SfResultSet implements java.sql.ResultSet {
         } else if (o instanceof Number) {
             return ((Number) o).longValue();
         } else if (o instanceof String) {
-            return Long.valueOf((String) o);
+            BigDecimal bd = new BigDecimal((String) o);
+            return bd.toBigInteger().longValue();
         } else {
             throw new SQLException("No type conversion to long available for " + o);
         }

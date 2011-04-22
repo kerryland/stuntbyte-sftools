@@ -19,10 +19,12 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,8 +47,12 @@ public class SfStatement implements java.sql.Statement {
     public ResultSet executeQuery(String sql) throws SQLException {
         generatedId = null;
         sql = stripComments(sql);
-        Select select = new Select(this, pc);
-        return select.execute(sql);
+        if (sql.toUpperCase().startsWith("SELECT")) {
+            Select select = new Select(this, pc);
+            return select.execute(sql);
+        } else {
+            throw new SQLFeatureNotSupportedException("Don't understand that SQL command");
+        }
     }
 
     private String stripComments(String sql) {
@@ -71,6 +77,7 @@ public class SfStatement implements java.sql.Statement {
     public int executeUpdate(String sql) throws SQLException {
         try {
             sql = stripComments(sql);
+            System.out.println(sql);
             generatedId = null;
             SimpleParser al = new SimpleParser(sql);
             LexicalToken token = al.getToken();
@@ -259,7 +266,6 @@ public class SfStatement implements java.sql.Statement {
     }
 
 
-
     public void addBatch(String sql) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
@@ -272,7 +278,6 @@ public class SfStatement implements java.sql.Statement {
     public int[] executeBatch() throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
-
 
 
     public int getResultSetHoldability() throws SQLException {
