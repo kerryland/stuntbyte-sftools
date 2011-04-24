@@ -174,13 +174,16 @@ public class Deployer {
             DeployMessage[] errors = result.getMessages();
 
             for (DeployMessage error : errors) {
-                listener.heyListen("ERROR: " + error.getProblem());
+                if (!error.getSuccess()) {
+                    listener.error(error.getProblemType().name() + ": " + error.getFullName() + " " + error.getProblem());
+                }
             }
 //               printErrors(result);            TODO
-            throw new Exception("The files were not successfully deployed");
+
+//            throw new Exception("The files were not successfully deployed");
         }
 
-        listener.heyListen("The file " + zipFile.getName() + " was successfully deployed");
+//        listener.finished("The file " + zipFile.getName() + " was successfully deployed");
     }
 
 
@@ -226,9 +229,7 @@ public class Deployer {
 
             waitTimeMilliSecs *= 2;
             if (poll++ > MAX_NUM_POLL_REQUESTS) {
-                throw new Exception("Request timed out.  If this is a large set " +
-                        "of metadata components, check that the time allowed " +
-                        "by MAX_NUM_POLL_REQUESTS is sufficient.");
+                throw new Exception("Request timed out. Make or may not have completed successfully...");
             }
             asyncResult = metadatabinding.checkStatus(
                     new String[]{asyncResult.getId()})[0];
@@ -251,7 +252,7 @@ public class Deployer {
             }
         }
         if (buf.length() > 0) {
-            listener.heyListen("Retrieve warnings:\n" + buf);
+            listener.finished("Retrieve warnings:\n" + buf);
         }
 
         // Write the zip to the file system
@@ -264,7 +265,7 @@ public class Deployer {
             FileChannel dest = os.getChannel();
             copy(src, dest);
 
-//            System.out.println("Results written to " + resultsFile.getAbsolutePath());
+            listener.finished("Results written to " + resultsFile.getAbsolutePath());
         } finally {
             os.close();
         }
@@ -297,7 +298,6 @@ public class Deployer {
      * Helper method to copy from a readable channel to a writable channel,
      * using an in-memory buffer.
      */
-
     private void copy(ReadableByteChannel src, WritableByteChannel dest)
             throws IOException {
         // use an in-memory byte buffer

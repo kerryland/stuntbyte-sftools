@@ -46,13 +46,21 @@ public class DropTable {
 
     public void createMetadataXml(String tableName) throws Exception {
         Deployer deployer = new Deployer(metadataConnection);
+        final StringBuilder deployError = new StringBuilder();
         deployer.dropNonCode(
                 "CustomObject",
                 "/objects/" + tableName + ".object",
                 new DeploymentEventListener() {
-                    public void heyListen(String message) {
-                        System.out.println("HEY! " + message);
+                    public void error(String message) {
+                        deployError.append(message).append("\n");
+                    }
+
+                    public void finished(String message) {
+
                     }
                 });
+        if (deployError.length() != 0) {
+            throw new SQLException(deployError.toString());
+        }
     }
 }

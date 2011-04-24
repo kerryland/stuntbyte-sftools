@@ -755,5 +755,13 @@ public class SalesfarceIDE {
         public void heyListen(String message) {
             message(message);
         }
+
+        public void error(String message) {
+            message(message);
+        }
+
+        public void finished(String message) {
+            message(message);
+        }
     }
 }

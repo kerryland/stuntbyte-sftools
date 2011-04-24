@@ -3,5 +3,6 @@ package com.fidelma.salesforce.misc;
 /**
  */
 public interface DeploymentEventListener {
-    void heyListen(String message);
+    void error(String message);
+    void finished(String message);
 }
