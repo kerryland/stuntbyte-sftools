@@ -157,7 +157,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public String getSearchStringEscape() throws SQLException {
-        return "%";
+        return "";
     }
 
     public String getExtraNameCharacters() throws SQLException {
