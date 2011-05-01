@@ -49,4 +49,8 @@ public class Table {
         }
         return result;
     }
+
+    public void removeColumn(String columnName) {
+        columnMap.remove(columnName.toUpperCase());
+    }
 }

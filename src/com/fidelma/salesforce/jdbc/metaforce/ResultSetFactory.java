@@ -98,6 +98,11 @@ public class ResultSetFactory {
         tableMap.remove(tableName.toUpperCase());
     }
 
+    public void removeColumn(String tableName, String columnName) throws SQLException {
+        Table table = getTable(tableName);
+        table.removeColumn(columnName);
+    }
+
 
     public Table getTable(String tableName) throws SQLException {
         Table result = tableMap.get(tableName.toUpperCase());

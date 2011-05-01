@@ -23,7 +23,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.rmi.RemoteException;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -41,83 +41,86 @@ public class Deployer {
     }
 
 
-    public void uploadNonCode(String nonCodeType, String filename, String srcDirectory, String code, DeploymentEventListener listener) throws Exception {
-        File deploymentFile = File.createTempFile("SFDC", "zip");
-        createDeploymentFile(nonCodeType, filename, srcDirectory, code, deploymentFile, "package.xml");
-        deployZip(deploymentFile, listener);
-    }
-
-    public void dropNonCode(String nonCodeType, String filename, DeploymentEventListener listener) throws Exception {
-        File deploymentFile = File.createTempFile("SFDC", "zip");
-        createDeploymentFile(nonCodeType, filename, null, null, deploymentFile, "destructiveChanges.xml");
-        deployZip(deploymentFile, listener);
-    }
-
-
-    private void createDeploymentFile(String nonCodeType,
-                                      String filename,
-                                      String srcDirectory,
-                                      String apexCode,
-                                      File deploymentFile,
-                                      String packageXmlName) throws IOException {
-        ZipOutputStream out = new ZipOutputStream(new FileOutputStream(deploymentFile));
-
-        String fileAndDirectory = determineDirectory(filename).replace("\\", "/");
+    public void uploadNonCode(String nonCodeType, String filename,
+                              String srcDirectory, String code,
+                              DeploymentEventListener listener) throws Exception {
 
         filename = new File(filename).getName();
         String nonSuffixedFilename = filename.substring(0, filename.lastIndexOf("."));
 
-        String packageXml =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<Package xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n" +
-                        "    <types>\n" +
-                        "        <members>" + nonSuffixedFilename + "</members>\n" +
-                        "        <name>" + nonCodeType + "</name>\n" +
-                        "    </types>\n" +
-                        "    <version>" + WSDL_VERSION + "</version>\n" +
-                        "</Package>";
+        Deployment deployment = new Deployment(srcDirectory);
+        deployment.addMember(nonCodeType, nonSuffixedFilename, code);
+        deployment.assemble();
+
+        deploy(deployment, listener);
+    }
+
+    public void dropNonCode(String nonCodeType, String filename, DeploymentEventListener listener) throws Exception {
+        filename = new File(filename).getName();
+        String nonSuffixedFilename = filename.substring(0, filename.lastIndexOf("."));
+
+        Deployment deployment = new Deployment(null);
+        deployment.addMember(nonCodeType, nonSuffixedFilename, null);
+        deployment.assemble();
+
+        undeploy(deployment, listener);
+    }
+
+    public void deploy(Deployment deployment, DeploymentEventListener listener) throws Exception {
+        deploy(deployment, listener, "package.xml");
+    }
+
+    public void undeploy(Deployment deployment, DeploymentEventListener listener) throws Exception {
+        deploy(deployment, listener, "destructiveChanges.xml");
+    }
+
+
+    private void deploy(Deployment deployment, DeploymentEventListener listener, String packageXmlName) throws Exception {
+        File deploymentFile = File.createTempFile("SFDC", "zip");
+
+        ZipOutputStream out = new ZipOutputStream(new FileOutputStream(deploymentFile));
 
         out.putNextEntry(new ZipEntry(packageXmlName));
-        out.write(packageXml.getBytes());
+        out.write(deployment.getPackageXml().getBytes());
         out.closeEntry();
 
         // Destructive changes need an empty package.xml
         if (packageXmlName.equals("destructiveChanges.xml")) {
-            packageXml =
-                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                            "<Package xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n" +
-                            "    <version>" + WSDL_VERSION + "</version>\n" +
-                            "</Package>";
-
+            Deployment dummy = new Deployment(null);
+            dummy.assemble();
             out.putNextEntry(new ZipEntry("package.xml"));
-            out.write(packageXml.getBytes());
+            out.write(dummy.getPackageXml().getBytes());
             out.closeEntry();
         }
 
 
-        // TODO: What about creating meta for a new class?
-        if (srcDirectory != null) {
-            File metaFile = new File(srcDirectory, fileAndDirectory + "-meta.xml");
-            FileInputStream meta = new FileInputStream(metaFile);
+        List<DeploymentResource> resources = deployment.getDeploymentResources();
+        for (DeploymentResource resource : resources) {
+            String metaData = resource.getMetaData();
+            if (metaData != null) {
+                ByteArrayInputStream meta = new ByteArrayInputStream(metaData.getBytes());
 
-            if (metaFile.exists()) {
                 int bytes = meta.read();
-                out.putNextEntry(new ZipEntry(fileAndDirectory + "-meta.xml"));
+                out.putNextEntry(new ZipEntry(resource.getFilepath() + "-meta.xml"));
                 while (bytes != -1) {
                     out.write(bytes);
                     bytes = meta.read();
                 }
                 out.closeEntry();
             }
+
+            if (resource.getCode() != null) {
+                out.putNextEntry(new ZipEntry(resource.getFilepath()));
+                out.write(resource.getCode().getBytes());
+                out.closeEntry();
+            }
         }
 
-        if (apexCode != null) {
-            out.putNextEntry(new ZipEntry(fileAndDirectory));
-            out.write(apexCode.getBytes());
-            out.closeEntry();
-        }
         out.close();
+
+        deployZip(deploymentFile, listener);
     }
+
 
     private String determineDirectory(String filename) {
         File parent = new File(filename).getParentFile();
