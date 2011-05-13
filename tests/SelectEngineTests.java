@@ -407,31 +407,32 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("NO", rs.getString("IS_NULLABLE"));
     }
 
-     /*
+/*
     @Test
     public void testRegression() throws Exception {
 
         Properties info = new Properties();
         info.put("user", "kerry.sainsbury@nzpost.co.nz.sandbox");
-        info.put("password", "u9SABqa2dQ8srnC7xytkAKhiKNe8vpazDIy");
+        info.put("password", "xJiKif3IeCLiZKNervuO3W3ozLxyQ6cm");
 //    info.put("standard", "true");
 //    info.put("includes", "Lead,Account");
+
+//        info.put("user", "fronde.admin@localist.co.nz");
+//        info.put("password", "jrP2U0TnW09DesQIaxOmAb3yWiN9lRLu");
+
 
         // Get a connection to the database
         Connection conn = DriverManager.getConnection(
                 "jdbc:sfdc:https://test.salesforce.com"
+//                "jdbc:sfdc:https://login.salesforce.com"
                 , info);
 
-        String soql = "select \n" +
-                "Main_Category__r.Name,\n " +
-                "Main_Category__c,\n" +
-                "count(id)\n" +
-                " from localist_product__c  \n" +
-                "where Main_Category__c != null\n" +
-                "and (First_Level_Category_Group__c = null or Second_Level_Category_Group__c = null)\n" +
-                "group by  Main_Category__c,\n" +
-                "Main_Category__r.Name";
-
+        String soql = "select Localist_Order__r.Account__r.Customer_State__c, " +
+                "Localist_Order__r.State__c, count(Id)\n" +
+                "from localist_product__c\n" +
+                "where Product_Offering__r.ProductCode = 'D-LP'\n" +
+                "and state__c = 'Pending'\n" +
+                "group by Localist_Order__r.Account__r.Customer_State__c, Localist_Order__r.State__c";
 
         Statement stmt = conn.createStatement();
 
@@ -448,17 +449,17 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
 //        System.out.println("LAB IS " + lab);
 //        System.out.println("COL IS " + col);
         while (rs.next()) {
-            System.out.println("1>" + rs.getString("Main_Category__c"));
-            System.out.println("1>" + rs.getString("Main_Category__r.Name"));
-            System.out.println("1>" + rs.getInt("expr0"));
+//            System.out.println("1>" + rs.getString("Main_Category__c"));
+//            System.out.println("1>" + rs.getString("Main_Category__r.Name"));
+//            System.out.println("1>" + rs.getInt("expr0"));
             System.out.println("2>" + rs.getString(1));
             System.out.println("2>" + rs.getString(2));
             System.out.println("2>" + rs.getInt(3));
         }
 
     }
+  */
 
-      */
     // Given aaa.bbb__r.ccc__r.ddd__r.name
 
     @Test

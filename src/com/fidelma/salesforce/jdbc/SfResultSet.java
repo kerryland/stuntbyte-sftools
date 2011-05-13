@@ -233,7 +233,8 @@ public class SfResultSet implements java.sql.ResultSet {
                 if (newColumnsInResult.get(i) == null) {
                     for (int j = 0; j < columnsInResult.size(); j++) {
                         if ((columnsInResult.get(j) != null) &&
-                                (columnsInSql.get(i).getName().toUpperCase().endsWith("." + columnsInResult.get(j).toUpperCase())))
+                                (columnsInSql.get(i).getName().toUpperCase().endsWith(
+                                        "." + columnsInResult.get(j).toUpperCase())))
                         {
 
                             if (columnsInSql.get(i).getAliasName() != null) {
@@ -246,6 +247,7 @@ public class SfResultSet implements java.sql.ResultSet {
                             columnsInResult.set(j, null);
                             columnsInSql.set(i, null);
                             done.remove(i);
+                            break;
                         }
                     }
                 }
