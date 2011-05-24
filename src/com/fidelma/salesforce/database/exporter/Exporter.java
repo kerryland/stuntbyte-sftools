@@ -1,41 +1,29 @@
 package com.fidelma.salesforce.database.exporter;
 
 import com.fidelma.salesforce.jdbc.SfConnection;
-import com.fidelma.salesforce.jdbc.hibernate.SalesforceDialect;
 import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.misc.LoginHelper;
-import com.sforce.async.AsyncApiException;
-import com.sforce.async.ContentType;
-import com.sforce.async.JobInfo;
-import com.sforce.async.OperationEnum;
-import com.sforce.async.RestConnection;
 import com.sforce.soap.metadata.MetadataConnection;
-import com.sforce.ws.ConnectionException;
-import com.sforce.ws.bind.TypeInfo;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.dialect.H2Dialect;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Types;
 import java.util.List;
-import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+
 /**
  * http://www.salesforce.com/us/developer/docs/api_asynch/index_Left.htm#StartTopic=Content/asynch_api_quickstart.htm
  */
@@ -54,6 +42,7 @@ public class Exporter {
         List<Table> tables = rsf.getTables();
 
         Statement stmt = localConnection.createStatement();
+        stmt.execute("drop all objects");
 
         for (Table table : tables) {
             if (table.getType().equals("TABLE")) {
@@ -77,8 +66,6 @@ public class Exporter {
                     sb.append(col.getName());
 
                     Integer jdbcType = ResultSetFactory.lookupJdbcType(col.getType());
-                    System.out.println(table.getName() + " " + col.getName() + " JDBCTYPE " + jdbcType);
-
                     String typeName = dialect.getTypeName(jdbcType, col.getLength(), col.getPrecision(), col.getScale());
                     sb.append(" ");
                     sb.append(typeName);
@@ -86,9 +73,43 @@ public class Exporter {
                 }
                 sb.replace(sb.length(), sb.length(), ")");
 
-                stmt.execute("drop table if exists " + tableName);
                 stmt.execute(sb.toString());
 
+            }
+        }
+
+        for (Table table : tables) {
+            if (table.getType().equals("TABLE")) {
+//            if (table.getName().equalsIgnoreCase("ACCOUNT")) {
+                StringBuilder sb = new StringBuilder();
+
+                String tableName = table.getName();
+                if (!tableName.endsWith("__c")) {
+                    tableName += "__s";   // Make sure we don't fail on the GROUP table...
+                }
+
+                PreparedStatement pstmt = sfConnection.prepareStatement("select * from " + table.getName());
+                ResultSet rs = pstmt.executeQuery();
+
+                StringBuilder columns = new StringBuilder();
+                StringBuilder values = new StringBuilder();
+                columns.append("insert into ").append(tableName).append(" (");
+                for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+                    columns.append(rs.getMetaData().getColumnName(i)).append(",");
+                    values.append("?,");
+                }
+                columns.replace(columns.length(), columns.length(), ") values (");
+                columns.append(values);
+                columns.replace(columns.length(), columns.length(), ")");
+
+                PreparedStatement pinsert= localConnection.prepareStatement(columns.toString());
+
+                while (rs.next()) {
+                    for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+                        pinsert.setObject(i, rs.getObject(i));
+                    }
+                    pinsert.executeUpdate();
+                }
             }
         }
     }
