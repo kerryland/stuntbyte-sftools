@@ -58,7 +58,7 @@ public class CreateTable {
     public void execute(String tableName, boolean alterMode) throws Exception {
         // TODO: IF NOT EXISTS
 
-        Table table = new Table(tableName, null);
+        Table table = new Table(tableName, null, "TABLE");
 
         if (!alterMode) {
             al.read("(");

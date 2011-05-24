@@ -100,7 +100,8 @@ public class WscService {
                 for (DescribeSObjectResult sob : sobs) {
                     Field[] fields = sob.getFields();
 
-                    Table table = new Table(sob.getName(), getRecordTypes(sob.getRecordTypeInfos()));
+                    String type = sob.getUpdateable() ? "TABLE" : "SYSTEM TABLE";
+                    Table table = new Table(sob.getName(), getRecordTypes(sob.getRecordTypeInfos()), type);
 
                     for (Field field : fields) {
                         if (keep(field)) {

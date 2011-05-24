@@ -9,10 +9,13 @@ import java.sql.Types;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Holds a force.com org's objects (tables) and fields (columns)
@@ -134,27 +137,37 @@ public class ResultSetFactory {
     /**
      * Provide table (object) detail.
      */
-    public ResultSet getTables(String search) {
+    public ResultSet getTables(String search, String[] types) {
         if (search != null) {
             search = search.toUpperCase();
         }
 
+        Set<String> typeSet = new HashSet<String>();
+        if (types != null) {
+            for (int i = 0; i < types.length; i++) {
+                typeSet.add(types[i].toUpperCase());
+            }
+        }
+
+
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
         for (Table table : tables) {
 
-            if (include(search, table.getName())) {
-                ColumnMap<String, Object> map = new ColumnMap<String, Object>();
-                map.put("TABLE_CAT", null);
-                map.put("TABLE_SCHEM", null);
-                map.put("TABLE_NAME", table.getName());
-                map.put("TABLE_TYPE", "TABLE");
-                map.put("REMARKS", table.getComments());
-                map.put("TYPE_CAT", null);
-                map.put("TYPE_SCHEM", null);
-                map.put("TYPE_NAME", null);
-                map.put("SELF_REFERENCING_COL_NAME", null);
-                map.put("REF_GENERATION", null);
-                maps.add(map);
+            if ((types == null) || (typeSet.contains(table.getType().toUpperCase()))) {
+                if (include(search, table.getName())) {
+                    ColumnMap<String, Object> map = new ColumnMap<String, Object>();
+                    map.put("TABLE_CAT", null);
+                    map.put("TABLE_SCHEM", null);
+                    map.put("TABLE_NAME", table.getName());
+                    map.put("TABLE_TYPE", table.getType());
+                    map.put("REMARKS", table.getComments());
+                    map.put("TYPE_CAT", null);
+                    map.put("TYPE_SCHEM", null);
+                    map.put("TYPE_NAME", null);
+                    map.put("SELF_REFERENCING_COL_NAME", null);
+                    map.put("REF_GENERATION", null);
+                    maps.add(map);
+                }
             }
         }
         return new ForceResultSet(maps);

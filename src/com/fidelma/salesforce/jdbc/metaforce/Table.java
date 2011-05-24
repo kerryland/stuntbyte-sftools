@@ -11,12 +11,14 @@ public class Table {
 
     private String name;
     private String comments;
+    private String type;
     private List<Column> columns;
     private Map<String, Column> columnMap = new HashMap<String, Column>();
 
-    public Table(String name, String comments) {
+    public Table(String name, String comments, String type) {
         this.name = name;
         this.comments = comments;
+        this.type = type;
         this.columns = new ArrayList<Column>();
     }
 
@@ -52,5 +54,9 @@ public class Table {
 
     public void removeColumn(String columnName) {
         columnMap.remove(columnName.toUpperCase());
+    }
+
+    public String getType() {
+        return type;
     }
 }

@@ -517,7 +517,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
                                String tableNamePattern,
                                String[] types) throws SQLException {
 
-        return metaDataFactory.getTables(tableNamePattern);
+        return metaDataFactory.getTables(tableNamePattern, types);
 
 //        ListMetadataQuery query = new ListMetadataQuery();
 //        query.setType("CustomObject");
@@ -553,6 +553,9 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
         ColumnMap<String, Object> row = new ColumnMap<String, Object>();
         row.put("TABLE_TYPE", "TABLE");
+        maps.add(row);
+        row = new ColumnMap<String, Object>();
+        row.put("TABLE_TYPE", "SYSTEM TABLE");
         maps.add(row);
         return new ForceResultSet(maps);
     }
