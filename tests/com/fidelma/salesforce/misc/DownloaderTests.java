@@ -29,6 +29,7 @@ public class DownloaderTests {
         MetadataConnection metaConnection = lh.getMetadataConnection();
         Downloader dl = new Downloader(metaConnection, dir, new Notice(), crcFile);
         dl.addPackage("CustomObject", "Lead");
+        dl.addPackage("CustomObject", "aaa__c");
         dl.download();
 
         // TODO: Check content of CRC and disk file

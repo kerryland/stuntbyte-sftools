@@ -40,6 +40,9 @@ public class SalesforceDialect extends org.hibernate.dialect.Dialect {
         registerColumnType(Types.DOUBLE, "Number");
         registerColumnType(Types.FLOAT, "Number");
         registerColumnType(Types.INTEGER, "Number");
+        registerColumnType(Types.LONGVARCHAR, "TextArea" );
+        registerColumnType(Types.BOOLEAN, "Checkbox" );
+        registerColumnType(Types.TIME, "Time" );
 
         /*
 

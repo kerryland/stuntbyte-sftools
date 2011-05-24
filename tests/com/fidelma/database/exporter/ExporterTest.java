@@ -1,5 +1,8 @@
 package com.fidelma.database.exporter;
 
+import com.fidelma.salesforce.database.exporter.Exporter;
+import com.fidelma.salesforce.jdbc.SfConnection;
+import com.fidelma.salesforce.misc.TestHelper;
 import org.h2.util.ScriptReader;
 import org.junit.Test;
 
@@ -25,30 +28,60 @@ public class ExporterTest {
 
     @Test
     public void testNotMuch() throws Exception {
-        Connection conn = setupData();
-        populateData(conn);
+        Class.forName("com.fidelma.salesforce.jdbc.SfDriver");
 
+        Properties info = new Properties();
+        info.put("user", TestHelper.username);
+        info.put("password", TestHelper.password);
+        info.put("standard", "true");
+        info.put("includes", "Lead,Account");
+        info.put("useLabels", "true");
+
+        // Get a connection to the database
+        SfConnection sfConn = (SfConnection) DriverManager.getConnection(
+                "jdbc:sfdc:" + TestHelper.loginUrl
+                , info);
+
+        Class.forName("org.h2.Driver");
+
+        info = new Properties();
+//        info.put("user", "salesforce@fidelma.com");
+//        info.put("password", "u9SABqa2dQxG0Y3kqWiJQVEwnYtryr1Ja1");
+//        info.put("standard", "true");
+//        info.put("includes", "Lead,Account");
+//        info.put("useLabels", "true");
+
+        // Get a connection to the database
+        Connection h2Conn = DriverManager.getConnection(
+//                "jdbc:h2:mem:"
+                "jdbc:h2:/tmp/sfdc-h2"
+                , info);
+
+
+        Exporter exporter = new Exporter(null);
+
+        exporter.createLocalSchema(sfConn, h2Conn);
 
     }
 
     private void populateData(Connection conn) throws Exception {
-    /*
-        Mary and Bob are users of the system
-        Bob has created all records in the database
+        /*
+       Mary and Bob are users of the system
+       Bob has created all records in the database
 
-        There are 4 accounts in the system
-        - Pizza Co and Burger Co, both owned by Mary
-        - Vege Co, owned by Bob
-        - Pizza Head Office, owned by Mary, and Parent Account of Pizza Co.
+       There are 4 accounts in the system
+       - Pizza Co and Burger Co, both owned by Mary
+       - Vege Co, owned by Bob
+       - Pizza Head Office, owned by Mary, and Parent Account of Pizza Co.
 
-        Each Account has one contact.
-        The contact of Pizza Co reports to the contact of Pizza Head Office
+       Each Account has one contact.
+       The contact of Pizza Co reports to the contact of Pizza Head Office
 
-        Pizza Co has one Opportunity, with two Line items.
+       Pizza Co has one Opportunity, with two Line items.
 
-        The user table is READ ONLY
+       The user table is READ ONLY
 
-         */
+        */
         PreparedStatement stmt = conn.prepareStatement("insert into \"User\"(Id, Name) values (?,?)");
         stmt.setString(1, nextId());
         stmt.setString(2, "User Bob");
@@ -62,6 +95,7 @@ public class ExporterTest {
     }
 
     int idGenerator = 0;
+
     private String nextId() {
         return "ID" + idGenerator++;
     }

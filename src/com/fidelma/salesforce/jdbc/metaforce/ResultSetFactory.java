@@ -134,6 +134,11 @@ public class ResultSetFactory {
         return include;
     }
 
+
+    public List<Table> getTables() {
+        return tables;
+    }
+
     /**
      * Provide table (object) detail.
      */
@@ -271,7 +276,7 @@ public class ResultSetFactory {
     }
 
 
-    private static TypeInfo lookupTypeInfo(String forceTypeName) throws SQLException {
+    static TypeInfo lookupTypeInfo(String forceTypeName) throws SQLException {
         for (TypeInfo entry : TYPE_INFO_DATA) {
             if (forceTypeName.equals(entry.typeName)) {
                 return entry;
