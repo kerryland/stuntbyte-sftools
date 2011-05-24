@@ -167,10 +167,16 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
     }
 
     public void setObject(int parameterIndex, Object x) throws SQLException {
+        // TODO: HANDLE EVERYTHING ELSE!
         if (x instanceof String) {
             setString(parameterIndex, (String) x);
         }
     }
+
+    public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength) throws SQLException {
+
+    }
+
 
 
 
@@ -306,9 +312,6 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
 
     }
 
-    public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength) throws SQLException {
-
-    }
 
     public void setAsciiStream(int parameterIndex, InputStream x, long length) throws SQLException {
 
