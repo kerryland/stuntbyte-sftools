@@ -1,5 +1,7 @@
 package com.fidelma.salesforce.misc;
 
+import com.sforce.async.AsyncApiException;
+import com.sforce.async.RestConnection;
 import com.sforce.soap.apex.SoapConnection;
 import com.sforce.soap.metadata.MetadataConnection;
 import com.sforce.soap.partner.Connector;
@@ -26,9 +28,9 @@ public class LoginHelper {
 
     private String sessionId;
     private boolean trace;
-    
+
     public static final double SFDC_VERSION = 20D;
-    private static final double WSDL_VERSION = 20D;
+    public static final double WSDL_VERSION = 21D;
 
 
     public LoginHelper(String server, String username, String password) {
@@ -39,97 +41,134 @@ public class LoginHelper {
     }
 
     private LoginResult doLogin() throws ConnectionException {
-          ConnectorConfig cc;
-          cc = new ConnectorConfig();
-          configureTracing(cc);
-          configureProxy(cc);
-          String serverEndpoint = server;
-          if (!serverEndpoint.startsWith("http://") && !serverEndpoint.startsWith("https://"))
-              serverEndpoint = (new StringBuilder()).append("https://").append(serverEndpoint).toString();
-          if (!serverEndpoint.contains("/services/Soap/u/")) {
-              if (!serverEndpoint.endsWith("/"))
-                  serverEndpoint = (new StringBuilder()).append(serverEndpoint).append("/").toString();
-              serverEndpoint = (new StringBuilder()).append(serverEndpoint).append("services/Soap/u/").append(WSDL_VERSION).toString();
-          } else if (!serverEndpoint.endsWith(String.valueOf(WSDL_VERSION)))
-              throw new RuntimeException("Server URL should point to API Version: 20.0");
-          cc.setAuthEndpoint(serverEndpoint);
-          cc.setServiceEndpoint(serverEndpoint);
-          if (sessionId != null) {
-              LoginResult lResult = new LoginResult();
-              lResult.setSessionId(sessionId);
-              lResult.setServerUrl(serverEndpoint);
-              lResult.setMetadataServerUrl(serverEndpoint.replaceFirst("/u/", "/m/"));
-              return lResult;
-          }
+        ConnectorConfig cc;
+        cc = new ConnectorConfig();
+        configureTracing(cc);
+        configureProxy(cc);
+        String serverEndpoint = server;
+        if (!serverEndpoint.startsWith("http://") && !serverEndpoint.startsWith("https://"))
+            serverEndpoint = (new StringBuilder()).append("https://").append(serverEndpoint).toString();
+        if (!serverEndpoint.contains("/services/Soap/u/")) {
+            if (!serverEndpoint.endsWith("/"))
+                serverEndpoint = (new StringBuilder()).append(serverEndpoint).append("/").toString();
+            serverEndpoint = (new StringBuilder()).append(serverEndpoint).append("services/Soap/u/").append(WSDL_VERSION).toString();
+        } else if (!serverEndpoint.endsWith(String.valueOf(WSDL_VERSION)))
+            throw new RuntimeException("Server URL should point to API Version: " + WSDL_VERSION);
+        cc.setAuthEndpoint(serverEndpoint);
+        cc.setServiceEndpoint(serverEndpoint);
+        if (sessionId != null) {
+            LoginResult lResult = new LoginResult();
+            lResult.setSessionId(sessionId);
+            lResult.setServerUrl(serverEndpoint);
+            lResult.setMetadataServerUrl(serverEndpoint.replaceFirst("/u/", "/m/"));
+            return lResult;
+        }
 
-          cc.setManualLogin(true);
-          PartnerConnection pConn = Connector.newConnection(cc);
-          return pConn.login(username, password);
-      }
-
-
-      public SoapConnection getApexConnection() throws ConnectionException {
-          ConnectorConfig cc;
-          LoginResult lResult = doLogin();
-          cc = new ConnectorConfig();
-          configureTracing(cc);
-          configureProxy(cc);
-          cc.setSessionId(lResult.getSessionId());
-          String endpoint = lResult.getServerUrl();
-          int baseUrl = endpoint.indexOf("/services/Soap/u");
-          String serviceUrl = endpoint.substring(0, baseUrl);
-          cc.setServiceEndpoint((new StringBuilder()).append(serviceUrl).append("/services/Soap/s/").append(WSDL_VERSION).toString());
-          return com.sforce.soap.apex.Connector.newConnection(cc);
-      }
-
-      public MetadataConnection getMetadataConnection() throws ConnectionException {
-          ConnectorConfig cc;
-          LoginResult lResult = doLogin();
-          cc = new ConnectorConfig();
-          configureTracing(cc);
-          configureProxy(cc);
-          cc.setSessionId(lResult.getSessionId());
-          cc.setServiceEndpoint(lResult.getMetadataServerUrl());
+        cc.setManualLogin(true);
+        PartnerConnection pConn = Connector.newConnection(cc);
+        return pConn.login(username, password);
+    }
 
 
-          return com.sforce.soap.metadata.Connector.newConnection(cc);
-      }
+    public SoapConnection getApexConnection() throws ConnectionException {
+        ConnectorConfig cc;
+        LoginResult lResult = doLogin();
+        cc = new ConnectorConfig();
+        configureTracing(cc);
+        configureProxy(cc);
+        cc.setSessionId(lResult.getSessionId());
+        String endpoint = lResult.getServerUrl();
+        int baseUrl = endpoint.indexOf("/services/Soap/u");
+        String serviceUrl = endpoint.substring(0, baseUrl);
+        cc.setServiceEndpoint((new StringBuilder()).append(serviceUrl).append("/services/Soap/s/").append(WSDL_VERSION).toString());
+        return com.sforce.soap.apex.Connector.newConnection(cc);
+    }
 
-      public PartnerConnection getPartnerConnection() throws ConnectionException {
-          ConnectorConfig cc;
-          LoginResult lResult = doLogin();
-          cc = new ConnectorConfig();
-          configureTracing(cc);
-          configureProxy(cc);
-          cc.setSessionId(lResult.getSessionId());
-          cc.setServiceEndpoint(lResult.getServerUrl());
-          return new PartnerConnection(cc);
-      }
+    public MetadataConnection getMetadataConnection() throws ConnectionException {
+        ConnectorConfig cc;
+        LoginResult lResult = doLogin();
+        cc = new ConnectorConfig();
+        configureTracing(cc);
+        configureProxy(cc);
+        cc.setSessionId(lResult.getSessionId());
+        cc.setServiceEndpoint(lResult.getMetadataServerUrl());
+
+        return com.sforce.soap.metadata.Connector.newConnection(cc);
+    }
+
+    public PartnerConnection getPartnerConnection() throws ConnectionException {
+        ConnectorConfig cc;
+        LoginResult lResult = doLogin();
+        cc = new ConnectorConfig();
+        configureTracing(cc);
+        configureProxy(cc);
+        cc.setSessionId(lResult.getSessionId());
+        cc.setServiceEndpoint(lResult.getServerUrl());
+        return new PartnerConnection(cc);
+    }
+
+    public class RubbishRestConnection {
+        RestConnection conn;
+        public String url;
+        public String sessionId;
+    }
+
+    public RubbishRestConnection getBulkConnection() throws ConnectionException, AsyncApiException {
+        ConnectorConfig cc;
+        LoginResult lResult = doLogin();
+        cc = new ConnectorConfig();
+        configureTracing(cc);
+        configureProxy(cc);
+        cc.setSessionId(lResult.getSessionId());
+        cc.setServiceEndpoint(lResult.getServerUrl());
+        System.out.println("SID+" + lResult.getSessionId());
+     //   String apiVersion = "22.0";
+        String soapEndpoint = cc.getServiceEndpoint();
+        System.out.println("KJS GOT " + soapEndpoint);
+
+        String restEndpoint = soapEndpoint.substring(0, soapEndpoint.indexOf("Soap/"))
+                + "async/" + WSDL_VERSION;
+        cc.setRestEndpoint(restEndpoint);
+        // This should only be false when doing debugging.
+        cc.setCompression(true);
+        // Set this to true to see HTTP requests and responses on stdout
+        cc.setTraceMessage(false);
+//        RestConnection rc = new RestConnection(cc);
+        RubbishRestConnection rrc = new RubbishRestConnection();
+
+        rrc.url = cc.getRestEndpoint();
+        rrc.sessionId = cc.getSessionId();
+        return rrc;
+
+
+//        return null;
+    }
+
 
     private void configureTracing(ConnectorConfig cc) {
-           cc.setTraceMessage(trace);
-           cc.setPrettyPrintXml(trace);
-       }
+        cc.setTraceMessage(trace);
+        cc.setPrettyPrintXml(trace);
+    }
 
 
-       private void configureProxy(ConnectorConfig cc) {
-           String proxyHost = System.getProperty("http.proxyHost");
-           String proxyPort = System.getProperty("http.proxyPort");
-           if (proxyHost != null) {
-               if (proxyHost.startsWith("http://"))
-                   throw new RuntimeException("proxyHost should not start with: http://");
-               int port = proxyPort != null ? Integer.parseInt(proxyPort) : 80;
-               cc.setProxy(proxyHost, port);
-               String proxyUser = System.getProperty("http.proxyUser");
-               cc.setProxyUsername(proxyUser);
-               String proxyPassword = System.getProperty("http.proxyPassword");
-               cc.setProxyPassword(proxyPassword);
-               log((new StringBuilder()).append("Using proxy: ").append(proxyHost).append(":").append(port).append(proxyUser == null ? "" : (new StringBuilder()).append(" user ").append(proxyUser).toString()).toString());
-           }
-       }
+    private void configureProxy(ConnectorConfig cc) {
+        String proxyHost = System.getProperty("http.proxyHost");
+        String proxyPort = System.getProperty("http.proxyPort");
+        if (proxyHost != null) {
+            if (proxyHost.startsWith("http://"))
+                throw new RuntimeException("proxyHost should not start with: http://");
+            int port = proxyPort != null ? Integer.parseInt(proxyPort) : 80;
+            cc.setProxy(proxyHost, port);
+            String proxyUser = System.getProperty("http.proxyUser");
+            cc.setProxyUsername(proxyUser);
+            String proxyPassword = System.getProperty("http.proxyPassword");
+            cc.setProxyPassword(proxyPassword);
+            log((new StringBuilder()).append("Using proxy: ").append(proxyHost).append(":").append(port).append(proxyUser == null ? "" : (new StringBuilder()).append(" user ").append(proxyUser).toString()).toString());
+        }
+    }
 
 
     private void log(String msg) {
-          System.out.println(msg);
-      }
+        System.out.println(msg);
+    }
 }

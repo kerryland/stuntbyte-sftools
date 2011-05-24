@@ -1,4 +1,5 @@
 import com.fidelma.salesforce.jdbc.SfConnection;
+import com.fidelma.salesforce.misc.TestHelper;
 import com.fidelma.salesforce.misc.TypeHelper;
 import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.Error;
@@ -40,15 +41,15 @@ public class SelectEngineTests {
         Class.forName("com.fidelma.salesforce.jdbc.SfDriver");
 
         Properties info = new Properties();
-        info.put("user", "salesforce@fidelma.com");
-        info.put("password", "u9SABqa2dQxG0Y3kqWiJQVEwnYtryr1Ja1");
+        info.put("user", TestHelper.username);
+        info.put("password", TestHelper.password);
         info.put("standard", "true");
         info.put("includes", "Lead,Account");
         info.put("useLabels", "true");
 
         // Get a connection to the database
         conn = (SfConnection) DriverManager.getConnection(
-                "jdbc:sfdc:https://login.salesforce.com"
+                "jdbc:sfdc:" + TestHelper.loginUrl
                 , info);
 
         SfConnection sfConnection = (SfConnection) conn;
@@ -482,9 +483,13 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         id = checkSaveResult(pc.create(new SObject[]{ccc}));
         ccc.setId(id);
 
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        cal.set(2010, Calendar.FEBRUARY, 11, 23, 59, 59);
+
         bbb = new SObject();
         bbb.setType("bbb__c");
         bbb.addField("Name", "bbb Name");
+        bbb.addField("SomeDate__c", new java.util.Date(cal.getTimeInMillis())); // date__c
         bbb.addField("ccc__c", id);
         id = checkSaveResult(pc.create(new SObject[]{bbb}));
         bbb.setId(id);
@@ -552,6 +557,24 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals(bbb.getId(), rs.getString("bbb__c"));
         assertEquals(1, rs.getInt("expr0"));
 
+
+        // Try a group by date
+        rs = stmt.executeQuery(
+                "select phone__c, " +
+                        "bbb__r.SomeDate__c, count(*) " +
+                        " from aaa__c " +
+                        "where bbb__r.SomeDate__c != null " +
+                        "group by phone__c, bbb__r.SomeDate__c");
+
+        md = rs.getMetaData();
+        assertEquals(3, md.getColumnCount());
+        assertEquals("phone", rs.getMetaData().getColumnTypeName(1));
+        assertEquals("date", rs.getMetaData().getColumnTypeName(2));
+        assertEquals("string", rs.getMetaData().getColumnTypeName(3)); // TODO: Should be integer!
+
+        assertTrue(rs.next());
+
+        assertEquals("2010-02-11", rs.getDate(2).toString());
 
         // Remove BBB, CCC and DDD -- we should still get 4 columns returned!
         pc.delete(new String[]{ddd.getId(), ccc.getId(), bbb.getId()});
@@ -939,7 +962,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
 
     @Test
     public void testSelectStar() throws Exception {
-        int colCount = 28;
+        int colCount = 29;
 
         Statement stmt = conn.createStatement();
         int count = stmt.executeUpdate("insert into aaa__c(name, number4dp__c) values ('selectStar', 1)");

@@ -47,7 +47,7 @@ public class Select {
             sql = removeQuotedTableName(sql);
             sql = patchWhereZeroEqualsOne(sql);
             sql = patchCountStar(sql, parsedSelect.getColumns());
-            System.out.println("EXECUTE " + sql);
+            // System.out.println("EXECUTE " + sql);
 
             Integer oldBatchSize = 2000;
             if (pc.getQueryOptions() != null) {

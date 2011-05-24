@@ -29,7 +29,7 @@ public class ParsedSelect {
     }
 
     public void addToSql(String val) {
-        System.out.print(val + " ");
+        // System.out.print(val + " ");
         parsedSql += val + " ";
     }
 

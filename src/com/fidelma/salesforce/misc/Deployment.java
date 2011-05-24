@@ -29,11 +29,7 @@ public class Deployment {
     private Element packge;
     private Map<String, List<String>> types = new HashMap<String, List<String>>();
     private List<DeploymentResource> deploymentResources = new ArrayList<DeploymentResource>();
-    private String srcDirectory;
 
-    public Deployment(String srcDirectory) {
-        this.srcDirectory = srcDirectory;
-    }
 
     public void addMember(String typeName, String member, String code) throws Exception {
         List<String> members = types.get(typeName);

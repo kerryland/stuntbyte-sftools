@@ -79,7 +79,7 @@ public class SfStatement implements java.sql.Statement {
     public int executeUpdate(String sql) throws SQLException {
         try {
             sql = stripComments(sql);
-            System.out.println(sql);
+            // System.out.println(sql);
             generatedId = null;
             SimpleParser al = new SimpleParser(sql);
             LexicalToken token = al.getToken();

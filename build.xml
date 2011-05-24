@@ -24,7 +24,9 @@
         <javac srcdir="src"
                destdir="classes"
                debug="on">
-            <classpath location="lib/ant-salesforce.jar"/>
+            <!--<classpath location="lib/ant-salesforce.jar"/>-->
+            <classpath location="lib/wsdl-partner.jar"/>
+            <classpath location="lib/wsdl-metadata.jar"/>
             <classpath location="lib/hibernate-core-3.3.1.GA.jar"/>
             <!--<classpath location="lib/wsc-20-partner-21-java-5.jar"/>-->
             <!--<classpath location="lib/force-metadata-jdbc-driver-2.0.jar"/>-->
@@ -33,7 +35,16 @@
 
         <jar destfile="c:/apps/sql-workbench/drivers/sfdc-kjs-driver-2.jar">
             <fileset dir="classes"/>
-            <zipfileset includes="**/*.class" src="lib/ant-salesforce.jar"/>
+            <zipfileset includes="**/*.class" src="lib/wsc-20.jar"/>
+            <zipfileset includes="**/*.class" src="lib/wsdl-partner.jar"/>
+            <zipfileset includes="**/*.class" src="lib/wsdl-metadata.jar"/>
+            <zipfileset includes="**/*.class" src="lib/wsdl-apex.jar"/>
+
+
+            <!--<zipfileset includes="**/*.class" src="lib/ant-salesforce.jar"/>-->
+
+
+
             <!--<zipfileset includes="**/*.class" src="lib/wsc-20-partner-21-java-5.jar"/>-->
 
             <!--<zipfileset includes="**/*.class" src="lib/force-metadata-jdbc-driver-2.0.jar"/>-->

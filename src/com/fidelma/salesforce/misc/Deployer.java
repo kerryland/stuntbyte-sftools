@@ -48,7 +48,7 @@ public class Deployer {
         filename = new File(filename).getName();
         String nonSuffixedFilename = filename.substring(0, filename.lastIndexOf("."));
 
-        Deployment deployment = new Deployment(srcDirectory);
+        Deployment deployment = new Deployment();
         deployment.addMember(nonCodeType, nonSuffixedFilename, code);
         deployment.assemble();
 
@@ -59,7 +59,7 @@ public class Deployer {
         filename = new File(filename).getName();
         String nonSuffixedFilename = filename.substring(0, filename.lastIndexOf("."));
 
-        Deployment deployment = new Deployment(null);
+        Deployment deployment = new Deployment();
         deployment.addMember(nonCodeType, nonSuffixedFilename, null);
         deployment.assemble();
 
@@ -86,7 +86,7 @@ public class Deployer {
 
         // Destructive changes need an empty package.xml
         if (packageXmlName.equals("destructiveChanges.xml")) {
-            Deployment dummy = new Deployment(null);
+            Deployment dummy = new Deployment();
             dummy.assemble();
             out.putNextEntry(new ZipEntry("package.xml"));
             out.write(dummy.getPackageXml().getBytes());
@@ -122,12 +122,12 @@ public class Deployer {
     }
 
 
-    private String determineDirectory(String filename) {
-        File parent = new File(filename).getParentFile();
-        File child = new File(parent.getName(), new File(filename).getName());
-
-        return child.getPath();
-    }
+//    private String determineDirectory(String filename) {
+//        File parent = new File(filename).getParentFile();
+//        File child = new File(parent.getName(), new File(filename).getName());
+//
+//        return child.getPath();
+//    }
 
 
     private static final long ONE_SECOND = 1000;

@@ -1,5 +1,6 @@
 import com.fidelma.salesforce.misc.Deployer;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
+import com.fidelma.salesforce.misc.Downloader;
 import com.fidelma.salesforce.misc.LoginHelper;
 import com.sforce.soap.apex.CodeCoverageResult;
 import com.sforce.soap.apex.CompileAndTestRequest;
@@ -62,6 +63,7 @@ public class SalesfarceIDE {
     private LoginHelper loginHelper;
     private Deployer deployer;
     private SimpleListener listener = new SimpleListener();
+    private MetadataConnection metaDataConnection;
 
 //    private PrintWriter messageLog;
 
@@ -106,7 +108,9 @@ public class SalesfarceIDE {
         String password = prop.getProperty("sf.password");
 
         loginHelper = new LoginHelper(server, username, password);
-        deployer = new Deployer(loginHelper.getMetadataConnection());
+        metaDataConnection = loginHelper.getMetadataConnection();
+        deployer = new Deployer(metaDataConnection);
+
         return prop;
     }
 
@@ -477,13 +481,17 @@ public class SalesfarceIDE {
             crcs.load(new FileReader(crcFile));
         }
 
-//        System.out.println("DOWNLOAD FILE IS " + filename);
         String metadataType = detemineApexType(filename);
-//        String metadataType = determineTypeName(filename);
 
         String filenameNoPath = new File(filename).getName();
         filenameNoPath = getNoSuffix(filenameNoPath);
 
+        Downloader downloader = new Downloader(metaDataConnection, srcDir, listener, crcFile);
+        downloader.addPackage(metadataType, filenameNoPath);
+        downloader.download();
+/*
+
+        // TODOL: Fix ugly code duplication here and in downloadFiles
         List<String> files = new ArrayList<String>();
         files.add(filenameNoPath);
 
@@ -496,6 +504,7 @@ public class SalesfarceIDE {
 
         updateCrcs(crcs, result);
         crcs.store(new FileWriter(crcFile), "Generated file");
+        */
 
     }
 
@@ -510,18 +519,23 @@ public class SalesfarceIDE {
                 "ApexPage",
                 "ApexTrigger"};
 
-        for (String metadataType : metadataTypes) {
-            List<String> files = new ArrayList<String>();
-            files.add("*");
-            Package p = createPackage(metadataType, files);
-            RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
+        Downloader downloader = new Downloader(metaDataConnection, srcDir, listener, crcFile);
 
-            File result = deployer.retrieveZip(retrieveRequest, listener);
-            updateCrcs(crcs, result);
-            deployer.unzipFile(srcDir, result);
+        for (String metadataType : metadataTypes) {
+            downloader.addPackage(metadataType, "*");
+            downloader.download();
+
+//            List<String> files = new ArrayList<String>();
+//            files.add("*");
+//            Package p = createPackage(metadataType, files);
+//            RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
+//
+//            File result = deployer.retrieveZip(retrieveRequest, listener);
+//            updateCrcs(crcs, result);
+//            deployer.unzipFile(srcDir, result);
         }
 
-        crcs.store(new FileWriter(crcFile), "Generated file");
+//        crcs.store(new FileWriter(crcFile), "Generated file");
 
     }
 
@@ -538,7 +552,7 @@ public class SalesfarceIDE {
     }
 
 
-    protected RetrieveRequest prepareRequest(boolean isSinglePackage, String packageNames[], Package componentManifest) {
+    private RetrieveRequest prepareRequest(boolean isSinglePackage, String packageNames[], Package componentManifest) {
         RetrieveRequest retrieveRequest = new RetrieveRequest();
         retrieveRequest.setApiVersion(apiversion);
         retrieveRequest.setSinglePackage(isSinglePackage);

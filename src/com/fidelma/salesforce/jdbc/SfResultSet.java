@@ -600,8 +600,11 @@ public class SfResultSet implements java.sql.ResultSet {
     private Date getDate(Object o) throws SQLException {
         if (o == null) {
             return null;
-        } else if (o instanceof Date) {
-            return ((Date) o);
+        } else if (o instanceof java.sql.Date) {
+            return (Date) o;
+        } else if (o instanceof java.util.Date) {
+            java.util.Date d = (java.util.Date) o;
+            return new java.sql.Date(d.getTime());
         } else if (o instanceof String) {
             try {
                 java.util.Date d = dateSdf.parse((String) o);
@@ -610,7 +613,7 @@ public class SfResultSet implements java.sql.ResultSet {
                 throw new SQLException("No type conversion to Date available for " + o);
             }
         } else {
-            throw new SQLException("No type conversion to Date available for " + o);
+            throw new SQLException("No type conversion to Date available for " + o + " " + o.getClass().getName());
         }
     }
 
