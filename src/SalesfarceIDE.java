@@ -378,9 +378,11 @@ public class SalesfarceIDE {
 
         CompileAndTestResult compileTestResult = connection.compileAndTest(request);
 
-        FileWriter fw = new FileWriter(new File(debugFile));
-        fw.write(connection.getDebuggingInfo().getDebugLog());
-        fw.close();
+        if (name.contains("Test") && runTests) {
+            FileWriter fw = new FileWriter(new File(debugFile));
+            fw.write(connection.getDebuggingInfo().getDebugLog());
+            fw.close();
+        }
 
         if (!compileTestResult.isSuccess()) {
 
@@ -486,7 +488,7 @@ public class SalesfarceIDE {
         String filenameNoPath = new File(filename).getName();
         filenameNoPath = getNoSuffix(filenameNoPath);
 
-        Downloader downloader = new Downloader(metaDataConnection, srcDir, listener, crcFile);
+        Downloader downloader = new Downloader(metaDataConnection, new File(srcDir), listener, crcFile);
         downloader.addPackage(metadataType, filenameNoPath);
         downloader.download();
 /*
@@ -511,7 +513,7 @@ public class SalesfarceIDE {
 
     public void downloadFiles(String srcDir, File crcFile) throws Exception {
         crcFile.createNewFile();
-        Properties crcs = new Properties();
+//        Properties crcs = new Properties();
 
         String[] metadataTypes = new String[]{
                 "ApexClass",
@@ -519,7 +521,7 @@ public class SalesfarceIDE {
                 "ApexPage",
                 "ApexTrigger"};
 
-        Downloader downloader = new Downloader(metaDataConnection, srcDir, listener, crcFile);
+        Downloader downloader = new Downloader(metaDataConnection, new File(srcDir), listener, crcFile);
 
         for (String metadataType : metadataTypes) {
             downloader.addPackage(metadataType, "*");

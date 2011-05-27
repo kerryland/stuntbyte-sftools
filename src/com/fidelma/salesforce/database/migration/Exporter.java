@@ -1,4 +1,4 @@
-package com.fidelma.salesforce.database.exporter;
+package com.fidelma.salesforce.database.migration;
 
 import com.fidelma.salesforce.jdbc.SfConnection;
 import com.fidelma.salesforce.jdbc.metaforce.Column;
@@ -36,8 +36,7 @@ public class Exporter {
     }
 
 
-    public void createLocalSchema(SfConnection sfConnection, Connection localConnection) throws SQLException {
-
+    public List<Table> createLocalSchema(SfConnection sfConnection, Connection localConnection) throws SQLException {
         ResultSetFactory rsf = sfConnection.getMetaDataFactory();
         List<Table> tables = rsf.getTables();
 
@@ -74,42 +73,45 @@ public class Exporter {
                 sb.replace(sb.length(), sb.length(), ")");
 
                 stmt.execute(sb.toString());
-
             }
         }
 
-        for (Table table : tables) {
-            if (table.getType().equals("TABLE")) {
-//            if (table.getName().equalsIgnoreCase("ACCOUNT")) {
-                StringBuilder sb = new StringBuilder();
+        return tables;
+    }
 
-                String tableName = table.getName();
-                if (!tableName.endsWith("__c")) {
-                    tableName += "__s";   // Make sure we don't fail on the GROUP table...
-                }
 
-                PreparedStatement pstmt = sfConnection.prepareStatement("select * from " + table.getName());
-                ResultSet rs = pstmt.executeQuery();
+    public void downloadData(SfConnection sfConnection, Connection localConnection, List<ExportCriteria> exportCriteriaList) throws SQLException {
 
-                StringBuilder columns = new StringBuilder();
-                StringBuilder values = new StringBuilder();
-                columns.append("insert into ").append(tableName).append(" (");
+        for (ExportCriteria criteria : exportCriteriaList) {
+//            StringBuilder sb = new StringBuilder();
+
+            String tableName = criteria.tableName;
+            if (!tableName.endsWith("__c")) {
+                tableName += "__s";   // Make sure we don't fail on the GROUP table...
+            }
+
+            PreparedStatement pstmt = sfConnection.prepareStatement(
+                    "select * from " + criteria.tableName + " " + criteria.whereClause);
+            ResultSet rs = pstmt.executeQuery();
+
+            StringBuilder columns = new StringBuilder();
+            StringBuilder values = new StringBuilder();
+            columns.append("insert into ").append(tableName).append(" (");
+            for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+                columns.append(rs.getMetaData().getColumnName(i)).append(",");
+                values.append("?,");
+            }
+            columns.replace(columns.length(), columns.length(), ") values (");
+            columns.append(values);
+            columns.replace(columns.length(), columns.length(), ")");
+
+            PreparedStatement pinsert = localConnection.prepareStatement(columns.toString());
+
+            while (rs.next()) {
                 for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
-                    columns.append(rs.getMetaData().getColumnName(i)).append(",");
-                    values.append("?,");
+                    pinsert.setObject(i, rs.getObject(i));
                 }
-                columns.replace(columns.length(), columns.length(), ") values (");
-                columns.append(values);
-                columns.replace(columns.length(), columns.length(), ")");
-
-                PreparedStatement pinsert= localConnection.prepareStatement(columns.toString());
-
-                while (rs.next()) {
-                    for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
-                        pinsert.setObject(i, rs.getObject(i));
-                    }
-                    pinsert.executeUpdate();
-                }
+                pinsert.executeUpdate();
             }
         }
     }
@@ -136,6 +138,10 @@ public class Exporter {
     }
 
 
+    /*
+    http://www.salesforce.com/us/developer/docs/api_asynch/index_Left.htm#StartTopic=Content/asynch_api_reference_jobinfo.htm
+
+     */
     public void exportSalesforceViaBatch() throws Exception {
         LoginHelper.RubbishRestConnection conn = loginHelper.getBulkConnection();
 
@@ -198,11 +204,13 @@ public class Exporter {
     public static void main(String[] args) throws Exception {
 
         LoginHelper loginHelper = new LoginHelper("https://login.salesforce.com",
-                "salesforce@fidelma.com",
-                "u9SABqa2dQxG0Y3kqWiJQVEwnYtryr1Ja1");
+                "kerry@fidelma.com",
+                "g2Py8oPzevwDahQQrFnO4GfKHDr9eDhL");
+//                "salesforce@fidelma.com",
+//                "u9SABqa2dQxG0Y3kqWiJQVEwnYtryr1Ja1");
 
         Exporter exporter = new Exporter(loginHelper);
-//        exporter.exportSalesforce();
+        exporter.exportSalesforceViaBatch();
 
     }
 

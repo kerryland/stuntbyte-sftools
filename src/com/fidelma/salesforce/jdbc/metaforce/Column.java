@@ -158,4 +158,9 @@ public class Column {
     public void setType(String type) {
         this.type = type;
     }
+
+    public Boolean isCustom() {
+        return name.toUpperCase().endsWith("__C");
+    }
+
 }

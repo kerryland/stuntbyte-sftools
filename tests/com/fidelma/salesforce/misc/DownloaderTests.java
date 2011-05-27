@@ -27,7 +27,7 @@ public class DownloaderTests {
 //        crcFile.deleteOnExit();
 
         MetadataConnection metaConnection = lh.getMetadataConnection();
-        Downloader dl = new Downloader(metaConnection, dir, new Notice(), crcFile);
+        Downloader dl = new Downloader(metaConnection, new File(dir), new Notice(), crcFile);
         dl.addPackage("CustomObject", "Lead");
         dl.addPackage("CustomObject", "aaa__c");
         dl.download();

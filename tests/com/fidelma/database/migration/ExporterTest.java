@@ -1,23 +1,20 @@
-package com.fidelma.database.exporter;
+package com.fidelma.database.migration;
 
-import com.fidelma.salesforce.database.exporter.Exporter;
+import com.fidelma.salesforce.database.migration.Exporter;
 import com.fidelma.salesforce.jdbc.SfConnection;
 import com.fidelma.salesforce.misc.TestHelper;
 import org.h2.util.ScriptReader;
 import org.junit.Test;
 
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
-import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Properties;
 
 import static org.junit.Assert.*;

@@ -24,7 +24,7 @@ public class SimpleParserTests {
 
         assertEquals(2, ps.getColumns().size());
 
-        assertEquals("COMPANY", ps.getColumns().get(0).getName());
+        assertEquals("Company", ps.getColumns().get(0).getName());
         assertEquals(false, ps.getColumns().get(0).isAlias());
         assertEquals(false, ps.getColumns().get(0).isFunction());
 
@@ -55,7 +55,7 @@ public class SimpleParserTests {
 //
 
         assertEquals(4, ps.getColumns().size());
-        assertEquals("COMPANY", ps.getColumns().get(0).getName());
+        assertEquals("company", ps.getColumns().get(0).getName());
         assertEquals(false, ps.getColumns().get(0).isAlias());
         assertEquals(false, ps.getColumns().get(0).isFunction());
 

@@ -33,16 +33,17 @@ import java.util.zip.ZipInputStream;
  */
 public class Downloader {
     private MetadataConnection metaDataConnection;
-    private String srcDir;
+    private File srcDir;
     private DeploymentEventListener listener;
     private File crcFile;
     private Properties crcs = new Properties();
 
     private Map<String, List<String>> metaDataFiles = new HashMap<String, List<String>>();
+    private File zipFile;
 
 
     public Downloader(MetadataConnection metaDataConnection,
-                      String srcDir,
+                      File srcDir,
                       DeploymentEventListener listener,
                       File crcFile) throws IOException {
         this.metaDataConnection = metaDataConnection;
@@ -50,12 +51,13 @@ public class Downloader {
         this.listener = listener;
         this.crcFile = crcFile;
 
-        if (crcFile.exists()) {
+        if ((crcFile != null) && (crcFile.exists())) {
             crcs.load(new FileReader(crcFile));
         }
     }
 
 
+    // http://www.salesforce.com/us/developer/docs/daas/Content/daas_package.htm
     public void addPackage(String metadataType, String name) {
         List<String> files = metaDataFiles.get(metadataType);
         if (files == null) {
@@ -76,11 +78,13 @@ public class Downloader {
             com.sforce.soap.metadata.Package p = createPackage(metadataType, files);
             RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
 
-            File result = retrieveZip(retrieveRequest, listener);
+            zipFile = retrieveZip(retrieveRequest, listener);
             // Find our file and rewrite the local one
-            unzipFile(srcDir, result);
-            updateCrcs(crcs, result);
-            crcs.store(new FileWriter(crcFile), "Generated file");
+            unzipFile(srcDir, zipFile);
+            if (crcFile != null) {
+                updateCrcs(crcs, zipFile);
+                crcs.store(new FileWriter(crcFile), "Generated file");
+            }
         }
         System.out.println("HERE DONE");
     }
@@ -127,7 +131,6 @@ public class Downloader {
     // maximum number of attempts to deploy the zip file
 
     private static final int MAX_NUM_POLL_REQUESTS = 50;
-
 
 
     public File retrieveZip(RetrieveRequest retrieveRequest, DeploymentEventListener listener) throws Exception {
@@ -193,7 +196,7 @@ public class Downloader {
     }
 
 
-    public void unzipFile(String srcDir, File zipFile) throws Exception {
+    public void unzipFile(File srcDir, File zipFile) throws Exception {
         BufferedOutputStream out = null;
         ZipInputStream in = new ZipInputStream(new BufferedInputStream(new FileInputStream(zipFile)));
         ZipEntry entry;
@@ -229,5 +232,9 @@ public class Downloader {
             }
             buffer.clear();
         }
+    }
+
+    public File getZipFile() {
+        return zipFile;
     }
 }

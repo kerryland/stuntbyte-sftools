@@ -88,7 +88,7 @@ public class Deployment {
 
             addTextElement(typesNode, "name", typeName);
         }
-        addTextElement(packge, "version", "20.0");
+        addTextElement(packge, "version", "20.0");  // TODO not hardcode
     }
 
     private Element addTextElement(Node parent, String elementName, String value) {

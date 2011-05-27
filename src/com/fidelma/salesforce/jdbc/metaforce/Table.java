@@ -56,7 +56,15 @@ public class Table {
         columnMap.remove(columnName.toUpperCase());
     }
 
+    /**
+     * @return "TABLE" : "SYSTEM TABLE"
+     *
+     */
     public String getType() {
         return type;
+    }
+
+    public Boolean isCustom() {
+        return name.toUpperCase().endsWith("__C");
     }
 }

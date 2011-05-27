@@ -9,6 +9,7 @@ import com.sforce.soap.partner.LoginResult;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
+import com.sforce.ws.wsdl.Part;
 
 /**
  * Created by IntelliJ IDEA.
@@ -69,42 +70,56 @@ public class LoginHelper {
         return pConn.login(username, password);
     }
 
+    private SoapConnection soapConnection;
 
     public SoapConnection getApexConnection() throws ConnectionException {
-        ConnectorConfig cc;
-        LoginResult lResult = doLogin();
-        cc = new ConnectorConfig();
-        configureTracing(cc);
-        configureProxy(cc);
-        cc.setSessionId(lResult.getSessionId());
-        String endpoint = lResult.getServerUrl();
-        int baseUrl = endpoint.indexOf("/services/Soap/u");
-        String serviceUrl = endpoint.substring(0, baseUrl);
-        cc.setServiceEndpoint((new StringBuilder()).append(serviceUrl).append("/services/Soap/s/").append(WSDL_VERSION).toString());
-        return com.sforce.soap.apex.Connector.newConnection(cc);
+        if (soapConnection == null) {
+            ConnectorConfig cc;
+            LoginResult lResult = doLogin();
+            cc = new ConnectorConfig();
+            configureTracing(cc);
+            configureProxy(cc);
+            cc.setSessionId(lResult.getSessionId());
+            String endpoint = lResult.getServerUrl();
+            int baseUrl = endpoint.indexOf("/services/Soap/u");
+            String serviceUrl = endpoint.substring(0, baseUrl);
+            cc.setServiceEndpoint((new StringBuilder()).append(serviceUrl).append("/services/Soap/s/").append(WSDL_VERSION).toString());
+            soapConnection = com.sforce.soap.apex.Connector.newConnection(cc);
+        }
+        return soapConnection;
     }
+
+    private MetadataConnection metadataConnection;
 
     public MetadataConnection getMetadataConnection() throws ConnectionException {
-        ConnectorConfig cc;
-        LoginResult lResult = doLogin();
-        cc = new ConnectorConfig();
-        configureTracing(cc);
-        configureProxy(cc);
-        cc.setSessionId(lResult.getSessionId());
-        cc.setServiceEndpoint(lResult.getMetadataServerUrl());
+        if (metadataConnection == null) {
+            ConnectorConfig cc;
+            LoginResult lResult = doLogin();
+            cc = new ConnectorConfig();
+            configureTracing(cc);
+            configureProxy(cc);
+            cc.setSessionId(lResult.getSessionId());
+            cc.setServiceEndpoint(lResult.getMetadataServerUrl());
 
-        return com.sforce.soap.metadata.Connector.newConnection(cc);
+            metadataConnection = com.sforce.soap.metadata.Connector.newConnection(cc);
+        }
+        return metadataConnection;
     }
 
+    private PartnerConnection partnerConnection;
+
     public PartnerConnection getPartnerConnection() throws ConnectionException {
-        ConnectorConfig cc;
-        LoginResult lResult = doLogin();
-        cc = new ConnectorConfig();
-        configureTracing(cc);
-        configureProxy(cc);
-        cc.setSessionId(lResult.getSessionId());
-        cc.setServiceEndpoint(lResult.getServerUrl());
-        return new PartnerConnection(cc);
+        if (partnerConnection == null) {
+            ConnectorConfig cc;
+            LoginResult lResult = doLogin();
+            cc = new ConnectorConfig();
+            configureTracing(cc);
+            configureProxy(cc);
+            cc.setSessionId(lResult.getSessionId());
+            cc.setServiceEndpoint(lResult.getServerUrl());
+            partnerConnection = new PartnerConnection(cc);
+        }
+        return partnerConnection;
     }
 
     public class RubbishRestConnection {
@@ -113,32 +128,37 @@ public class LoginHelper {
         public String sessionId;
     }
 
+    private RubbishRestConnection bulkConnection;
+
     public RubbishRestConnection getBulkConnection() throws ConnectionException, AsyncApiException {
-        ConnectorConfig cc;
-        LoginResult lResult = doLogin();
-        cc = new ConnectorConfig();
-        configureTracing(cc);
-        configureProxy(cc);
-        cc.setSessionId(lResult.getSessionId());
-        cc.setServiceEndpoint(lResult.getServerUrl());
-        System.out.println("SID+" + lResult.getSessionId());
-     //   String apiVersion = "22.0";
-        String soapEndpoint = cc.getServiceEndpoint();
-        System.out.println("KJS GOT " + soapEndpoint);
+        if (bulkConnection == null) {
+            ConnectorConfig cc;
+            LoginResult lResult = doLogin();
+            cc = new ConnectorConfig();
+            configureTracing(cc);
+            configureProxy(cc);
+            cc.setSessionId(lResult.getSessionId());
+            cc.setServiceEndpoint(lResult.getServerUrl());
+            System.out.println("SID+" + lResult.getSessionId());
+            //   String apiVersion = "22.0";
+            String soapEndpoint = cc.getServiceEndpoint();
+            System.out.println("KJS GOT " + soapEndpoint);
 
-        String restEndpoint = soapEndpoint.substring(0, soapEndpoint.indexOf("Soap/"))
-                + "async/" + WSDL_VERSION;
-        cc.setRestEndpoint(restEndpoint);
-        // This should only be false when doing debugging.
-        cc.setCompression(true);
-        // Set this to true to see HTTP requests and responses on stdout
-        cc.setTraceMessage(false);
+            String restEndpoint = soapEndpoint.substring(0, soapEndpoint.indexOf("Soap/"))
+                    + "async/" + WSDL_VERSION;
+            cc.setRestEndpoint(restEndpoint);
+            // This should only be false when doing debugging.
+            cc.setCompression(true);
+            // Set this to true to see HTTP requests and responses on stdout
+            cc.setTraceMessage(false);
 //        RestConnection rc = new RestConnection(cc);
-        RubbishRestConnection rrc = new RubbishRestConnection();
+            RubbishRestConnection rrc = new RubbishRestConnection();
 
-        rrc.url = cc.getRestEndpoint();
-        rrc.sessionId = cc.getSessionId();
-        return rrc;
+            rrc.url = cc.getRestEndpoint();
+            rrc.sessionId = cc.getSessionId();
+            bulkConnection = rrc;
+        }
+        return bulkConnection;
 
 
 //        return null;

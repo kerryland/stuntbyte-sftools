@@ -136,7 +136,7 @@ public class Deployer {
     private static final int MAX_NUM_POLL_REQUESTS = 50;
 
 
-    private void deployZip(File zipFile, DeploymentEventListener listener) throws Exception {
+    public void deployZip(File zipFile, DeploymentEventListener listener) throws Exception {
 //           System.out.println("FILE IS " + zipFile.getAbsolutePath());
         byte zipBytes[] = readZipFile(zipFile);
         DeployOptions deployOptions = new DeployOptions();
