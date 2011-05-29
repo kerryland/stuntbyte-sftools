@@ -2,7 +2,6 @@ package com.fidelma.salesforce.jdbc;
 
 import com.fidelma.salesforce.jdbc.ddl.AlterTable;
 import com.fidelma.salesforce.jdbc.ddl.CreateTable;
-import com.fidelma.salesforce.jdbc.ddl.DropColumn;
 import com.fidelma.salesforce.jdbc.ddl.DropTable;
 import com.fidelma.salesforce.jdbc.dml.Delete;
 import com.fidelma.salesforce.jdbc.dml.Insert;
@@ -15,18 +14,17 @@ import com.fidelma.salesforce.misc.LoginHelper;
 import com.fidelma.salesforce.parse.SimpleParser;
 import com.sforce.soap.metadata.MetadataConnection;
 import com.sforce.soap.partner.*;
+import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,7 +57,7 @@ public class SfStatement implements java.sql.Statement {
 
     private String stripComments(String sql) {
         LineNumberReader r = new LineNumberReader(new StringReader(sql));
-        String line = null;
+        String line;
         StringBuilder result = new StringBuilder();
         try {
             line = r.readLine();
@@ -76,7 +74,30 @@ public class SfStatement implements java.sql.Statement {
         return result.toString();
     }
 
+    enum DmlType {INSERT, UPDATE, DELETE}
+
+    private DmlType batchDmlType = null;
+    private List<SObject> batchSObjects = new ArrayList<SObject>();
+    private List<Integer> batchResults = new ArrayList<Integer>();
+
     public int executeUpdate(String sql) throws SQLException {
+        return executeUpdate(sql, false);
+    }
+
+    protected boolean isBatchMode() {
+        return batchDmlType != null;
+    }
+
+    private void checkBatchMode(Boolean batchMode, DmlType checkType) throws SQLException {
+        if (batchMode) {
+            if ((batchDmlType != null) && (batchDmlType != checkType)) {
+                throw new SQLException("Batchmode only supports one DML type per statement");
+            }
+            batchDmlType = checkType;
+        }
+    }
+
+    public int executeUpdate(String sql, Boolean batchMode) throws SQLException {
         try {
             sql = stripComments(sql);
             // System.out.println(sql);
@@ -86,17 +107,23 @@ public class SfStatement implements java.sql.Statement {
 
             updateCount = 0;
             if (token.getValue().equalsIgnoreCase("UPDATE")) {
+                checkBatchMode(batchMode, DmlType.UPDATE);
                 Update update = new Update(al, sfConnection.getMetaDataFactory(), pc);
-                updateCount = update.execute();
+                updateCount = update.execute(batchMode, batchSObjects);
 
             } else if (token.getValue().equalsIgnoreCase("INSERT")) {
+                checkBatchMode(batchMode, DmlType.INSERT);
                 Insert insert = new Insert(al, sfConnection.getMetaDataFactory(), pc);
-                updateCount = insert.execute();
+                updateCount = insert.execute(batchMode, batchSObjects);
                 generatedId = insert.getGeneratedId();
 
             } else if (token.getValue().equalsIgnoreCase("DELETE")) {
+                checkBatchMode(batchMode, DmlType.DELETE);
                 Delete delete = new Delete(al, pc);
-                updateCount = delete.execute();
+                updateCount = delete.execute(batchMode, batchSObjects);
+
+            } else if (batchMode) {
+                throw new SQLException(token.getValue() + " command not supported in batch mode");
 
             } else if (token.getValue().equalsIgnoreCase("CREATE")) {
                 al.read("TABLE");
@@ -121,6 +148,10 @@ public class SfStatement implements java.sql.Statement {
             } else if (token.getValue().equalsIgnoreCase("ROLLBACK")) {
             } else {
                 throw new SQLException("Unsupported command " + token.getValue());
+            }
+
+            if (batchMode) {
+                batchResults.add(updateCount);
             }
 
             return updateCount;
@@ -276,16 +307,44 @@ public class SfStatement implements java.sql.Statement {
 
 
     public void addBatch(String sql) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        executeUpdate(sql, true);
     }
 
     public void clearBatch() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
-
+        batchSObjects.clear();
     }
 
     public int[] executeBatch() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        try {
+            SObject[] arr = new SObject[batchSObjects.size()];
+            batchSObjects.toArray(arr);
+
+            // TODO: Handle max sobjects per call of 200!
+            if (batchDmlType == DmlType.INSERT) {
+                Insert insert = new Insert(null, sfConnection.getMetaDataFactory(), pc);
+                insert.saveSObjects(arr);
+
+            } else if (batchDmlType == DmlType.UPDATE) {
+                Update update = new Update(null, sfConnection.getMetaDataFactory(), pc);
+                update.saveSObjects(arr);
+
+            } else if (batchDmlType == DmlType.DELETE) {
+                Delete delete = new Delete(null, pc);
+                delete.deleteSObjects(arr);
+            }
+            clearBatch();
+            batchDmlType = null;
+
+        } catch (ConnectionException e) {
+            throw new SQLException(e);
+        }
+
+        int[] br = new int[batchResults.size()];
+        int i = 0;
+        for (Integer batchResult : batchResults) {
+            br[i++] = batchResult;
+        }
+        return br;
     }
 
 

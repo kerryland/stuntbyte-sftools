@@ -182,7 +182,7 @@ public class CreateTable {
                 if (value == null || (!value.equals(",") && !value.equals(")"))) {
                     throw new SQLException("Expected , or ) -- not " + value);
                 }
-                System.out.println("End of coldef with=" + value);
+//                System.out.println("End of coldef with=" + value);
                 columnName = al.getValue();
             }
         }

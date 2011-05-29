@@ -703,6 +703,28 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals(1, foundCount);
     }
 
+    @Test
+    public void testUpdateBatch() throws Exception {
+        Statement stmt = conn.createStatement();
+        stmt.addBatch("update Lead\n" +
+                " set FirstName = 'wibbleZ', phone='0800yyy'," +
+                " NumberOfEmployees=7 where LastName = '" + surname + "'");
+        stmt.executeBatch();
+
+        ResultSet rs = stmt.executeQuery("select FirstName, Phone, Lastname, AnnualRevenue, NumberOfEmployees" +
+                " from Lead where lastName = '" + surname + "'");
+
+        int foundCount = 0;
+        while (rs.next()) {
+            foundCount++;
+            assertEquals("wibbleZ", rs.getString("FirstName"));
+            assertEquals(surname, rs.getString("LastName"));
+            assertEquals("0800yyy", rs.getString("Phone"));
+            assertEquals(7, rs.getInt("NumberOfEmployees"));
+        }
+        assertEquals(1, foundCount);
+    }
+
 
     @Test
     public void testPreparedUpdate() throws Exception {
@@ -737,6 +759,13 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         }
         assertEquals(1, foundCount);
     }
+
+    //TODO Test prepared batch update
+    //TODO Test prepared batch insert
+    //TODO Test prepared batch delete
+    //TODO Test batch insert
+    //TODO Test batch delete
+
 
     @Test
     public void testInsert() throws Exception {

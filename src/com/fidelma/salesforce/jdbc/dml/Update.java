@@ -11,7 +11,9 @@ import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,7 +32,7 @@ public class Update {
         this.pc = pc;
     }
 
-    public int execute() throws Exception {
+    public int execute(Boolean batchMode, List<SObject> batchSObjects) throws Exception {
         LexicalToken token;
         int count=0;
         String table = al.getToken().getValue();
@@ -86,7 +88,7 @@ public class Update {
 
             qr = pc.query(readSoql.toString());
 
-            SObject[] input = qr.getRecords();
+//            SObject[] input = qr.getRecords();
 
             SObjectChunker chunker = new SObjectChunker(MAX_UPDATES_PER_CALL, pc, qr);
             while (chunker.next()) {
@@ -104,16 +106,14 @@ public class Update {
                         Object value = TypeHelper.dataTypeConvert((String) values.get(key), dataType);
                         sObject.setField(key, value);
                     }
+
+                    if (batchMode) {
+                        batchSObjects.add(sObject);
+                    }
                 }
 
-                SaveResult[] sr = pc.update(update);
-                for (SaveResult saveResult : sr) {
-                    if (!saveResult.isSuccess()) {
-                        com.sforce.soap.partner.Error[] errors = saveResult.getErrors();
-                        for (Error error : errors) {
-                            throw new SQLException(error.getMessage());
-                        }
-                    }
+                if (!batchMode) {
+                    saveSObjects(update);
                 }
                 count += sObjects.length;
             }
@@ -125,4 +125,21 @@ public class Update {
     }
 
 
+    public void saveSObjects(SObject[] update) throws SQLException {
+        try {
+            SaveResult[] sr = pc.update(update);
+            for (SaveResult saveResult : sr) {
+                if (!saveResult.isSuccess()) {
+                    Error[] errors = saveResult.getErrors();
+                    for (Error error : errors) {
+                        throw new SQLException(error.getMessage());
+                    }
+                }
+            }
+        } catch (ConnectionException e) {
+            throw new SQLException(e);
+        }
+
+
+    }
 }

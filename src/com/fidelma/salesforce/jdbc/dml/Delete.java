@@ -1,6 +1,5 @@
 package com.fidelma.salesforce.jdbc.dml;
 
-import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
 import com.fidelma.salesforce.parse.SimpleParser;
 import com.sforce.soap.partner.DeleteResult;
@@ -12,6 +11,7 @@ import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  */
@@ -26,7 +26,7 @@ public class Delete {
         this.pc = pc;
     }
 
-    public int execute() throws Exception {
+    public int execute(Boolean batchMode, List<SObject> batchSObjects) throws Exception {
         al.read("FROM");
 
         LexicalToken token;
@@ -64,7 +64,13 @@ public class Delete {
             SObjectChunker chunker = new SObjectChunker(MAX_DELETES_PER_CALL, pc, qr);
             while (chunker.next()) {
                 SObject[] sObjects = chunker.nextChunk();
-                deleteChunk(sObjects);
+                if (batchMode) {
+                    for (SObject sObject : sObjects) {
+                        batchSObjects.add(sObject);
+                    }
+                } else {
+                    deleteSObjects(sObjects);
+                }
                 count+=sObjects.length;
             }
 
@@ -82,20 +88,24 @@ public class Delete {
         return count;
     }
 
-    private void deleteChunk(SObject[] chunk) throws ConnectionException, SQLException {
-        String[] delete = new String[chunk.length];
-        for (int i = 0; i < chunk.length; i++) {
-            SObject sObject = chunk[i];
-            delete[i] = sObject.getId();
-        }
-        DeleteResult[] sr = pc.delete(delete);
-        for (DeleteResult deleteResult : sr) {
-            if (!deleteResult.isSuccess()) {
-                Error[] errors = deleteResult.getErrors();
-                for (Error error : errors) {
-                    throw new SQLException(error.getMessage());
+    public void deleteSObjects(SObject[] chunk) throws SQLException {
+        try {
+            String[] delete = new String[chunk.length];
+            for (int i = 0; i < chunk.length; i++) {
+                SObject sObject = chunk[i];
+                delete[i] = sObject.getId();
+            }
+            DeleteResult[] sr = pc.delete(delete);
+            for (DeleteResult deleteResult : sr) {
+                if (!deleteResult.isSuccess()) {
+                    Error[] errors = deleteResult.getErrors();
+                    for (Error error : errors) {
+                        throw new SQLException(error.getMessage());
+                    }
                 }
             }
+        } catch (ConnectionException e) {
+            throw new SQLException(e);
         }
     }
 

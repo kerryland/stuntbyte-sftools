@@ -91,7 +91,7 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
         int ptr = 0;
 
         while (ptr < tokenizedSoql.size()) {
-            String s= tokenizedSoql.get(ptr);
+            String s = tokenizedSoql.get(ptr);
             if (oldTypeCount && s.equalsIgnoreCase("COUNT")) {
                 soql.append("count() ");
                 ptr = ptr + 2; // skip the tokenised brackets
@@ -177,9 +177,6 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
 
     }
 
-
-
-
     private void setParameter(int parameterIndex, String x) throws SQLException {
         Integer soqlIndex = paramMap.get(parameterIndex);
         if (soqlIndex == null) {
@@ -216,6 +213,10 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
 
 
     public boolean execute() throws SQLException {
+        if (isBatchMode()) {
+            executeBatch();
+            return true;
+        }
         if (this.tokenizedSoql.size() > 0) {
             if (tokenizedSoql.get(0).toUpperCase().startsWith("SELECT")) {
                 executeQuery();
@@ -228,7 +229,7 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
     }
 
     public void addBatch() throws SQLException {
-
+        executeUpdate(assembleSoql(), true);
     }
 
     public void setCharacterStream(int parameterIndex, Reader reader, int length) throws SQLException {

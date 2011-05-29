@@ -44,7 +44,7 @@ public class Migrator {
          */
         // Copy metadata from source instance to target instance
         File sourceSchemaDir = new File(System.getProperty("java.io.tmpdir"),
-                "SF-SRC" + System.currentTimeMillis()) ;  // TODO: This must be unique
+                "SF-SRC" + System.currentTimeMillis());  // TODO: This must be unique
         sourceSchemaDir.mkdir();
 
         DeploymentEventListener del = new DeploymentEventListener() {
@@ -66,25 +66,9 @@ public class Migrator {
         }
         sourceDownloader.download();
 
-        // Obliterate the destination instance
-        // Decide what to remove
-        Deployment undeploy = new Deployment();
-        tables = targetInstance.getMetaDataFactory().getTables();
-        for (Table table : tables) {
-            if (table.getType().equals("TABLE")) {
-                for (Column column : table.getColumns()) {
-                    if (table.isCustom()) {
-                        undeploy.addMember("CustomObject", table.getName(), null);
-                    } else if (column.isCustom()) {
-                        undeploy.addMember("CustomField", table.getName() + "." + column.getName(), null);
-                    }
-                }
-            }
-        }
-
         // Remove everything!
-        Deployer targetDeployer = new Deployer(targetInstance.getHelper().getMetadataConnection());
-        targetDeployer.undeploy(undeploy, del);
+        Deployer targetDeployer = deleteAllTables(targetInstance, del);
+
 
         // Upload schema to destination instance
         targetDeployer.deployZip(sourceDownloader.getZipFile(), del);
@@ -95,8 +79,67 @@ public class Migrator {
         // Update all relationship references to the new ids
 
 
+        // sourceSchemaDir.delete();
+    }
 
-       // sourceSchemaDir.delete();
+    public Deployer deleteAllTables(SfConnection targetInstance, DeploymentEventListener del) throws Exception {
+
+        // TODO: Insufficient to just delete tables. Must delete code, case escalation rules, EVERYTHING
+
+        // Decide what to remove
+        Deployment undeploy = new Deployment();
+
+        // TODO: * does not work. Need to name them explicitly
+        // simplest option prob to download via * and then
+        // just renamed package.xml to destructiveChanges.xml
+
+//        undeploy.addMember("ApexClass", "*", null);
+//        undeploy.addMember("ArticleType", "*", null);
+//        undeploy.addMember("ApexComponent", "*", null);
+//        undeploy.addMember("ApexPage", "*", null);
+//        undeploy.addMember("ApexTrigger", "*", null);
+//        undeploy.addMember("CustomApplication", "*", null);
+//        undeploy.addMember("CustomLabels", "*", null);
+//        undeploy.addMember("CustomObjectTranslation", "*", null);
+//        undeploy.addMember("CustomPageWebLink", "*", null);
+//        undeploy.addMember("CustomSite", "*", null);
+//        undeploy.addMember("CustomTab", "*", null);
+//        undeploy.addMember("DataCategoryGroup", "*", null);
+//        undeploy.addMember("EntitlementTemplate", "*", null);
+//        undeploy.addMember("FieldSet", "*", null);
+//        undeploy.addMember("HomePageComponent", "*", null);
+//        undeploy.addMember("HomePageLayout", "*", null);
+//        undeploy.addMember("Layout", "*", null);
+//        undeploy.addMember("Portal", "*", null);
+//        undeploy.addMember("Profile", "*", null);
+//        undeploy.addMember("RecordType", "*", null);
+//        undeploy.addMember("RemoteSiteSetting", "*", null);
+//        undeploy.addMember("ReportType", "*", null);
+//        undeploy.addMember("Scontrol", "*", null);
+//        undeploy.addMember("StaticResource", "*", null);
+//        undeploy.addMember("Translations", "*", null);
+//        undeploy.addMember("Workflow", "*", null);
+
+        List<Table> tables = targetInstance.getMetaDataFactory().getTables();
+        for (Table table : tables) {
+            if (table.getType().equals("TABLE")) {
+                if (table.isCustom()) {
+                    undeploy.addMember("CustomObject", table.getName(), null);
+                } else {
+                    for (Column column : table.getColumns()) {
+                        if (column.isCustom()) {
+                            undeploy.addMember("CustomField", table.getName() + "." + column.getName(), null);
+                        }
+                    }
+
+                }
+            }
+        }
+
+        Deployer targetDeployer = new Deployer(targetInstance.getHelper().getMetadataConnection());
+        targetDeployer.undeploy(undeploy, del);
+        return targetDeployer;
+
     }
 
 }

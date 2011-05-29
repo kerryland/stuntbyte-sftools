@@ -39,13 +39,12 @@ public class Deployment {
         }
         members.add(member);
 
-        DeploymentResource resource = new DeploymentResource();
-        resource.setCode(code);
-        resource.setFilepath(determineDirectoryName(typeName) + "/" + member + "." + determineFileSuffix(typeName));
-
-//        File
-
-        deploymentResources.add(resource);
+        if (code != null) {
+            DeploymentResource resource = new DeploymentResource();
+            resource.setCode(code);
+            resource.setFilepath(determineDirectoryName(typeName) + "/" + member + "." + determineFileSuffix(typeName));
+            deploymentResources.add(resource);
+        }
     }
 
 

@@ -8,9 +8,11 @@ import com.fidelma.salesforce.misc.TypeHelper;
 import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.sobject.SObject;
+import com.sforce.ws.ConnectionException;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -31,83 +33,14 @@ public class Insert {
         this.pc = pc;
     }
 
-    public int execute() throws SQLException {
+    public int execute(Boolean batchMode, List<SObject> batchSObjects) throws SQLException {
         try {
-            LexicalToken token;
-            al.read("INTO");
-            String table = al.getToken().getValue();
+            SObject sObject = convertSqlToSobject();
 
-            token = al.getToken("(");
-            token = al.getToken();
-
-            List<String> columns = new ArrayList<String>();
-            while (token != null) {
-                String column = token.getValue();
-                columns.add(column);
-
-                // Comma or )
-                token = al.getToken();
-                if (token.getValue().equals(")")) {
-                    break;
-                } else if (token.getValue().equals(",")) {
-                    token = al.getToken();
-                    continue;
-                } else {
-                    throw new SQLException("Unexpected token " + token.getValue());
-                }
-            }
-
-            al.read("values");
-            token = al.getToken("(");
-            token = al.getToken();
-
-            List<String> values = new ArrayList<String>();
-            while (token != null) {
-                String value = token.getValue();
-                values.add(value);
-
-                // Comma or )
-                token = al.getToken();
-                if (token.getValue().equals(")")) {
-                    break;
-                } else if (token.getValue().equals(",")) {
-                    token = al.getToken();
-                    continue;
-                } else {
-                    throw new SQLException("Unexpected token " + token.getValue());
-                }
-            }
-
-            if (columns.size() != values.size()) {
-                throw new SQLException("Number of columns does not match number of values ");
-            }
-
-            SObject sObject = new SObject();
-            sObject.setType(table);
-
-            Table tableData = metaDataFactory.getTable(table);
-
-            int i = 0;
-            for (String key : columns) {
-                String val = values.get(i++);
-                Integer dataType = ResultSetFactory.lookupJdbcType(tableData.getColumn(key).getType());
-                Object value = TypeHelper.dataTypeConvert(val, dataType);
-
-                sObject.setField(key, value);
-            }
-
-            SaveResult[] sr = pc.create(new SObject[]{sObject});
-            for (SaveResult saveResult : sr) {
-                if (!saveResult.isSuccess()) {
-                    com.sforce.soap.partner.Error[] errors = saveResult.getErrors();
-                    StringBuilder sb = new StringBuilder();
-                    for (Error error : errors) {
-                        sb.append(error.getMessage()).append(". ");
-                    }
-                    throw new SQLException(sb.toString());
-                } else {
-                    generatedId = saveResult.getId();
-                }
+            if (batchMode) {
+                batchSObjects.add(sObject);
+            } else {
+                saveSObjects(new SObject[] {sObject});
             }
         } catch (SQLException e) {
             throw e;
@@ -115,8 +48,91 @@ public class Insert {
         } catch (Exception e) {
             throw new SQLException(e);
         }
-
         return 1;
+    }
+
+
+    public int saveSObjects(SObject[] sObjects) throws ConnectionException, SQLException {
+        SaveResult[] sr = pc.create(sObjects);
+        for (SaveResult saveResult : sr) {
+            if (!saveResult.isSuccess()) {
+                com.sforce.soap.partner.Error[] errors = saveResult.getErrors();
+                StringBuilder sb = new StringBuilder();
+                for (Error error : errors) {
+                    sb.append(error.getMessage()).append(". ");
+                }
+                throw new SQLException(sb.toString());
+            } else {
+                generatedId = saveResult.getId();
+            }
+        }
+        return sr.length;
+    }
+
+    private SObject convertSqlToSobject() throws Exception {
+        LexicalToken token;
+        al.read("INTO");
+        String table = al.getToken().getValue();
+
+        token = al.getToken("(");
+        token = al.getToken();
+
+        List<String> columns = new ArrayList<String>();
+        while (token != null) {
+            String column = token.getValue();
+            columns.add(column);
+
+            // Comma or )
+            token = al.getToken();
+            if (token.getValue().equals(")")) {
+                break;
+            } else if (token.getValue().equals(",")) {
+                token = al.getToken();
+                continue;
+            } else {
+                throw new SQLException("Unexpected token " + token.getValue());
+            }
+        }
+
+        al.read("values");
+        token = al.getToken("(");
+        token = al.getToken();
+
+        List<String> values = new ArrayList<String>();
+        while (token != null) {
+            String value = token.getValue();
+            values.add(value);
+
+            // Comma or )
+            token = al.getToken();
+            if (token.getValue().equals(")")) {
+                break;
+            } else if (token.getValue().equals(",")) {
+                token = al.getToken();
+                continue;
+            } else {
+                throw new SQLException("Unexpected token " + token.getValue());
+            }
+        }
+
+        if (columns.size() != values.size()) {
+            throw new SQLException("Number of columns does not match number of values ");
+        }
+
+        SObject sObject = new SObject();
+        sObject.setType(table);
+
+        Table tableData = metaDataFactory.getTable(table);
+
+        int i = 0;
+        for (String key : columns) {
+            String val = values.get(i++);
+            Integer dataType = ResultSetFactory.lookupJdbcType(tableData.getColumn(key).getType());
+            Object value = TypeHelper.dataTypeConvert(val, dataType);
+
+            sObject.setField(key, value);
+        }
+        return sObject;
     }
 
     public String getGeneratedId() {

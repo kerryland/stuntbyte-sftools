@@ -50,7 +50,7 @@ public class Deployer {
 
         Deployment deployment = new Deployment();
         deployment.addMember(nonCodeType, nonSuffixedFilename, code);
-        deployment.assemble();
+//        deployment.assemble();
 
         deploy(deployment, listener);
     }
@@ -61,7 +61,7 @@ public class Deployer {
 
         Deployment deployment = new Deployment();
         deployment.addMember(nonCodeType, nonSuffixedFilename, null);
-        deployment.assemble();
+//        deployment.assemble();
 
         undeploy(deployment, listener);
     }
@@ -76,7 +76,9 @@ public class Deployer {
 
 
     private void deploy(Deployment deployment, DeploymentEventListener listener, String packageXmlName) throws Exception {
+        deployment.assemble();
         File deploymentFile = File.createTempFile("SFDC", "zip");
+        System.out.println("Deployment file "+deploymentFile.getName());
 
         ZipOutputStream out = new ZipOutputStream(new FileOutputStream(deploymentFile));
 
