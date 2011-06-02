@@ -7,9 +7,15 @@ import com.fidelma.salesforce.misc.Deployer;
 import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Downloader;
+import org.hibernate.repackage.cglib.asm.attrs.StackMapType;
+import org.omg.CORBA.StructMember;
 
 import java.io.File;
+import java.lang.management.LockInfo;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -139,6 +145,40 @@ public class Migrator {
         Deployer targetDeployer = new Deployer(targetInstance.getHelper().getMetadataConnection());
         targetDeployer.undeploy(undeploy, del);
         return targetDeployer;
+    }
+
+    public class RestoreRequest {
+        String tableName;
+        String sql;
+    }
+
+    public void restoreRows(SfConnection destination,
+                            Connection localDb,
+                            List<RestoreRequest> restoreRequests) throws SQLException {
+
+        for (RestoreRequest restoreRequest : restoreRequests) {
+            PreparedStatement stmt = localDb.prepareStatement(restoreRequest.sql);
+
+            List<String> rowsToRestore = new ArrayList<String>();
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                String id = rs.getString("Id");
+                rowsToRestore.add(id);
+            }
+
+            // What about master detail?
+
+
+            // Look for rows to restore in destination.
+            // If they exist, then we are upserting
+
+            // If they don't exist, we are inserting
+
+
+
+        }
+
 
     }
 

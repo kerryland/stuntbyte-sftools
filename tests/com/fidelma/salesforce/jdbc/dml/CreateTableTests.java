@@ -2,6 +2,7 @@ package com.fidelma.salesforce.jdbc.dml;
 
 import com.fidelma.salesforce.jdbc.SfConnection;
 import com.fidelma.salesforce.jdbc.ddl.CreateTable;
+import com.fidelma.salesforce.misc.TestHelper;
 import com.fidelma.salesforce.parse.SimpleParser;
 import junit.framework.Assert;
 import org.junit.BeforeClass;
@@ -31,25 +32,11 @@ public class CreateTableTests {
 
     @BeforeClass
     public static void oneTimeSetUp() throws Exception {
-
-        Class.forName("com.fidelma.salesforce.jdbc.SfDriver");
-
         createConnection();
-
     }
 
     private static void createConnection() throws SQLException {
-        Properties info = new Properties();
-        info.put("user", "salesforce@fidelma.com");
-        info.put("password", "u9SABqa2dQxG0Y3kqWiJQVEwnYtryr1Ja1");
-        info.put("standard", "true");
-        info.put("includes", "Lead,Account");
-        info.put("useLabels", "true");
-
-        // Get a connection to the database
-        conn = (SfConnection) DriverManager.getConnection(
-                "jdbc:sfdc:https://login.salesforce.com"
-                , info);
+        conn = TestHelper.getTestConnection();
     }
 
 
@@ -116,6 +103,30 @@ public class CreateTableTests {
             names.remove(rs.getString("COLUMN_NAME"));
         }
         Assert.assertEquals(0, names.size());
+    }
+
+
+    @Test
+    public void testCreateReference() throws Exception {
+        Statement stmt = conn.createStatement();
+        stmt.execute("drop table one__c if exists");
+        stmt.execute("drop table two__c if exists");
+
+        stmt.execute("create table two__c(Spang__c Number with (label 'Spang No'), Name__c Text(20))");
+        stmt.execute("create table one__c(two_ref__c Lookup references(two__c) " +
+                "with (relationshipName 'RefLookup', relationshipLabel 'RefLookupLbl')," +
+                " Name__c Text(20), ext__c Text(15) with (externalId true))");
+
+        stmt.execute("insert into two__c(Spang__c, Name__c) values (3, 'Norman')");
+        ResultSet keyRs = stmt.getGeneratedKeys();
+        keyRs.next();
+        String twoId = keyRs.getString(1);
+
+        stmt.execute("insert into one__c(two_ref__c, name__c, ext__c) values ('" + twoId + "', 'Bates', 'x')");
+
+        ResultSet rs = stmt.executeQuery("select two_ref__r.Name__c from one__c");
+        Assert.assertTrue(rs.next());
+        Assert.assertEquals("Norman", rs.getString(1));
 
     }
 }

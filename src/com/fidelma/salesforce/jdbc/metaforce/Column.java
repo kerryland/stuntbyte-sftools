@@ -1,6 +1,9 @@
 package com.fidelma.salesforce.jdbc.metaforce;
 
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Column {
 
     private Table table;
@@ -21,6 +24,8 @@ public class Column {
     private String relationshipType;
     private String aDefault;
     private boolean hasMultipleRelationships;
+    public Map<String, String> extraProperties = new HashMap<String, String>();
+
 
     public Column(String name, String type) {
         this.name = name;
@@ -163,4 +168,11 @@ public class Column {
         return name.toUpperCase().endsWith("__C");
     }
 
+    public void addExtraProperty(String name, String value) {
+        extraProperties.put(name, value);
+    }
+
+    public Map<String, String> getExtraProperties() {
+        return extraProperties;
+    }
 }

@@ -22,16 +22,20 @@ public class TestHelper {
     public static String hackPassword = "g2Py8oPzUAsZJ1VuDEw71tfV2pwqMJN5O";
 
 
-    public static SfConnection getTestConnection() throws ClassNotFoundException, SQLException {
+    public static SfConnection getTestConnection() throws SQLException {
         return connect(loginUrl, username, password);
     }
 
-    public static SfConnection getHackConnection() throws ClassNotFoundException, SQLException {
+    public static SfConnection getHackConnection() throws SQLException {
         return connect(loginUrl, hackUsername, hackPassword);
     }
 
-    private static SfConnection connect(String lloginurl, String lusername, String lpassword) throws ClassNotFoundException, SQLException {
-        Class.forName("com.fidelma.salesforce.jdbc.SfDriver");
+    private static SfConnection connect(String lloginurl, String lusername, String lpassword) throws SQLException {
+        try {
+            Class.forName("com.fidelma.salesforce.jdbc.SfDriver");
+        } catch (ClassNotFoundException e) {
+            throw new SQLException(e); // Impossible!
+        }
 
         Properties info = new Properties();
         info.put("user", lusername);
