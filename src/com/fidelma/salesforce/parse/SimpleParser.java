@@ -14,24 +14,30 @@ import java.util.List;
 public class SimpleParser {
 
     private LexicalAnalyzer al;
+    private String commandString;
 
     public SimpleParser(String commandString) {
+        this.commandString = commandString;
+
         al = new LexicalAnalyzer(
                 new ByteArrayInputStream(
                         commandString.getBytes()), null);
     }
 
+    public String getCommandString() {
+        return commandString;
+    }
 
     public void assertEquals(String expected, String value) throws SQLException {
         if (!value.equalsIgnoreCase(expected)) {
-            throw new SQLException("Expected " + expected + " got " + value);
+            throw new SQLException("Expected " + expected + " got " + value + " in " +  commandString);
         }
     }
 
     public void read(String expected) throws SQLException {
         LexicalToken token = al.getToken();
         if (token == null) {
-            throw new SQLException("SOQL Command ended unexpected");
+            throw new SQLException("SOQL Command ended unexpected: " + commandString);
         }
         assertEquals(expected, token.getValue());
     }
@@ -39,7 +45,7 @@ public class SimpleParser {
     public String readIf() throws SQLException {
         LexicalToken token = al.getToken();
         if (token == null) {
-            throw new SQLException("SOQL Command ended unexpected");
+            throw new SQLException("SOQL Command ended unexpected: " + commandString);
         }
         return token.getValue();
     }

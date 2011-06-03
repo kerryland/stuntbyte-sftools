@@ -37,6 +37,7 @@ public class SfStatement implements java.sql.Statement {
     private MetadataConnection metadataConnection;
     private int updateCount = -1;
     private String generatedId;
+    private List<String> generatedIds = new ArrayList<String>();
 
     public SfStatement(SfConnection sfConnection, LoginHelper helper) throws ConnectionException, SQLException {
         this.sfConnection = sfConnection;
@@ -45,7 +46,7 @@ public class SfStatement implements java.sql.Statement {
     }
 
     public ResultSet executeQuery(String sql) throws SQLException {
-        generatedId = null;
+        generatedIds.clear();
         sql = stripComments(sql);
         if (sql.toUpperCase().startsWith("SELECT")) {
             Select select = new Select(this, pc);
@@ -101,7 +102,7 @@ public class SfStatement implements java.sql.Statement {
         try {
             sql = stripComments(sql);
             // System.out.println(sql);
-            generatedId = null;
+            generatedIds.clear();
             SimpleParser al = new SimpleParser(sql);
             LexicalToken token = al.getToken();
 
@@ -115,7 +116,7 @@ public class SfStatement implements java.sql.Statement {
                 checkBatchMode(batchMode, DmlType.INSERT);
                 Insert insert = new Insert(al, sfConnection.getMetaDataFactory(), pc);
                 updateCount = insert.execute(batchMode, batchSObjects);
-                generatedId = insert.getGeneratedId();
+                generatedIds.add(insert.getGeneratedId());
 
             } else if (token.getValue().equalsIgnoreCase("DELETE")) {
                 checkBatchMode(batchMode, DmlType.DELETE);
@@ -273,9 +274,11 @@ public class SfStatement implements java.sql.Statement {
 
     public ResultSet getGeneratedKeys() throws SQLException {
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
-        ColumnMap<String, Object> row = new ColumnMap<String, Object>();
-        row.put("Id", generatedId);
-        maps.add(row);
+        for (String generatedId : generatedIds) {
+            ColumnMap<String, Object> row = new ColumnMap<String, Object>();
+            row.put("Id", generatedId);
+            maps.add(row);
+        }
         return new ForceResultSet(maps);
     }
 
@@ -315,6 +318,7 @@ public class SfStatement implements java.sql.Statement {
     }
 
     public int[] executeBatch() throws SQLException {
+        generatedIds.clear();
         try {
             SObject[] arr = new SObject[batchSObjects.size()];
             batchSObjects.toArray(arr);
@@ -323,6 +327,9 @@ public class SfStatement implements java.sql.Statement {
             if (batchDmlType == DmlType.INSERT) {
                 Insert insert = new Insert(null, sfConnection.getMetaDataFactory(), pc);
                 insert.saveSObjects(arr);
+                for (SObject sObject : arr) {
+                    generatedIds.add(sObject.getId());
+                }
 
             } else if (batchDmlType == DmlType.UPDATE) {
                 Update update = new Update(null, sfConnection.getMetaDataFactory(), pc);

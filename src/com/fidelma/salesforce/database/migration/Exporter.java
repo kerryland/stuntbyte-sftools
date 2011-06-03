@@ -20,7 +20,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -80,9 +83,9 @@ public class Exporter {
     }
 
 
-    public void downloadData(SfConnection sfConnection, Connection localConnection, List<ExportCriteria> exportCriteriaList) throws SQLException {
+    public void downloadData(SfConnection sfConnection, Connection localConnection, List<MigrationCriteria> migrationCriteriaList) throws SQLException {
 
-        for (ExportCriteria criteria : exportCriteriaList) {
+        for (MigrationCriteria criteria : migrationCriteriaList) {
 //            StringBuilder sb = new StringBuilder();
 
             String tableName = criteria.tableName;
@@ -91,28 +94,65 @@ public class Exporter {
             }
 
             PreparedStatement pstmt = sfConnection.prepareStatement(
-                    "select * from " + criteria.tableName + " " + criteria.whereClause);
+                    "select * from " + criteria.tableName + " " + criteria.sql);
             ResultSet rs = pstmt.executeQuery();
 
-            StringBuilder columns = new StringBuilder();
-            StringBuilder values = new StringBuilder();
-            columns.append("insert into ").append(tableName).append(" (");
-            for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
-                columns.append(rs.getMetaData().getColumnName(i)).append(",");
-                values.append("?,");
-            }
-            columns.replace(columns.length(), columns.length(), ") values (");
-            columns.append(values);
-            columns.replace(columns.length(), columns.length(), ")");
+            copyResultSetToTable(localConnection, tableName, rs, null);
+        }
+    }
 
-            PreparedStatement pinsert = localConnection.prepareStatement(columns.toString());
+    public void copyResultSetToTable(Connection destination,
+                                     String tableName,
+                                     ResultSet rs,
+                                     ResultSetCallback resultSetCallback) throws SQLException {
+        StringBuilder columns = new StringBuilder();
+        StringBuilder values = new StringBuilder();
+        columns.append("insert into ").append(tableName).append(" (");
+        boolean first = true;
+        first = true;
+        Map<Integer, Integer> sourceToDestColumnMap = new HashMap<Integer, Integer>();
 
-            while (rs.next()) {
-                for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
-                    pinsert.setObject(i, rs.getObject(i));
+        int destCol = 0;
+        for (int col = 1; col <= rs.getMetaData().getColumnCount(); col++) {
+            if (resultSetCallback == null || resultSetCallback.shouldInsert(tableName, rs, col)) {
+                if (!first) {
+                    columns.append(",");
+                    values.append(",");
                 }
-                pinsert.executeUpdate();
+                first = false;
+                columns.append(rs.getMetaData().getColumnName(col));
+                values.append("?");
+
+                sourceToDestColumnMap.put(col, ++destCol);
             }
+        }
+        columns.append(") values (");
+        columns.append(values);
+        columns.append(")");
+
+//        System.out.println("KJS3 " + columns.toString());
+
+        PreparedStatement pinsert = destination.prepareStatement(columns.toString());
+
+        List<String> sourceIds = new ArrayList<String>();
+        while (rs.next()) {
+            for (Integer sourceCol : sourceToDestColumnMap.keySet()) {
+                destCol = sourceToDestColumnMap.get(sourceCol);
+//                System.out.println("KJS set col " + destCol + " to " + rs.getObject(sourceCol));
+                pinsert.setObject(destCol, rs.getObject(sourceCol));
+            }
+
+            pinsert.addBatch();
+            sourceIds.add(rs.getString("Id"));
+
+            if (resultSetCallback != null) {
+                resultSetCallback.onRow(rs);
+            }
+
+        }
+        pinsert.executeBatch();
+        if (resultSetCallback != null) {
+            resultSetCallback.afterBatchInsert(tableName, sourceIds, pinsert);
         }
     }
 

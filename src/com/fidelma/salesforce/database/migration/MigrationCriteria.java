@@ -1,6 +1,6 @@
 package com.fidelma.salesforce.database.migration;
 
-public class ExportCriteria {
+public class MigrationCriteria {
     public String tableName;
-    public String whereClause;
+    public String sql = "";
 }

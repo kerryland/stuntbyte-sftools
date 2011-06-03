@@ -73,7 +73,7 @@ public class SimpleParserTests {
         assertEquals("EXPR1", ps.getColumns().get(3).getName());
         assertEquals(false, ps.getColumns().get(3).isAlias());
         assertEquals(true, ps.getColumns().get(3).isFunction());
-        assertEquals("MAX", ps.getColumns().get(3).getFunctionName());
+        assertEquals("max", ps.getColumns().get(3).getFunctionName());
 
 
 

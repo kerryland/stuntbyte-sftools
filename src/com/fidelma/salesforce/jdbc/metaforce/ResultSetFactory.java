@@ -278,7 +278,7 @@ public class ResultSetFactory {
 
     static TypeInfo lookupTypeInfo(String forceTypeName) throws SQLException {
         for (TypeInfo entry : TYPE_INFO_DATA) {
-            if (forceTypeName.equals(entry.typeName)) {
+            if (forceTypeName.equalsIgnoreCase(entry.typeName)) {
                 return entry;
             }
         }
@@ -287,7 +287,11 @@ public class ResultSetFactory {
     }
 
     public static Integer lookupJdbcType(String forceTypeName) throws SQLException {
-        return lookupTypeInfo(forceTypeName).sqlDataType;
+        Integer result = lookupTypeInfo(forceTypeName).sqlDataType;
+        if (result == null) {
+            throw new SQLException("Unable to identify JDBC type for " + forceTypeName);
+        }
+        return result;
     }
 
 //    public static String lookupJdbcType(String forceTypeName) throws SQLException {

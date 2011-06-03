@@ -12,14 +12,14 @@ public class Column {
     private String referencedTable;
     private String referencedColumn;
 
-    private Integer length;
-    private boolean nillable;
+    private int length;
+    private boolean nillable = true;
     private String comments;
     private boolean calculated;
     private boolean autoIncrement;
     private boolean caseSensitive;
-    private Integer precision;
-    private Integer scale;
+    private int precision;
+    private int scale;
     private String label;
     private String relationshipType;
     private String aDefault;
@@ -27,6 +27,10 @@ public class Column {
     public Map<String, String> extraProperties = new HashMap<String, String>();
 
 
+    public Column(String name, String type, Boolean isCalculated) {
+        this(name, type);
+        setCalculated(isCalculated);
+    }
     public Column(String name, String type) {
         this.name = name;
         this.type = type;
@@ -56,11 +60,11 @@ public class Column {
         return referencedColumn;
     }
 
-    public Integer getLength() {
+    public int getLength() {
         return length;
     }
 
-    public void setLength(Integer length) {
+    public void setLength(int length) {
         this.length = length;
     }
 
@@ -112,19 +116,19 @@ public class Column {
         return caseSensitive;
     }
 
-    public void setPrecision(Integer precision) {
+    public void setPrecision(int precision) {
         this.precision = precision;
     }
 
-    public Integer getPrecision() {
+    public int getPrecision() {
         return precision;
     }
 
-    public void setScale(Integer scale) {
+    public void setScale(int scale) {
         this.scale = scale;
     }
 
-    public Integer getScale() {
+    public int getScale() {
         return scale;
     }
 

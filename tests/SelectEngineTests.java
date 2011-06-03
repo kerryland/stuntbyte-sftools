@@ -999,6 +999,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         ResultSet rs = stmt.executeQuery("select * from aaa__c where name='selectStar'");
         assertEquals(colCount, rs.getMetaData().getColumnCount());
         assertTrue(rs.next());
+        assertNotNull(rs.getString("Id"));
         assertEquals("selectStar", rs.getString("name"));
         assertEquals("1.0", rs.getBigDecimal("number4dp__c").toPlainString());
 

@@ -210,6 +210,16 @@ public class CreateTable {
 
         createMetadataXml(table);
 
+        // Add some system generated columns to the metaDataFactory, so
+        // we can query them.
+        table.addColumn(new Column("Id", "Id", true));
+        table.addColumn(new Column("CreatedById", "Text", true));
+        table.addColumn(new Column("CreatedDate", "DateTime", true));
+        table.addColumn(new Column("LastModifiedById", "Text", true));
+        table.addColumn(new Column("LastModifiedDate", "DateTime", true));
+        table.addColumn(new Column("OwnerId", "Text", true));
+        table.addColumn(new Column("SystemModstamp", "DateTime", true));
+
         patchDataTypes(table.getColumns());
         metaDataFactory.addTable(table);
     }
@@ -234,6 +244,7 @@ public class CreateTable {
         if (datatype.equalsIgnoreCase("TextAreaLong")) return "string";
         if (datatype.equalsIgnoreCase("Checkbox")) return "boolean";
         if (datatype.equalsIgnoreCase("Number")) return "decimal";
+        if (datatype.equalsIgnoreCase("Id")) return "String";
         return datatype.toLowerCase();
     }
 
@@ -288,13 +299,14 @@ public class CreateTable {
                     addElement(document, fields, "required", col.isNillable() ? "false" : "true");
                 }
                 addElement(document, fields, "unique", "false");
-                if (col.getPrecision() != null) {
+                if (col.getPrecision() != 0) {
                     addElement(document, fields, "precision", "" + col.getPrecision());
-                }
-                if (col.getScale() != null) {
                     addElement(document, fields, "scale", "" + col.getScale());
                 }
-                if (col.getLength() != null) {
+//                if (col.getScale() != 0) {
+//
+//                }
+                if (col.getLength() != 0) {
                     addElement(document, fields, "length", "" + col.getLength());
                 }
 

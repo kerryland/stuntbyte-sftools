@@ -54,6 +54,7 @@ public class Insert {
 
     public int saveSObjects(SObject[] sObjects) throws ConnectionException, SQLException {
         SaveResult[] sr = pc.create(sObjects);
+        int row = 0;
         for (SaveResult saveResult : sr) {
             if (!saveResult.isSuccess()) {
                 com.sforce.soap.partner.Error[] errors = saveResult.getErrors();
@@ -64,6 +65,8 @@ public class Insert {
                 throw new SQLException(sb.toString());
             } else {
                 generatedId = saveResult.getId();
+//                System.out.println("KJS generated " + generatedId + " vs " + sObjects[row].getId());
+                sObjects[row++].setId(generatedId);
             }
         }
         return sr.length;
@@ -78,7 +81,7 @@ public class Insert {
         token = al.getToken();
 
         List<String> columns = new ArrayList<String>();
-        while (token != null) {
+        while (token != null && !token.getValue().equals(")")) {
             String column = token.getValue();
             columns.add(column);
 
@@ -90,7 +93,8 @@ public class Insert {
                 token = al.getToken();
                 continue;
             } else {
-                throw new SQLException("Unexpected token " + token.getValue());
+                throw new SQLException("Unexpected token " + token.getValue() + " in " +
+                        al.getCommandString());
             }
         }
 
@@ -99,7 +103,7 @@ public class Insert {
         token = al.getToken();
 
         List<String> values = new ArrayList<String>();
-        while (token != null) {
+        while (token != null && !token.getValue().equals(")")) {
             String value = token.getValue();
             values.add(value);
 
@@ -111,12 +115,12 @@ public class Insert {
                 token = al.getToken();
                 continue;
             } else {
-                throw new SQLException("Unexpected token " + token.getValue());
+                throw new SQLException("Unexpected token " + token.getValue() + " in " + al.getCommandString());
             }
         }
 
         if (columns.size() != values.size()) {
-            throw new SQLException("Number of columns does not match number of values ");
+            throw new SQLException("Number of columns does not match number of values: " +  al.getCommandString());
         }
 
         SObject sObject = new SObject();

@@ -2,22 +2,24 @@ package com.fidelma.salesforce.database.migration;
 
 import com.fidelma.salesforce.jdbc.SfConnection;
 import com.fidelma.salesforce.jdbc.metaforce.Column;
+import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.misc.Deployer;
 import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Downloader;
 import org.hibernate.repackage.cglib.asm.attrs.StackMapType;
-import org.omg.CORBA.StructMember;
 
 import java.io.File;
-import java.lang.management.LockInfo;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -147,38 +149,87 @@ public class Migrator {
         return targetDeployer;
     }
 
-    public class RestoreRequest {
-        String tableName;
-        String sql;
-    }
-
     public void restoreRows(SfConnection destination,
                             Connection localDb,
-                            List<RestoreRequest> restoreRequests) throws SQLException {
+                            List<MigrationCriteria> restoreRequests) throws SQLException {
 
-        for (RestoreRequest restoreRequest : restoreRequests) {
-            PreparedStatement stmt = localDb.prepareStatement(restoreRequest.sql);
+        Exporter exporter = new Exporter(null);
+
+        // Insert all data, except for references and unwritable fields
+
+        // Capture the new ids and map them to the old ids
+        Statement stmt = localDb.createStatement();
+        stmt.execute("drop table keyMap if exists");
+        stmt.execute("create table keyMap(tableName varchar(50), oldId varchar(18), newId varchar(18))");
+
+        final PreparedStatement insertKeymap = localDb.prepareStatement(
+                "insert into keyMap(tableName, oldId, newId) values (?,?,?)");
+
+        // Create fresh master-detail records
+        final ResultSetFactory salesforceMetadata = destination.getMetaDataFactory();
+
+        final List<String> generatedIds = new ArrayList<String>();
+
+        ResultSetCallback callback = new ResultSetCallback() {
+            public void onRow(ResultSet rs) {
+
+            }
+
+            public void afterBatchInsert(String tableName, List<String> sourceIds, PreparedStatement pinsert) throws SQLException {
+                // Map old ids to new ids
+//                Map<String, String> keyChangeMap = new HashMap<String, String>();
+
+                ResultSet keys = pinsert.getGeneratedKeys();
+                int row = 0;
+                while (keys.next()) {
+//                    generatedIds.add(keys.getString("Id"));
+//                    keyChangeMap.put(sourceIds.get(row++), keys.getString("Id"));
+                    insertKeymap.setString(1, tableName);
+                    insertKeymap.setString(2, sourceIds.get(row++));
+                    insertKeymap.setString(3, keys.getString("Id"));
+
+                    insertKeymap.execute();
+                }
+//                assert keyChangeMap.keySet().size() == sourceIds.size();
+
+            }
+
+            public boolean shouldInsert(String tableName, ResultSet rs, int col) throws SQLException {
+                boolean result = true;
+
+                if (tableName.endsWith("___s")) {
+                    tableName = tableName.substring(0, tableName.length()-3);
+                }
+                Table table = salesforceMetadata.getTable(tableName);
+                String columnName = rs.getMetaData().getColumnName(col);
+                String dataType = table.getColumn(columnName).getType();
+
+                if (table.getColumn(columnName).isCalculated()) {
+                    result = false;
+                    // TODO: Master detail too?
+                } else if (dataType.equalsIgnoreCase("Reference")) {
+                    result = false;
+                }
+                return result;
+            }
+        };
+
+        for (MigrationCriteria restoreRequest : restoreRequests) {
+            String sql = "select * from " + restoreRequest.tableName + " " + restoreRequest.sql;
+
+            PreparedStatement sourceStmt = localDb.prepareStatement(sql);
+            ResultSet rs = sourceStmt.executeQuery();
+
+            exporter.copyResultSetToTable(
+                    destination,
+                    restoreRequest.tableName,
+                    rs,
+                    callback
+                    );
 
             List<String> rowsToRestore = new ArrayList<String>();
 
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                String id = rs.getString("Id");
-                rowsToRestore.add(id);
-            }
-
-            // What about master detail?
-
-
-            // Look for rows to restore in destination.
-            // If they exist, then we are upserting
-
-            // If they don't exist, we are inserting
-
-
-
         }
-
 
     }
 

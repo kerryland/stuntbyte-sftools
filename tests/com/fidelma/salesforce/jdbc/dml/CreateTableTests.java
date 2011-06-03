@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  */
 
@@ -128,5 +130,12 @@ public class CreateTableTests {
         Assert.assertTrue(rs.next());
         Assert.assertEquals("Norman", rs.getString(1));
 
+        // Insert a record that just has an id and system values
+        stmt.execute("insert into one__c() values ()");
+        rs = stmt.executeQuery("select count() from one__c");
+        rs.next();
+        assertEquals(2, rs.getInt(1));
+
     }
+
 }
