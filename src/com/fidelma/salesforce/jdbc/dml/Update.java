@@ -9,8 +9,10 @@ import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
+import sun.awt.geom.AreaOp;
 
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,8 +36,7 @@ public class Update {
 
     public int execute(Boolean batchMode, List<SObject> batchSObjects) throws Exception {
         LexicalToken token;
-        int count=0;
-        String table = al.getToken().getValue();
+        String tableName = al.getToken().getValue();
 
         al.read("SET");
         token = al.getToken();
@@ -43,7 +44,8 @@ public class Update {
 
         Map<String, Object> values = new HashMap<String, Object>();
 
-        Table tableData = metaDataFactory.getTable(table);
+        Table table = metaDataFactory.getTable(tableName);
+        List<String> whereChunk = new ArrayList<String>();
 
         while (token != null) {
             String column = token.getValue();
@@ -51,7 +53,7 @@ public class Update {
             LexicalToken value = al.getToken();
 
             if (!column.equalsIgnoreCase("Id")) {
-                Integer dataType = metaDataFactory.lookupJdbcType(tableData.getColumn(column).getType());
+                Integer dataType = ResultSetFactory.lookupJdbcType(table.getColumn(column).getType());
                 assert dataType != null;
                 values.put(column.toUpperCase(), value.getValue());
             }
@@ -64,6 +66,7 @@ public class Update {
                             whereClause += "'";
                         }
                         whereClause += token.getValue();
+                        whereChunk.add(token.getValue());
                         if (token.getType().equals(LexicalToken.Type.STRING)) {
                             whereClause += "'";
                         }
@@ -80,41 +83,68 @@ public class Update {
             }
         }
 
+        int count;
+        String rowId = detectSingleRowUpdate(whereChunk);
+        if (rowId != null) {
+            count = updateSingleRow(batchMode, batchSObjects, tableName, values, table, rowId);
+        } else {
+            count = updateMultipleRows(batchMode, batchSObjects, tableName, whereClause, values, table);
+        }
+        return count;
+    }
+
+
+    // Try to determine if the WHERE clause refers to a single row.
+    // ie: WHERE ID = 'someid'
+    // or WHERE ID in ('someid')
+    private String detectSingleRowUpdate(List<String> whereChunk) {
+        String id = null;
+        if ((whereChunk.size() == 4) &&
+                (whereChunk.get(0).equalsIgnoreCase("where")) &&
+                (whereChunk.get(1).equalsIgnoreCase("Id")) &&
+                (whereChunk.get(2).equals("="))) {
+            id = whereChunk.get(3);
+        } else if ((whereChunk.size() == 6) &&
+                (whereChunk.get(0).equalsIgnoreCase("where")) &&
+                (whereChunk.get(1).equalsIgnoreCase("Id")) &&
+                (whereChunk.get(2).equalsIgnoreCase("in")) &&
+                (whereChunk.get(3).equals("(")) &&
+                (whereChunk.get(5).equals(")"))) {
+            id = whereChunk.get(4);
+        }
+        return id;
+    }
+
+
+    private int updateSingleRow(Boolean batchMode, List<SObject> batchSObjects,
+                                       String tableName,  Map<String, Object> values,
+                                       Table table, String id) throws SQLException, ParseException {
+
+        SObject[] sObjects = new SObject[1];
+        sObjects[0] = new SObject();
+        sObjects[0].setType(tableName);
+        sObjects[0].setId(id);
+
+        storeData(batchMode, batchSObjects, tableName, values, table, sObjects);
+        return 1;
+    }
+
+    private int updateMultipleRows(Boolean batchMode, List<SObject> batchSObjects,
+                                   String tableName, String whereClause, Map<String, Object> values,
+                                   Table table) throws SQLException, ParseException {
         QueryResult qr;
+        int count = 0;
         try {
             StringBuilder readSoql = new StringBuilder();
             readSoql.append("select Id ");
-            readSoql.append(" from ").append(table).append(" ").append(whereClause);
+            readSoql.append(" from ").append(tableName).append(" ").append(whereClause);
 
             qr = pc.query(readSoql.toString());
-
-//            SObject[] input = qr.getRecords();
 
             SObjectChunker chunker = new SObjectChunker(MAX_UPDATES_PER_CALL, pc, qr);
             while (chunker.next()) {
                 SObject[] sObjects = chunker.nextChunk();
-                SObject[] update = new SObject[sObjects.length];
-
-                for (int i = 0; i < sObjects.length; i++) {
-                    SObject sObject = new SObject();
-                    update[i] = sObject;
-                    sObject.setType(table);
-                    sObject.setId(sObjects[i].getId());
-
-                    for (String key : values.keySet()) {
-                        Integer dataType = metaDataFactory.lookupJdbcType(tableData.getColumn(key).getType());
-                        Object value = TypeHelper.dataTypeConvert((String) values.get(key), dataType);
-                        sObject.setField(key, value);
-                    }
-
-                    if (batchMode) {
-                        batchSObjects.add(sObject);
-                    }
-                }
-
-                if (!batchMode) {
-                    saveSObjects(update);
-                }
+                storeData(batchMode, batchSObjects, tableName, values, table, sObjects);
                 count += sObjects.length;
             }
 
@@ -122,6 +152,33 @@ public class Update {
             throw new SQLException(e);
         }
         return count;
+    }
+
+    private void storeData(Boolean batchMode, List<SObject> batchSObjects, String tableName, Map<String, Object> values, Table table, SObject[] sObjects) throws SQLException, ParseException {
+        SObject[] update = new SObject[sObjects.length];
+
+        for (int i = 0; i < sObjects.length; i++) {
+            String id = sObjects[i].getId();
+
+            SObject sObject = new SObject();
+            sObject.setType(tableName);
+            sObject.setId(id);
+
+            for (String key : values.keySet()) {
+                Integer dataType = ResultSetFactory.lookupJdbcType(table.getColumn(key).getType());
+                Object value = TypeHelper.dataTypeConvert((String) values.get(key), dataType);
+                sObject.setField(key, value);
+            }
+
+            if (batchMode) {
+                batchSObjects.add(sObject);
+            }
+            update[i] = sObject;
+        }
+
+        if (!batchMode) {
+            saveSObjects(update);
+        }
     }
 
 

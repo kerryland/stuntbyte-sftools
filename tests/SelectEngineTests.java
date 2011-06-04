@@ -29,6 +29,7 @@ public class SelectEngineTests {
     private static SfConnection conn = null;
 
     private static String surname;
+    private static String leadId;
     private static List<String> deleteMe = new ArrayList<String>();
 
     private static SObject aaa;
@@ -62,7 +63,15 @@ public class SelectEngineTests {
         lead.addField("Company", "MikeCo");
         lead.addField("FirstName", "Mike");
         lead.addField("LastName", surname);
-        String id = checkSaveResult(pc.create(new SObject[]{lead}));
+        leadId = checkSaveResult(pc.create(new SObject[]{lead}));
+
+        SObject lead2 = new SObject();
+        lead2.setType("Lead");
+        lead2.addField("Company", "JohnCo");
+        lead2.addField("FirstName", "Mike");
+        lead2.addField("LastName", "X" + surname);
+        checkSaveResult(pc.create(new SObject[]{lead2}));
+
 
     }
 
@@ -679,17 +688,17 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
 
 
     @Test
-    public void testUpdate() throws Exception {
+    public void testUpdateOneRowViaId() throws Exception {
         Statement stmt = conn.createStatement();
         int count = stmt.executeUpdate("update Lead\n" +
                 " set FirstName = 'wibbleX', phone='0800xxxx'," +
                 " AnnualRevenue=475000, " +
-                " NumberOfEmployees=6 where LastName = '" + surname + "'");
+                " NumberOfEmployees=6 where Id='" + leadId + "'");
         assertEquals(1, count);
         assertEquals(1, stmt.getUpdateCount());
 
         ResultSet rs = stmt.executeQuery("select FirstName, Phone, Lastname, AnnualRevenue, NumberOfEmployees" +
-                " from Lead where lastName = '" + surname + "'");
+                " from Lead where Id = '" + leadId + "'");
 
         int foundCount = 0;
         while (rs.next()) {
@@ -703,16 +712,17 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals(1, foundCount);
     }
 
+
     @Test
-    public void testUpdateBatch() throws Exception {
+    public void testUpdateOneRowBatchViaInId() throws Exception {
         Statement stmt = conn.createStatement();
         stmt.addBatch("update Lead\n" +
                 " set FirstName = 'wibbleZ', phone='0800yyy'," +
-                " NumberOfEmployees=7 where LastName = '" + surname + "'");
+                " NumberOfEmployees=7 where Id in ('" + leadId + "')");
         stmt.executeBatch();
 
         ResultSet rs = stmt.executeQuery("select FirstName, Phone, Lastname, AnnualRevenue, NumberOfEmployees" +
-                " from Lead where lastName = '" + surname + "'");
+                " from Lead where id in ('" + leadId + "')");
 
         int foundCount = 0;
         while (rs.next()) {
@@ -724,6 +734,57 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         }
         assertEquals(1, foundCount);
     }
+
+
+    @Test
+    public void testUpdateMultipleRows() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("select count(*) from Lead where firstName = 'Mike'");
+        rs.next();
+        int rowsNamedMike = rs.getInt(1);
+        Assert.assertTrue(rowsNamedMike > 1);
+
+        int count = stmt.executeUpdate("update Lead set LastName = 'wibbleX' where firstName = 'Mike'");
+
+        assertEquals(rowsNamedMike, count);
+        assertEquals(rowsNamedMike, stmt.getUpdateCount());
+
+        rs = stmt.executeQuery("select Lastname from Lead where firstName = 'Mike'");
+
+        int foundCount = 0;
+        while (rs.next()) {
+            foundCount++;
+            assertEquals("wibbleX", rs.getString("LastName"));
+        }
+        assertEquals(rowsNamedMike, foundCount);
+    }
+
+
+    @Test
+    public void testUpdateMultipleRowsBatch() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("select count(*) from Lead where firstName = 'Mike'");
+        rs.next();
+        int rowsNamedMike = rs.getInt(1);
+        Assert.assertTrue(rowsNamedMike > 1);
+
+        stmt.addBatch("update Lead set LastName = 'wibbleX' where firstName = 'Mike'");
+
+        int count = stmt.executeBatch()[0];
+
+        assertEquals(rowsNamedMike, count);
+        assertEquals(rowsNamedMike, stmt.getUpdateCount());
+
+        rs = stmt.executeQuery("select Lastname from Lead where firstName = 'Mike'");
+
+        int foundCount = 0;
+        while (rs.next()) {
+            foundCount++;
+            assertEquals("wibbleX", rs.getString("LastName"));
+        }
+        assertEquals(rowsNamedMike, foundCount);
+    }
+
 
 
     @Test
