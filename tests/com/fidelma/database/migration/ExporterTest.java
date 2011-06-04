@@ -55,14 +55,24 @@ public class ExporterTest {
         sfdc.execute("create table two__c(Name__c Text(20))"); // Just get the default columns, Id and Name.
         sfdc.execute("create table one__c(ref__c Lookup references(two__c) with (relationshipName 'RefLookup'))");
 
-        sfdc.execute("insert into two__c(Name__c) values ('Norman')");
+        sfdc.addBatch("insert into two__c(Name__c) values ('Norman')");
+        sfdc.addBatch("insert into two__c(Name__c) values ('Wibbles')");
+        sfdc.executeBatch();
+
         ResultSet keyRs = sfdc.getGeneratedKeys();
         keyRs.next();
-        String twoId = keyRs.getString(1);
-        sfdc.execute("insert into one__c(ref__c) values ('" + twoId + "')");
+        String twoNormanId = keyRs.getString(1);
+        keyRs.next();
+        String twoWibblesId = keyRs.getString(1);
+
+        sfdc.addBatch("insert into one__c(ref__c) values ('" + twoNormanId + "')");
+        sfdc.addBatch("insert into one__c(ref__c) values ('" + twoWibblesId + "')");
+        sfdc.executeBatch();
         keyRs = sfdc.getGeneratedKeys();
         keyRs.next();
-        String oneId = keyRs.getString(1);
+        String oneNormanId = keyRs.getString(1);
+        keyRs.next();
+        String oneWibblesId = keyRs.getString(1);
 
         // Pull data down into local database
         List<MigrationCriteria> criteriaList = new ArrayList<MigrationCriteria>();
@@ -94,20 +104,28 @@ public class ExporterTest {
         migrator.restoreRows(sfconn, h2Conn, migrationCriteriaList);
 
         // Check salesforce has the same data, but with different ids
-        ResultSet rs = sfdc.executeQuery("select * from two__c");
+        ResultSet rs = sfdc.executeQuery("select * from two__c order by Name__c");
         rs.next();
-        System.out.println("TWO has id " + rs.getString("Id") + " name " + rs.getString("Name__c"));
-        String newTwoId = rs.getString("Id");
-        Assert.assertNotSame(newTwoId, twoId);
+        String newTwoNormanId = rs.getString("Id");
+        Assert.assertNotSame(newTwoNormanId, twoNormanId);
         Assert.assertEquals("Norman", rs.getString("Name__c"));
+        rs.next();
+        String newTwoWibbleId = rs.getString("Id");
+        Assert.assertNotSame(newTwoWibbleId, twoWibblesId);
+        Assert.assertEquals("Wibbles", rs.getString("Name__c"));
         Assert.assertFalse(rs.next());
 
-        rs = sfdc.executeQuery("select * from one__c");
+
+        rs = sfdc.executeQuery("select Id, Ref__c from one__c order by Ref__r.Name");
         rs.next();
-        String newOneId = rs.getString("Id");
-        Assert.assertNotSame(newOneId, oneId);
-        System.out.println("COMPARE TWO IDS " + newTwoId + " vs " + rs.getString("ref__c"));
-        Assert.assertEquals(newTwoId, rs.getString("ref__c"));  // Do we refer to the new "two__c.Id"?
+        String newOneNormanId = rs.getString("Id");
+        Assert.assertNotSame(newOneNormanId, oneNormanId);
+        Assert.assertEquals(newTwoNormanId, rs.getString("ref__c"));  // Do we refer to the new "two__c.Id"?
+        rs.next();
+        String newOneWibblesId = rs.getString("Id");
+        Assert.assertNotSame(newOneWibblesId, oneWibblesId);
+        Assert.assertEquals(newTwoWibbleId, rs.getString("ref__c"));  // Do we refer to the new "two__c.Id"?
+
         Assert.assertFalse(rs.next());
 
 

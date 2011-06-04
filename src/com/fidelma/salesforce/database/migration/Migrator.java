@@ -1,6 +1,7 @@
 package com.fidelma.salesforce.database.migration;
 
 import com.fidelma.salesforce.jdbc.SfConnection;
+import com.fidelma.salesforce.jdbc.dml.Select;
 import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
@@ -9,6 +10,7 @@ import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Downloader;
 import org.hibernate.repackage.cglib.asm.attrs.StackMapType;
+import org.omg.stub.java.rmi._Remote_Stub;
 
 import java.io.File;
 import java.sql.Connection;
@@ -168,8 +170,6 @@ public class Migrator {
         // Create fresh master-detail records
         final ResultSetFactory salesforceMetadata = destination.getMetaDataFactory();
 
-        final List<String> generatedIds = new ArrayList<String>();
-
         ResultSetCallback callback = new ResultSetCallback() {
             public void onRow(ResultSet rs) {
 
@@ -198,7 +198,7 @@ public class Migrator {
                 boolean result = true;
 
                 if (tableName.endsWith("___s")) {
-                    tableName = tableName.substring(0, tableName.length()-3);
+                    tableName = tableName.substring(0, tableName.length() - 3);
                 }
                 Table table = salesforceMetadata.getTable(tableName);
                 String columnName = rs.getMetaData().getColumnName(col);
@@ -214,6 +214,7 @@ public class Migrator {
             }
         };
 
+        // Copy the base data, but not the relationships
         for (MigrationCriteria restoreRequest : restoreRequests) {
             String sql = "select * from " + restoreRequest.tableName + " " + restoreRequest.sql;
 
@@ -225,12 +226,105 @@ public class Migrator {
                     restoreRequest.tableName,
                     rs,
                     callback
-                    );
-
-            List<String> rowsToRestore = new ArrayList<String>();
-
+            );
         }
 
+        // TODO: Disable triggers and workflow
+
+        // Now correct the relationsips
+
+        // Loop through each table
+        /*
+
+select newOne__c.newId as Id, two__c.newId as ref__c
+  from one__c
+  left join keyMap as newOne__c on newOne__c.tableName = 'one__c' and newOne__c.oldId = one__c.Id
+  left join keyMap as two__c on two__c.tableName = 'two__c' and two__c.oldId = one__c.ref__c
+
+
+  SELECT newone__c.newId AS Id,
+       two__c.newId AS ref__c
+FROM one__c
+  LEFT JOIN keyMap AS one__c ON newone__c.tableName = 'one__c' AND newone__c.oldId = one__c.Id
+  left JOIN keyMap AS one__c ON one__c.tableName = 'one__c' AND one__c.oldId = one__c.Id  // SB TWO!
+
+          */
+        List<Table> tables = salesforceMetadata.getTables();
+        for (Table table : tables) {
+            if (!table.getName().equalsIgnoreCase("one__c")) {
+                continue; // TODO: remove
+            }
+
+            boolean first = true;
+            StringBuilder selectColumns = new StringBuilder();
+            StringBuilder selectJoins = new StringBuilder();
+
+            selectColumns.append("select ");
+            selectJoins.append(" left join keyMap as new");
+            selectJoins.append(table.getName());
+            selectJoins.append(" on new");
+            selectJoins.append(table.getName());
+            selectJoins.append(".tableName = '");
+            selectJoins.append(table.getName());
+            selectJoins.append("' and new");
+            selectJoins.append(table.getName());
+            selectJoins.append(".oldId =");
+            selectJoins.append(table.getName());
+            selectJoins.append(".Id");
+
+            String updateRefs = "update " + table.getName() + " set ";
+            int colCount = 0;
+            for (Column column : table.getColumns()) {
+                if (column.getReferencedTable() != null) {
+                    colCount++;
+                    if (!first) {
+                        updateRefs += ",";
+                    }
+                    first = false;
+                    String joinTable = column.getReferencedTable();
+                    selectColumns.append(joinTable);
+                    selectColumns.append(".newId as ");
+                    selectColumns.append(column.getName());
+                    selectColumns.append(",");
+
+                    selectJoins.append(" left join keyMap as ");
+                    selectJoins.append(joinTable);
+                    selectJoins.append(" on ");
+                    selectJoins.append(joinTable);
+                    selectJoins.append(".tableName = '");
+                    selectJoins.append(joinTable);
+                    selectJoins.append("' and ");
+                    selectJoins.append(joinTable);
+                    selectJoins.append(".oldId =");
+                    selectJoins.append(table.getName());
+                    selectJoins.append(".");
+                    selectJoins.append(column.getName());
+
+                    updateRefs += column.getName() + "=?";
+                }
+            }
+            updateRefs += " where id = ?";
+
+            PreparedStatement updateStmt = destination.prepareStatement(updateRefs);
+
+            selectColumns.append(" new").append(table.getName()).append(".newId as Id");
+            selectColumns.append(" from ");
+            selectColumns.append(table.getName());
+            selectColumns.append(selectJoins);
+
+            colCount++;
+
+            // TODO: The current UPDATE implementation is HORRIFIC if there where clause is just one row
+            // TODO: We could bypass the SELECT if we specify the ID in the WHERE clause...
+            ResultSet rs = stmt.executeQuery(selectColumns.toString());
+            while (rs.next()) {
+                for (int i=1; i <= colCount; i++) {
+                    updateStmt.setString(i, rs.getString(i));
+                }
+                updateStmt.addBatch();
+            }
+            updateStmt.executeBatch();
+        }
     }
 
 }
