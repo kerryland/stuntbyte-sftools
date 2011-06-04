@@ -111,6 +111,7 @@ public class CreateTableTests {
     @Test
     public void testCreateReference() throws Exception {
         Statement stmt = conn.createStatement();
+        stmt.execute("drop table three__c if exists");
         stmt.execute("drop table one__c if exists");
         stmt.execute("drop table two__c if exists");
 

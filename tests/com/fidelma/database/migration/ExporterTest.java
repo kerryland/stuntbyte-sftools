@@ -91,6 +91,7 @@ public class ExporterTest {
         criteria = new MigrationCriteria();
         criteria.tableName = "two__c";
         criteriaList.add(criteria);
+        criteria = new MigrationCriteria();
         criteria.tableName = "three__c";
         criteriaList.add(criteria);
 
@@ -105,13 +106,16 @@ public class ExporterTest {
         sfdc.execute("delete from three__c");
 
         Migrator migrator = new Migrator();
-//        List<MigrationCriteria> migrationCriteriaList = new ArrayList<MigrationCriteria>();
-//        MigrationCriteria m = new MigrationCriteria();
-//        m.tableName = "one__c";
-//        migrationCriteriaList.add(m);
-//        m = new MigrationCriteria();
-//        m.tableName = "two__c";
-//        migrationCriteriaList.add(m);
+        criteriaList.clear();
+        criteria = new MigrationCriteria();
+        criteria.tableName = "one__c";
+        criteriaList.add(criteria);
+        criteria = new MigrationCriteria();
+        criteria.tableName = "two__c";
+        criteriaList.add(criteria);
+        criteria = new MigrationCriteria();
+        criteria.tableName = "three__c";
+        criteriaList.add(criteria);
 
 
         // Push rows back to Salesforce
@@ -130,7 +134,7 @@ public class ExporterTest {
         Assert.assertFalse(rs.next());
 
 
-        rs = sfdc.executeQuery("select Id, tworef__c from one__c order by Ref__r.Name");
+        rs = sfdc.executeQuery("select Id, tworef__c from one__c order by twoRef__r.Name");
         rs.next();
         String newOneNormanId = rs.getString("Id");
         Assert.assertNotSame(newOneNormanId, oneNormanId);
@@ -142,10 +146,10 @@ public class ExporterTest {
 
         Assert.assertFalse(rs.next());
 
-        rs = sfdc.executeQuery("select Name, OneRef__r.Name__c from three__c");
+        rs = sfdc.executeQuery("select Name, OneRef__r.TwoRef__r.Name__c from three__c");
         rs.next();
-        Assert.assertEquals("Kerry", rs.getString("Name"));
-        Assert.assertEquals("Norman", rs.getString("OneRef__r.Name"));
+        Assert.assertEquals("Kerry", rs.getString(1));
+        Assert.assertEquals("Norman", rs.getString(2));
 
 
     }

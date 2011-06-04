@@ -30,7 +30,7 @@ public class SimpleParser {
 
     public void assertEquals(String expected, String value) throws SQLException {
         if (!value.equalsIgnoreCase(expected)) {
-            throw new SQLException("Expected " + expected + " got " + value + " in " +  commandString);
+            throw new SQLException("Expected '" + expected + "' got '" + value + "' in :" +  commandString);
         }
     }
 

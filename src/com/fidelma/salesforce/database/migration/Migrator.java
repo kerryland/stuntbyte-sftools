@@ -1,7 +1,6 @@
 package com.fidelma.salesforce.database.migration;
 
 import com.fidelma.salesforce.jdbc.SfConnection;
-import com.fidelma.salesforce.jdbc.dml.Select;
 import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
@@ -9,8 +8,6 @@ import com.fidelma.salesforce.misc.Deployer;
 import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Downloader;
-import org.hibernate.repackage.cglib.asm.attrs.StackMapType;
-import org.omg.stub.java.rmi._Remote_Stub;
 
 import java.io.File;
 import java.sql.Connection;
@@ -19,9 +16,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -160,9 +155,9 @@ public class Migrator {
         // Insert all data, except for references and unwritable fields
 
         // Capture the new ids and map them to the old ids
-        Statement stmt = localDb.createStatement();
-        stmt.execute("drop table keyMap if exists");
-        stmt.execute("create table keyMap(tableName varchar(50), oldId varchar(18), newId varchar(18))");
+        Statement localDbStatement = localDb.createStatement();
+        localDbStatement.execute("drop table keyMap if exists");
+        localDbStatement.execute("create table keyMap(tableName varchar(50), oldId varchar(18), newId varchar(18))");
 
         final PreparedStatement insertKeymap = localDb.prepareStatement(
                 "insert into keyMap(tableName, oldId, newId) values (?,?,?)");
@@ -176,22 +171,16 @@ public class Migrator {
             }
 
             public void afterBatchInsert(String tableName, List<String> sourceIds, PreparedStatement pinsert) throws SQLException {
-                // Map old ids to new ids
-//                Map<String, String> keyChangeMap = new HashMap<String, String>();
-
+                // Update local db with the keys from newly inserted rows
                 ResultSet keys = pinsert.getGeneratedKeys();
                 int row = 0;
                 while (keys.next()) {
-//                    generatedIds.add(keys.getString("Id"));
-//                    keyChangeMap.put(sourceIds.get(row++), keys.getString("Id"));
                     insertKeymap.setString(1, tableName);
                     insertKeymap.setString(2, sourceIds.get(row++));
                     insertKeymap.setString(3, keys.getString("Id"));
 
                     insertKeymap.execute();
                 }
-//                assert keyChangeMap.keySet().size() == sourceIds.size();
-
             }
 
             public boolean shouldInsert(String tableName, ResultSet rs, int col) throws SQLException {
@@ -206,78 +195,102 @@ public class Migrator {
 
                 if (table.getColumn(columnName).isCalculated()) {
                     result = false;
-                } else if (dataType.equalsIgnoreCase("Reference") || (dataType.equalsIgnoreCase("masterrecord"))) {
+//                } else if (dataType.equalsIgnoreCase("Reference") || (dataType.equalsIgnoreCase("masterrecord"))) {
+                } else if (dataType.equalsIgnoreCase("Reference")) {
                     result = false;
                 }
                 return result;
             }
         };
 
-        // Copy the base data, but not the relationships
-        for (MigrationCriteria restoreRequest : restoreRequests) {
-            String sql = "select * from " + restoreRequest.tableName + " " + restoreRequest.sql;
-
-            PreparedStatement sourceStmt = localDb.prepareStatement(sql);
-            ResultSet rs = sourceStmt.executeQuery();
-
-            exporter.copyResultSetToTable(
-                    destination,
-                    restoreRequest.tableName,
-                    rs,
-                    callback
-            );
-        }
 
         // TODO: Disable triggers and workflow
 
-        // Now correct the relationsips
 
-        // Loop through each table
-        /*
+        // Copy the base data to Salesforce, but not the relationships
+        for (MigrationCriteria restoreRequest : restoreRequests) {
+            if (!tableContainsMasterDetail(salesforceMetadata.getTable(restoreRequest.tableName))) {
+                String sql = "select * from " + restoreRequest.tableName + " " + restoreRequest.sql;
 
-select newOne__c.newId as Id, two__c.newId as ref__c
-  from one__c
-  left join keyMap as newOne__c on newOne__c.tableName = 'one__c' and newOne__c.oldId = one__c.Id
-  left join keyMap as two__c on two__c.tableName = 'two__c' and two__c.oldId = one__c.ref__c
+                PreparedStatement sourceStmt = localDb.prepareStatement(sql);
+                ResultSet rs = sourceStmt.executeQuery();
 
+                exporter.copyResultSetToTable(
+                        destination,
+                        restoreRequest.tableName,
+                        rs,
+                        callback
+                );
+            }
+        }
 
-  SELECT newone__c.newId AS Id,
-       two__c.newId AS ref__c
-FROM one__c
-  LEFT JOIN keyMap AS one__c ON newone__c.tableName = 'one__c' AND newone__c.oldId = one__c.Id
-  left JOIN keyMap AS one__c ON one__c.tableName = 'one__c' AND one__c.oldId = one__c.Id  // SB TWO!
+        // Copy all data for "masterrecord" rows, including relationships all at once.
+        for (MigrationCriteria restoreRequest : restoreRequests) {
+            Table table = salesforceMetadata.getTable(restoreRequest.tableName);
+            if (tableContainsMasterDetail(table)) {
+                correctReferences(destination, localDbStatement, table, callback);
+            }
+        }
 
-          */
+        // TODO: Handle cyclic dependencies that may exist for masterrecords
+
+        // Now correct the relationships for non-masterrecord tables
         for (MigrationCriteria request : restoreRequests) {
             Table table = salesforceMetadata.getTable(request.tableName);
+            if (!tableContainsMasterDetail(table)) {
+                correctReferences(destination, localDbStatement, table, null);
+            }
+        }
+    }
 
-            boolean first = true;
-            StringBuilder selectColumns = new StringBuilder();
-            StringBuilder selectJoins = new StringBuilder();
+    private void correctReferences(Connection destination, Statement stmt, Table table, ResultSetCallback callback) throws SQLException {
+        boolean hasMasterDetail = tableContainsMasterDetail(table);
 
-            selectColumns.append("select ");
-            selectJoins.append(" left join keyMap as new");
-            selectJoins.append(table.getName());
-            selectJoins.append(" on new");
-            selectJoins.append(table.getName());
-            selectJoins.append(".tableName = '");
-            selectJoins.append(table.getName());
-            selectJoins.append("' and new");
-            selectJoins.append(table.getName());
-            selectJoins.append(".oldId =");
-            selectJoins.append(table.getName());
-            selectJoins.append(".Id");
+        boolean first = true;
+        StringBuilder selectColumns = new StringBuilder();
+        StringBuilder selectJoins = new StringBuilder();
 
-            String updateRefs = "update " + table.getName() + " set ";
-            int colCount = 0;
-            for (Column column : table.getColumns()) {
-                if (column.getReferencedTable() != null) {
-                    colCount++;
-                    if (!first) {
+        selectColumns.append("select ");
+        selectJoins.append(" left join keyMap as new");
+        selectJoins.append(table.getName());
+        selectJoins.append(" on new");
+        selectJoins.append(table.getName());
+        selectJoins.append(".tableName = '");
+        selectJoins.append(table.getName());
+        selectJoins.append("' and new");
+        selectJoins.append(table.getName());
+        selectJoins.append(".oldId =");
+        selectJoins.append(table.getName());
+        selectJoins.append(".Id");
+
+        String updateRefs;
+        StringBuilder insertCols = new StringBuilder();
+        StringBuilder insertValues = new StringBuilder();
+
+        if (hasMasterDetail) {
+            updateRefs = "insert into " + table.getName() + " (";
+        } else {
+            updateRefs = "update " + table.getName() + " set ";
+        }
+        int colCount = 0;
+        for (Column column : table.getColumns()) {
+            if (column.isCalculated()) {
+                continue;
+            }
+            String joinTable = column.getReferencedTable();
+            if (joinTable != null || hasMasterDetail) {
+                colCount++;
+                if (!first) {
+                    if (hasMasterDetail) {
+                        insertCols.append(",");
+                        insertValues.append(",");
+                    } else {
                         updateRefs += ",";
                     }
-                    first = false;
-                    String joinTable = column.getReferencedTable();
+                }
+                first = false;
+
+                if (joinTable != null) {
                     selectColumns.append(joinTable);
                     selectColumns.append(".newId as ");
                     selectColumns.append(column.getName());
@@ -295,32 +308,68 @@ FROM one__c
                     selectJoins.append(table.getName());
                     selectJoins.append(".");
                     selectJoins.append(column.getName());
+                } else {
+                    selectColumns.append(column.getName());
+                    selectColumns.append(",");
+                }
 
+                if (hasMasterDetail) {
+                    insertCols.append(column.getName());
+                    insertValues.append("?");
+                } else {
                     updateRefs += column.getName() + "=?";
                 }
             }
+        }
+        if (!hasMasterDetail) {
             updateRefs += " where id = ?";
+        } else {
+            updateRefs += insertCols.toString() + ") values (" + insertValues.toString() + ")";
+        }
 
-            PreparedStatement updateStmt = destination.prepareStatement(updateRefs);
+        PreparedStatement updateStmt = destination.prepareStatement(updateRefs);
 
+        if (!hasMasterDetail) {
             selectColumns.append(" new").append(table.getName()).append(".newId as Id");
-            selectColumns.append(" from ");
-            selectColumns.append(table.getName());
-            selectColumns.append(selectJoins);
+        } else {
+            selectColumns.append(table.getName()).append(".Id as Id");
+        }
+        selectColumns.append(" from ");
+        selectColumns.append(table.getName());
+        selectColumns.append(selectJoins);
 
+        if (colCount > 0) {
             colCount++;
 
-            // TODO: The current UPDATE implementation is HORRIFIC if there where clause is just one row
-            // TODO: We could bypass the SELECT if we specify the ID in the WHERE clause...
+            List<String> sourceIds = new ArrayList<String>();
             ResultSet rs = stmt.executeQuery(selectColumns.toString());
             while (rs.next()) {
-                for (int i=1; i <= colCount; i++) {
-                    updateStmt.setString(i, rs.getString(i));
+                for (int i = 1; i <= colCount; i++) {
+                    if ((i == colCount) && hasMasterDetail) {
+                        sourceIds.add(rs.getString(i));
+                    } else {
+                        updateStmt.setString(i, rs.getString(i));
+                    }
                 }
                 updateStmt.addBatch();
             }
             updateStmt.executeBatch();
+
+            if (hasMasterDetail) {
+                callback.afterBatchInsert(table.getName(), sourceIds, updateStmt);
+            }
         }
+    }
+
+    private boolean tableContainsMasterDetail(Table table) {
+        boolean result = false;
+        for (Column column : table.getColumns()) {
+            if (column.getType().equalsIgnoreCase("masterrecord")) {
+                result = true;
+                break;
+            }
+        }
+        return result;
     }
 
 }
