@@ -197,7 +197,7 @@ public class Migrator {
             public boolean shouldInsert(String tableName, ResultSet rs, int col) throws SQLException {
                 boolean result = true;
 
-                if (tableName.endsWith("___s")) {
+                if (tableName.endsWith("__s")) {
                     tableName = tableName.substring(0, tableName.length() - 3);
                 }
                 Table table = salesforceMetadata.getTable(tableName);
@@ -206,8 +206,7 @@ public class Migrator {
 
                 if (table.getColumn(columnName).isCalculated()) {
                     result = false;
-                    // TODO: Master detail too?
-                } else if (dataType.equalsIgnoreCase("Reference")) {
+                } else if (dataType.equalsIgnoreCase("Reference") || (dataType.equalsIgnoreCase("masterrecord"))) {
                     result = false;
                 }
                 return result;
@@ -249,11 +248,8 @@ FROM one__c
   left JOIN keyMap AS one__c ON one__c.tableName = 'one__c' AND one__c.oldId = one__c.Id  // SB TWO!
 
           */
-        List<Table> tables = salesforceMetadata.getTables();
-        for (Table table : tables) {
-            if (!table.getName().equalsIgnoreCase("one__c")) {
-                continue; // TODO: remove
-            }
+        for (MigrationCriteria request : restoreRequests) {
+            Table table = salesforceMetadata.getTable(request.tableName);
 
             boolean first = true;
             StringBuilder selectColumns = new StringBuilder();

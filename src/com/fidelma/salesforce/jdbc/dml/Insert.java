@@ -109,7 +109,9 @@ public class Insert {
 
             // Comma or )
             token = al.getToken();
-            if (token.getValue().equals(")")) {
+            if (token == null) {
+                throw new SQLException("Unexpected end of command: " + al.getCommandString());
+            } else if (token.getValue().equals(")")) {
                 break;
             } else if (token.getValue().equals(",")) {
                 token = al.getToken();

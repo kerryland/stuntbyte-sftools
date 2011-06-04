@@ -140,7 +140,7 @@ public class CreateTable {
                     col.setPrecision(precision);
                     col.setScale(scale);
 
-                } else if (dataType.equalsIgnoreCase("LOOKUP")) {
+                } else if (dataType.equalsIgnoreCase("LOOKUP") || dataType.equalsIgnoreCase("MasterDetail")) {
                     al.read("REFERENCES");
                     al.read("(");
                     col.setReferencedTable(al.getValue());
@@ -217,7 +217,8 @@ public class CreateTable {
         table.addColumn(new Column("CreatedDate", "DateTime", true));
         table.addColumn(new Column("LastModifiedById", "Text", true));
         table.addColumn(new Column("LastModifiedDate", "DateTime", true));
-        table.addColumn(new Column("OwnerId", "Text", true));
+        table.addColumn(new Column("Name", "Text", false));
+//        table.addColumn(new Column("OwnerId", "Text", true));
         table.addColumn(new Column("SystemModstamp", "DateTime", true));
 
         patchDataTypes(table.getColumns());
@@ -240,6 +241,7 @@ public class CreateTable {
     private String publicTypeToSalesforceType(String datatype) {
         if (datatype.equalsIgnoreCase("AutoNumber")) return "string";
         if (datatype.equalsIgnoreCase("Lookup")) return "reference";
+        if (datatype.equalsIgnoreCase("MasterDetail")) return "masterrecord";
         if (datatype.equalsIgnoreCase("Text")) return "string";
         if (datatype.equalsIgnoreCase("TextAreaLong")) return "string";
         if (datatype.equalsIgnoreCase("Checkbox")) return "boolean";
