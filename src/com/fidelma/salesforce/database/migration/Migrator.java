@@ -8,6 +8,7 @@ import com.fidelma.salesforce.misc.Deployer;
 import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Downloader;
+import org.hibernate.type.IntegerType;
 
 import java.io.File;
 import java.sql.Connection;
@@ -16,7 +17,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -206,6 +211,7 @@ public class Migrator {
 
         // TODO: Disable triggers and workflow
 
+        Set<String> processedTables = new HashSet<String>();
 
         // Copy the base data to Salesforce, but not the relationships
         for (MigrationCriteria restoreRequest : restoreRequests) {
@@ -219,20 +225,56 @@ public class Migrator {
                         destination,
                         restoreRequest.tableName,
                         rs,
-                        callback
-                );
+                        callback);
+
+                processedTables.add(restoreRequest.tableName.toUpperCase());
             }
         }
 
-        // Copy all data for "masterrecord" rows, including relationships all at once.
+
+        // Record the names of tables with master/detail references
+        Set<String> masterRecordTables = new HashSet<String>();
+
         for (MigrationCriteria restoreRequest : restoreRequests) {
             Table table = salesforceMetadata.getTable(restoreRequest.tableName);
             if (tableContainsMasterDetail(table)) {
-                correctReferences(destination, localDbStatement, table, callback);
+                masterRecordTables.add(table.getName().toUpperCase());
             }
         }
 
-        // TODO: Handle cyclic dependencies that may exist for masterrecords
+
+        // Process master/detail references
+        boolean processingOccurred = true;
+        while ((masterRecordTables.size() > 0) && (processingOccurred)) {
+            Set<String> workSet = new HashSet<String>(masterRecordTables);
+            processingOccurred = false;
+            for (String tableName : workSet) {
+                Table table = salesforceMetadata.getTable(tableName);
+                Boolean ok = true;
+                for (Column col : table.getColumns()) {
+                    if ((col.getType().equalsIgnoreCase("masterrecord")) &&
+                            (!processedTables.contains(col.getReferencedTable().toUpperCase()))) {
+                        ok = false;
+                        break;
+                    }
+                }
+
+                if (ok) {
+                    System.out.println("Processing " + table.getName());
+                    correctReferences(destination, localDbStatement, table, callback);
+                    masterRecordTables.remove(tableName.toUpperCase());
+                    processedTables.add(tableName.toUpperCase());
+                    processingOccurred = true;
+                } else {
+                    System.out.println("Skipping " + table.getName());
+                }
+            }
+        }
+
+        if ((!processingOccurred) && (masterRecordTables.size() > 0)) {
+            throw new SQLException("Unable to migrate data in " + masterRecordTables.iterator().next());
+        }
+
 
         // Now correct the relationships for non-masterrecord tables
         for (MigrationCriteria request : restoreRequests) {
@@ -242,6 +284,7 @@ public class Migrator {
             }
         }
     }
+
 
     private void correctReferences(Connection destination, Statement stmt, Table table, ResultSetCallback callback) throws SQLException {
         boolean hasMasterDetail = tableContainsMasterDetail(table);

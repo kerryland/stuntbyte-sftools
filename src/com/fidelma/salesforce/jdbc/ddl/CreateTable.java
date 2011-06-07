@@ -4,6 +4,7 @@ import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.misc.Deployer;
+import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.parse.SimpleParser;
 import com.sforce.soap.metadata.MetadataConnection;
@@ -11,6 +12,7 @@ import com.sforce.soap.partner.PartnerConnection;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.swing.table.TableStringConverter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
@@ -58,7 +60,67 @@ public class CreateTable {
         execute(tableName, true);
     }
 
-    public void execute(String tableName, boolean alterMode) throws Exception {
+    public void createTables(List<Table> tables) throws SQLException {
+        try {
+            final StringBuilder deployError = new StringBuilder();
+            Deployer deployer = new Deployer(metadataConnection);
+            Deployment deployment = new Deployment();
+
+            for (Table table : tables) {
+                String xml = createMetadataXml(table);
+                deployment.addMember("CustomObject", table.getName(), xml);
+            }
+
+            deployer.deploy(deployment, new DeploymentEventListener() {
+                public void error(String message) {
+                    deployError.append(message);
+                    deployError.append("\n");
+                }
+
+                public void finished(String message) {
+                }
+            });
+
+            if (deployError.length() != 0) {
+                throw new SQLException(deployError.toString());
+            }
+
+            for (Table table : tables) {
+                // Add some system generated columns to the metaDataFactory, so
+                // we can query them.
+                table.addColumn(new Column("Id", "Id", true));
+                table.addColumn(new Column("CreatedById", "Text", true));
+                table.addColumn(new Column("CreatedDate", "DateTime", true));
+                table.addColumn(new Column("LastModifiedById", "Text", true));
+                table.addColumn(new Column("LastModifiedDate", "DateTime", true));
+                table.addColumn(new Column("Name", "Text", false));
+                //        table.addColumn(new Column("OwnerId", "Text", true)); // TODO: Some custom objects do have this?
+                table.addColumn(new Column("SystemModstamp", "DateTime", true));
+
+                patchDataTypes(table.getColumns());
+
+                metaDataFactory.addTable(table);
+            }
+
+        } catch (Exception e) {
+            throw new SQLException(e);
+        }
+    }
+
+
+    private void execute(String tableName, boolean alterMode) throws Exception {
+        Table table = parse(tableName, alterMode);
+        List<Table> tables = new ArrayList<Table>(1);
+        tables.add(table);
+        createTables(tables);
+    }
+
+    public Table parse() throws Exception {
+        String tableName = al.getToken().getValue();
+        return parse(tableName, false);
+    }
+
+    private Table parse(String tableName, boolean alterMode) throws Exception {
         // TODO: IF NOT EXISTS
 
         Table table = new Table(tableName, null, "TABLE");
@@ -186,9 +248,9 @@ public class CreateTable {
                     do {
                         col.addExtraProperty(al.getValue(), al.getValue());
                         value = al.getValue();
-                    }  while (value.equals(","));
+                    } while (value.equals(","));
 
-                    assert(value.equals(")"));
+                    assert (value.equals(")"));
                     value = al.getValue();
                 }
 
@@ -201,28 +263,14 @@ public class CreateTable {
                 columnName = null;
             } else {
                 if (value == null || (!value.equals(",") && !value.equals(")"))) {
-                    throw new SQLException("Expected , or ) -- not " + value);
+                    throw new SQLException("Expected ',' or ')' -- not '" + value + "'");
                 }
 //                System.out.println("End of coldef with=" + value);
                 columnName = al.getValue();
             }
         }
 
-        createMetadataXml(table);
-
-        // Add some system generated columns to the metaDataFactory, so
-        // we can query them.
-        table.addColumn(new Column("Id", "Id", true));
-        table.addColumn(new Column("CreatedById", "Text", true));
-        table.addColumn(new Column("CreatedDate", "DateTime", true));
-        table.addColumn(new Column("LastModifiedById", "Text", true));
-        table.addColumn(new Column("LastModifiedDate", "DateTime", true));
-        table.addColumn(new Column("Name", "Text", false));
-//        table.addColumn(new Column("OwnerId", "Text", true));
-        table.addColumn(new Column("SystemModstamp", "DateTime", true));
-
-        patchDataTypes(table.getColumns());
-        metaDataFactory.addTable(table);
+        return table;
     }
 
     // This is so we can update metadata locally
@@ -251,7 +299,7 @@ public class CreateTable {
     }
 
 
-    public void createMetadataXml(Table table) throws Exception {
+    public String createMetadataXml(Table table) throws Exception {
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
 
@@ -265,6 +313,7 @@ public class CreateTable {
         addElement(document, rootElement, "deploymentStatus", "Deployed");
         addElement(document, rootElement, "sharingModel", "ReadWrite");
 
+        // TODO: Handle auto number namefields! (and length != 15 :-)
         Element nameField = document.createElement("nameField");
         rootElement.appendChild(nameField);
         addElement(document, nameField, "label", "Name");
@@ -367,33 +416,15 @@ public class CreateTable {
         result = new StreamResult(System.out);
         transformer.transform(source, result);
         */
+        return sw.toString();
 
-        final StringBuilder deployError = new StringBuilder();
-        Deployer deployer = new Deployer(metadataConnection);
-        deployer.uploadNonCode(
-                "CustomObject",
-                "/objects/" + table.getName() + ".object",
-                null,
-                sw.toString(),
-                new DeploymentEventListener() {
-                    public void error(String message) {
-                        deployError.append(message);
-                        deployError.append("\n");
-                    }
-
-                    public void finished(String message) {
-                    }
-                });
-        if (deployError.length() != 0) {
-            throw new SQLException(deployError.toString());
-        }
     }
 
-    private Element addElement(Document document, Element fields, String name, String value) {
+    private Element addElement(Document document, Element field, String name, String value) {
         Element em;
         em = document.createElement(name);
         em.appendChild(document.createTextNode(value));
-        fields.appendChild(em);
+        field.appendChild(em);
         return em;
     }
 
@@ -404,7 +435,6 @@ public class CreateTable {
         fields.add(em);
         return em;
     }
-
 
 
 }

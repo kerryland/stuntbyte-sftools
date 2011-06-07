@@ -55,6 +55,7 @@ public class Deployer {
         deploy(deployment, listener);
     }
 
+    /*
     public void dropNonCode(String nonCodeType, String filename, DeploymentEventListener listener) throws Exception {
         filename = new File(filename).getName();
         String nonSuffixedFilename = filename.substring(0, filename.lastIndexOf("."));
@@ -65,6 +66,7 @@ public class Deployer {
 
         undeploy(deployment, listener);
     }
+    */
 
     public void deploy(Deployment deployment, DeploymentEventListener listener) throws Exception {
         deploy(deployment, listener, "package.xml");

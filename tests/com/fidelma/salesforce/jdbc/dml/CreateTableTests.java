@@ -111,14 +111,17 @@ public class CreateTableTests {
     @Test
     public void testCreateReference() throws Exception {
         Statement stmt = conn.createStatement();
-        stmt.execute("drop table three__c if exists");
-        stmt.execute("drop table one__c if exists");
-        stmt.execute("drop table two__c if exists");
+        stmt.addBatch("drop table four__c if exists");
+        stmt.addBatch("drop table three__c if exists");
+        stmt.addBatch("drop table one__c if exists");
+        stmt.addBatch("drop table two__c if exists");
+        stmt.executeBatch();
 
-        stmt.execute("create table two__c(Spang__c Number with (label 'Spang No'), Name__c Text(20))");
-        stmt.execute("create table one__c(two_ref__c Lookup references(two__c) " +
+        stmt.addBatch("create table two__c(Spang__c Number with (label 'Spang No'), Name__c Text(20))");
+        stmt.addBatch("create table one__c(two_ref__c Lookup references(two__c) " +
                 "with (relationshipName 'RefLookup', relationshipLabel 'RefLookupLbl')," +
                 " Name__c Text(20), ext__c Text(15) with (externalId true))");
+        stmt.executeBatch();
 
         stmt.execute("insert into two__c(Spang__c, Name__c) values (3, 'Norman')");
         ResultSet keyRs = stmt.getGeneratedKeys();

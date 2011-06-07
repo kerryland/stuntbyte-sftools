@@ -9,6 +9,7 @@ import com.fidelma.salesforce.jdbc.dml.Select;
 import com.fidelma.salesforce.jdbc.dml.Update;
 import com.fidelma.salesforce.jdbc.metaforce.ColumnMap;
 import com.fidelma.salesforce.jdbc.metaforce.ForceResultSet;
+import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
 import com.fidelma.salesforce.misc.LoginHelper;
 import com.fidelma.salesforce.parse.SimpleParser;
@@ -26,6 +27,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -38,6 +40,7 @@ public class SfStatement implements java.sql.Statement {
     private int updateCount = -1;
     private String generatedId;
     private List<String> generatedIds = new ArrayList<String>();
+    private List<Object> batchDDL = new ArrayList<Object>();
 
     public SfStatement(SfConnection sfConnection, LoginHelper helper) throws ConnectionException, SQLException {
         this.sfConnection = sfConnection;
@@ -75,7 +78,7 @@ public class SfStatement implements java.sql.Statement {
         return result.toString();
     }
 
-    enum DmlType {INSERT, UPDATE, DELETE}
+    enum DmlType {INSERT, UPDATE, DROP_TABLE, CREATE_TABLE, DELETE}
 
     private DmlType batchDmlType = null;
     private List<SObject> batchSObjects = new ArrayList<SObject>();
@@ -123,27 +126,41 @@ public class SfStatement implements java.sql.Statement {
                 Delete delete = new Delete(al, pc);
                 updateCount = delete.execute(batchMode, batchSObjects);
 
-            } else if (batchMode) {
-                throw new SQLException(token.getValue() + " command not supported in batch mode");
+//            } else if (batchMode) {
+//                throw new SQLException(token.getValue() + " command not supported in batch mode");
 
             } else if (token.getValue().equalsIgnoreCase("CREATE")) {
                 al.read("TABLE");
-
                 CreateTable createTable = new CreateTable(al, sfConnection.getMetaDataFactory(), metadataConnection);
-                createTable.executeCreate();
+
+                if (batchMode) {
+                    checkBatchMode(batchMode, DmlType.CREATE_TABLE);
+                    Table table = createTable.parse();                  //  What if 2nd CREATE TABLE refers to first...
+                    batchDDL.add(table);
+                } else {
+                    createTable.executeCreate();
+                }
 
             } else if (token.getValue().equalsIgnoreCase("ALTER")) {
                 al.read("TABLE");
 
                 AlterTable alterTable = new AlterTable(al, sfConnection.getMetaDataFactory(), metadataConnection);
                 alterTable.execute();
-
+                // TODO: Support batch? (Can you alter two columns on the same table?)
 
             } else if (token.getValue().equalsIgnoreCase("DROP")) {
                 al.read("TABLE");
 
                 DropTable dropTable = new DropTable(al, sfConnection.getMetaDataFactory(), metadataConnection);
-                dropTable.execute();
+                if (batchMode) {
+                    checkBatchMode(batchMode, DmlType.DROP_TABLE);
+                    String tableName = dropTable.parse();
+                    if (tableName != null) {
+                        batchDDL.add(tableName);
+                    }
+                } else {
+                    dropTable.execute();
+                }
 
             } else if (token.getValue().equalsIgnoreCase("COMMIT")) {
             } else if (token.getValue().equalsIgnoreCase("ROLLBACK")) {
@@ -314,6 +331,7 @@ public class SfStatement implements java.sql.Statement {
     }
 
     public void clearBatch() throws SQLException {
+        batchDDL.clear();
         batchSObjects.clear();
     }
 
@@ -338,6 +356,29 @@ public class SfStatement implements java.sql.Statement {
             } else if (batchDmlType == DmlType.DELETE) {
                 Delete delete = new Delete(null, pc);
                 delete.deleteSObjects(arr);
+
+            } else if (batchDmlType == DmlType.DROP_TABLE) {
+                DropTable dropTable = new DropTable(null, sfConnection.getMetaDataFactory(), metadataConnection);
+                List<String> tablesToDrop = new ArrayList<String>();
+                for (Object tableName : batchDDL) {
+                    tablesToDrop.add((String) tableName);
+                }
+                dropTable.dropTables(tablesToDrop);
+
+            } else if (batchDmlType == DmlType.CREATE_TABLE) {
+                CreateTable createTable = new CreateTable(null, sfConnection.getMetaDataFactory(), metadataConnection);
+
+                List<Table> tables = new ArrayList<Table>();
+                for (Object table : batchDDL) {
+                    tables.add((Table) table);
+                }
+                createTable.createTables(tables);
+
+            } else if (batchDmlType == null) {
+                // We never called 'addBatch'. That's an OK thing to do
+
+            } else {
+                throw new SQLException("Unknown batch type '" + batchDmlType + "' -- cannot executeBatch");
             }
             clearBatch();
             batchDmlType = null;

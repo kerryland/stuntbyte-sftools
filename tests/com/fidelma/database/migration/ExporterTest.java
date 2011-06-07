@@ -50,17 +50,34 @@ public class ExporterTest {
         Statement sfdc = sfconn.createStatement();
 
         /*
+
+         | TWO |
+            ^      (Lookup)
+         | ONE |
+            ^      (Masterdetail)
+         | THREE |
+            ^      (Masterdetail)
+         | FOUR |
+
+
         one__c.tworef__c    -- Lookup --> two__c
-        three__c.one__c  -- Master/Detail child --> one__c
+        three__c.one__c     -- Master/Detail child --> one__c
+        four__c.threeref__c  -- Master/Detail child --> three__c
          */
-        sfdc.execute("drop table three__c if exists");
-        sfdc.execute("drop table one__c if exists");
-        sfdc.execute("drop table two__c if exists");
+        sfdc.addBatch("drop table three__c if exists");
+        sfdc.addBatch("drop table one__c if exists");
+        sfdc.addBatch("drop table two__c if exists");
+        sfdc.addBatch("drop table four__c if exists");
+        sfdc.executeBatch();
 
+        sfdc.addBatch("create table two__c(Name__c Text(20))");
+        sfdc.addBatch("create table one__c(tworef__c Lookup references(two__c) with (relationshipName 'RefLookup'))");
+        sfdc.addBatch("create table three__c(oneref__c MasterDetail references(one__c) with (relationshipName 'oneChild'))");
+        sfdc.addBatch("create table four__c(" +
+                     "threeref__c MasterDetail references(three__c) with (relationshipName 'threeChild'))");
 
-        sfdc.execute("create table two__c(Name__c Text(20))"); // Just get the default columns, Id and Name.
-        sfdc.execute("create table one__c(tworef__c Lookup references(two__c) with (relationshipName 'RefLookup'))");
-        sfdc.execute("create table three__c(oneref__c MasterDetail references(one__c) with (relationshipName 'oneChild'))");
+        sfdc.executeBatch();
+
 
         sfdc.addBatch("insert into two__c(Name__c) values ('Norman')");
         sfdc.addBatch("insert into two__c(Name__c) values ('Wibbles')");
@@ -71,6 +88,8 @@ public class ExporterTest {
         String twoNormanId = keyRs.getString(1);
         keyRs.next();
         String twoWibblesId = keyRs.getString(1);
+        System.out.println("TWO IDS OLD are " + twoNormanId);
+        System.out.println("TWO IDS OLD are " + twoWibblesId);
 
         sfdc.addBatch("insert into one__c(tworef__c) values ('" + twoNormanId + "')");
         sfdc.addBatch("insert into one__c(tworef__c) values ('" + twoWibblesId + "')");
@@ -82,6 +101,12 @@ public class ExporterTest {
         String oneWibblesId = keyRs.getString(1);
 
         sfdc.execute("insert into three__c(Name, oneref__c) values ('Kerry', '" + oneNormanId + "')");
+        keyRs = sfdc.getGeneratedKeys();
+        keyRs.next();
+        String threeId = keyRs.getString(1);
+
+        sfdc.execute("insert into four__c(threeref__c) values ('" + threeId + "')");
+
 
         // Pull data down into local database
         List<MigrationCriteria> criteriaList = new ArrayList<MigrationCriteria>();
@@ -94,16 +119,23 @@ public class ExporterTest {
         criteria = new MigrationCriteria();
         criteria.tableName = "three__c";
         criteriaList.add(criteria);
+        criteria = new MigrationCriteria();
+        criteria.tableName = "four__c";
+        criteriaList.add(criteria);
 
 
         Exporter exporter = new Exporter(null);
         exporter.createLocalSchema(sfconn, h2Conn);
         exporter.downloadData(sfconn, h2Conn, criteriaList);
 
+//        if (1==1)
+//        throw new Exception("Check h2 one__c row count");
+
         // Delete the data from the destination salesforce
         sfdc.execute("delete from one__c");
         sfdc.execute("delete from two__c");
         sfdc.execute("delete from three__c");
+        sfdc.execute("delete from four__c");
 
         Migrator migrator = new Migrator();
         criteriaList.clear();
@@ -115,6 +147,9 @@ public class ExporterTest {
         criteriaList.add(criteria);
         criteria = new MigrationCriteria();
         criteria.tableName = "three__c";
+        criteriaList.add(criteria);
+        criteria = new MigrationCriteria();
+        criteria.tableName = "four__c";
         criteriaList.add(criteria);
 
 
@@ -133,15 +168,20 @@ public class ExporterTest {
         Assert.assertEquals("Wibbles", rs.getString("Name__c"));
         Assert.assertFalse(rs.next());
 
+        System.out.println("TWO IDS NEW are " + newTwoNormanId);
+        System.out.println("TWO IDS NEW are " + newTwoWibbleId);
 
-        rs = sfdc.executeQuery("select Id, tworef__c from one__c order by twoRef__r.Name");
+
+        rs = sfdc.executeQuery("select Id, tworef__c, twoRef__r.Name__c from one__c order by twoRef__r.Name__c");
         rs.next();
         String newOneNormanId = rs.getString("Id");
         Assert.assertNotSame(newOneNormanId, oneNormanId);
+        Assert.assertEquals("Norman", rs.getString("tworef__r.Name__c"));
         Assert.assertEquals(newTwoNormanId, rs.getString("tworef__c"));  // Do we refer to the new "two__c.Id"?
         rs.next();
         String newOneWibblesId = rs.getString("Id");
         Assert.assertNotSame(newOneWibblesId, oneWibblesId);
+        Assert.assertEquals("Wibbles", rs.getString("tworef__r.Name__c"));
         Assert.assertEquals(newTwoWibbleId, rs.getString("tworef__c"));  // Do we refer to the new "two__c.Id"?
 
         Assert.assertFalse(rs.next());

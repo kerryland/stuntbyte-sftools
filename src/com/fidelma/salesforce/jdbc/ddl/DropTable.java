@@ -2,6 +2,7 @@ package com.fidelma.salesforce.jdbc.ddl;
 
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.misc.Deployer;
+import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.parse.SimpleParser;
 import com.sforce.soap.metadata.MetadataConnection;
@@ -10,6 +11,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * DROP TABLE <tableName> [ IF EXISTS ]
@@ -25,42 +28,70 @@ public class DropTable {
         this.metadataConnection = metadataConnection;
     }
 
-    public void execute() throws Exception {
-        String tableName = al.getToken().getValue();
+    public void execute() throws SQLException {
+        String tableName = parse();
 
-        String value = al.getValue();
-        if (value != null) {
-            al.assertEquals("if", value);
-            al.read("exists");
-
-            try {
-                metaDataFactory.getTable(tableName);
-            } catch (SQLException e) {
-                return; // It doesn't exist
-            }
+        if (tableName != null) {
+            List<String> tablesToDrop = new ArrayList<String>();
+            tablesToDrop.add(tableName);
+            dropTables(tablesToDrop);
         }
-        createMetadataXml(tableName);
-        metaDataFactory.removeTable(tableName);
+    }
+
+    public String parse() throws SQLException {
+        try {
+            String tableName = al.getToken().getValue();
+
+            String value = al.getValue();
+            if (value != null) {
+                al.assertEquals("if", value);
+                al.read("exists");
+
+                try {
+                    metaDataFactory.getTable(tableName);
+                } catch (SQLException e) {
+                    tableName = null;
+                }
+            }
+            return tableName;
+        } catch (Exception e) {
+            throw new SQLException(e);
+        }
     }
 
 
-    public void createMetadataXml(String tableName) throws Exception {
+    public void dropTables(List<String> tablesToDrop) throws SQLException {
         Deployer deployer = new Deployer(metadataConnection);
         final StringBuilder deployError = new StringBuilder();
-        deployer.dropNonCode(
-                "CustomObject",
-                "/objects/" + tableName + ".object",
-                new DeploymentEventListener() {
-                    public void error(String message) {
-                        deployError.append(message).append("\n");
-                    }
 
-                    public void finished(String message) {
+        Deployment deployment = new Deployment();
 
-                    }
-                });
+        try {
+            for (String tableName : tablesToDrop) {
+                deployment.addMember("CustomObject", tableName, null);
+            }
+            deployer.undeploy(deployment,
+                    new DeploymentEventListener() {
+                        public void error(String message) {
+                            deployError.append(message).append("\n");
+                        }
+
+                        public void finished(String message) {
+
+                        }
+                    });
+
+        } catch (Exception e) {
+            throw new SQLException(e);
+        }
+
         if (deployError.length() != 0) {
             throw new SQLException(deployError.toString());
         }
+
+        for (String tableName : tablesToDrop) {
+            metaDataFactory.removeTable(tableName);
+        }
+
     }
 }
