@@ -119,7 +119,6 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
 
     public void setShort(int parameterIndex, short x) throws SQLException {
         setParameter(parameterIndex, Short.toString(x));
-
     }
 
     public void setInt(int parameterIndex, int x) throws SQLException {
@@ -146,6 +145,11 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
         setParameter(parameterIndex, "'" + x + "'");
     }
 
+    public void setTime(int parameterIndex, Time x) throws SQLException {
+        // TODO!
+
+    }
+
 
     private SimpleDateFormat timestampSdf = new SimpleDateFormat(TypeHelper.timestampFormat);
     private SimpleDateFormat dateSdf = new SimpleDateFormat(TypeHelper.dateFormat);
@@ -167,9 +171,43 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
     }
 
     public void setObject(int parameterIndex, Object x) throws SQLException {
-        // TODO: HANDLE EVERYTHING ELSE!
-        if (x instanceof String) {
+        // TODO: TEST ALL THESE!
+        if (x == null) {
+           setParameter(parameterIndex, ""); // TODO: REALLY?
+
+        } else if (x instanceof BigDecimal) {
+            setBigDecimal(parameterIndex, (BigDecimal) x);
+
+        } else if (x instanceof Boolean) {
+            setBoolean(parameterIndex, (Boolean) x);
+
+        } else if (x instanceof Date) {
+            setDate(parameterIndex, (Date) x);
+
+        } else if (x instanceof Double) {
+            setDouble(parameterIndex, (Double) x);
+
+        } else if (x instanceof Float) {
+            setFloat(parameterIndex, (Float) x);
+
+        } else if (x instanceof Integer) {
+            setInt(parameterIndex, (Integer) x);
+
+        } else if (x instanceof Long) {
+            setLong(parameterIndex, (Long) x);
+
+        } else if (x instanceof Short) {
+            setShort(parameterIndex, (Short) x);
+
+        } else if (x instanceof String) {
             setString(parameterIndex, (String) x);
+
+        } else if (x instanceof Time) {
+            setTime(parameterIndex, (Time) x);
+
+        } else if (x instanceof Timestamp) {
+            setTimestamp(parameterIndex, (Timestamp) x);
+
         }
     }
 
@@ -186,11 +224,6 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
     }
 
     public void setBytes(int parameterIndex, byte[] x) throws SQLException {
-
-    }
-
-
-    public void setTime(int parameterIndex, Time x) throws SQLException {
 
     }
 

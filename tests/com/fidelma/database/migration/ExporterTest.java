@@ -15,14 +15,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Properties;
+import java.util.TimeZone;
 
 import static org.junit.Assert.*;
 
@@ -70,7 +74,7 @@ public class ExporterTest {
         sfdc.addBatch("drop table four__c if exists");
         sfdc.executeBatch();
 
-        sfdc.addBatch("create table two__c(Name__c Text(20))");
+        sfdc.addBatch("create table two__c(Name__c Text(20), SomeDate__c DateTime)");
         sfdc.addBatch("create table one__c(tworef__c Lookup references(two__c) with (relationshipName 'RefLookup'))");
         sfdc.addBatch("create table three__c(oneref__c MasterDetail references(one__c) with (relationshipName 'oneChild'))");
         sfdc.addBatch("create table four__c(" +
@@ -78,18 +82,31 @@ public class ExporterTest {
 
         sfdc.executeBatch();
 
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
-        sfdc.addBatch("insert into two__c(Name__c) values ('Norman')");
-        sfdc.addBatch("insert into two__c(Name__c) values ('Wibbles')");
-        sfdc.executeBatch();
+        PreparedStatement psfdc = sfconn.prepareStatement("insert into two__c(Name__c, SomeDate__c) values (?,?)");
+        psfdc.setString(1, "Norman");
+        cal.clear();
+        cal.set(2010, Calendar.FEBRUARY, 11, 17, 0);
+        psfdc.setTimestamp(2, new Timestamp(cal.getTimeInMillis()));
+        psfdc.addBatch();
 
-        ResultSet keyRs = sfdc.getGeneratedKeys();
+        psfdc.setString(1, "Wibbles");
+        cal.set(2010, Calendar.FEBRUARY, 15, 17, 0);
+        psfdc.setTimestamp(2, new Timestamp(cal.getTimeInMillis()));
+        psfdc.addBatch();
+
+        psfdc.executeBatch();
+
+//        sfdc.addBatch("insert into two__c(Name__c) values ('Norman')");
+//        sfdc.addBatch("insert into two__c(Name__c) values ('Wibbles')");
+//        sfdc.executeBatch();
+
+        ResultSet keyRs = psfdc.getGeneratedKeys();
         keyRs.next();
         String twoNormanId = keyRs.getString(1);
         keyRs.next();
         String twoWibblesId = keyRs.getString(1);
-        System.out.println("TWO IDS OLD are " + twoNormanId);
-        System.out.println("TWO IDS OLD are " + twoWibblesId);
 
         sfdc.addBatch("insert into one__c(tworef__c) values ('" + twoNormanId + "')");
         sfdc.addBatch("insert into one__c(tworef__c) values ('" + twoWibblesId + "')");
@@ -168,10 +185,6 @@ public class ExporterTest {
         Assert.assertEquals("Wibbles", rs.getString("Name__c"));
         Assert.assertFalse(rs.next());
 
-        System.out.println("TWO IDS NEW are " + newTwoNormanId);
-        System.out.println("TWO IDS NEW are " + newTwoWibbleId);
-
-
         rs = sfdc.executeQuery("select Id, tworef__c, twoRef__r.Name__c from one__c order by twoRef__r.Name__c");
         rs.next();
         String newOneNormanId = rs.getString("Id");
@@ -186,11 +199,18 @@ public class ExporterTest {
 
         Assert.assertFalse(rs.next());
 
-        rs = sfdc.executeQuery("select Name, OneRef__r.TwoRef__r.Name__c from three__c");
+        rs = sfdc.executeQuery("select Name, OneRef__r.TwoRef__r.Name__c, OneRef__r.TwoRef__r.SomeDate__c from three__c");
         rs.next();
         Assert.assertEquals("Kerry", rs.getString(1));
         Assert.assertEquals("Norman", rs.getString(2));
+        Timestamp ts = rs.getTimestamp(3);
 
+        cal.setTimeInMillis(ts.getTime());
+        Assert.assertEquals(2010, cal.get(Calendar.YEAR));
+        Assert.assertEquals(Calendar.FEBRUARY, cal.get(Calendar.MONTH));
+        Assert.assertEquals(11, cal.get(Calendar.DATE));
+        Assert.assertEquals(17, cal.get(Calendar.HOUR_OF_DAY));
+        Assert.assertEquals(0, cal.get(Calendar.MINUTE));
 
     }
 
@@ -275,7 +295,6 @@ public class ExporterTest {
                     }
                 } else {
                     conn.createStatement().execute(sql);
-//                    System.out.println("Executed " + sql);
                 }
             } catch (SQLException e) {
                 System.out.println(sql);

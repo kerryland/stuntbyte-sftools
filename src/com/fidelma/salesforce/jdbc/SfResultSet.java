@@ -40,6 +40,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
 /**
  */
@@ -61,6 +62,9 @@ public class SfResultSet implements java.sql.ResultSet {
     private boolean wasNull;
     private SfStatement statement;
     private boolean closed;
+
+    private SimpleDateFormat timestampSdf = new SimpleDateFormat(TypeHelper.timestampFormat);
+    private SimpleDateFormat dateSdf = new SimpleDateFormat(TypeHelper.dateFormat);
 
     public SfResultSet() {
         // Create an empty resultset
@@ -90,6 +94,8 @@ public class SfResultSet implements java.sql.ResultSet {
         columnsInResult = new ArrayList<String>();
 
         if (records.length > 0) {
+            configureDateTimeObjects();
+
             generateResultFields(null, records[0], columnsInResult);
 
             String drivingTable = null;
@@ -106,6 +112,14 @@ public class SfResultSet implements java.sql.ResultSet {
         }
 
         batchEnd = records.length - 1;
+    }
+
+    private void configureDateTimeObjects() {
+        timestampSdf = new SimpleDateFormat(TypeHelper.timestampFormat);
+        timestampSdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        dateSdf = new SimpleDateFormat(TypeHelper.dateFormat);
+        dateSdf.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
 
@@ -554,8 +568,6 @@ public class SfResultSet implements java.sql.ResultSet {
         return getTimestamp(columnLabel);
     }
 
-    private SimpleDateFormat timestampSdf = new SimpleDateFormat(TypeHelper.timestampFormat);
-    private SimpleDateFormat dateSdf = new SimpleDateFormat(TypeHelper.dateFormat);
 
     private Timestamp getTimestamp(Object o) throws SQLException {
         if (o == null) {
