@@ -56,11 +56,15 @@ public class WscService {
         Set<String> typesSet = new HashSet<String>(typesList);
         List<String[]> batchedTypes = batch(typesList);
 
+        Map<String, DescribeSObjectResult> describeCache = new HashMap<String, DescribeSObjectResult>();
+
         // Need all child references so run through the batches first
         for (String[] batch : batchedTypes) {
             DescribeSObjectResult[] sobs = partnerConnection.describeSObjects(batch);
             if (sobs != null) {
                 for (DescribeSObjectResult sob : sobs) {
+                    describeCache.put(sob.getName(), sob);
+
                     ChildRelationship[] crs = sob.getChildRelationships();
                     if (crs != null) {
                         for (ChildRelationship cr : crs) {
@@ -95,9 +99,12 @@ public class WscService {
 
         // Run through the batches again now the child references are available
         for (String[] batch : batchedTypes) {
-            DescribeSObjectResult[] sobs = partnerConnection.describeSObjects(batch);
-            if (sobs != null) {
-                for (DescribeSObjectResult sob : sobs) {
+//            DescribeSObjectResult[] sobs = partnerConnection.describeSObjects(batch);
+//            if (sobs != null) {
+            for (String tableName :batch) {
+                DescribeSObjectResult sob = describeCache.get(tableName);
+//                for (DescribeSObjectResult sob : sobs) {
+
                     Field[] fields = sob.getFields();
 
                     String type = sob.getUpdateable() ? "TABLE" : "SYSTEM TABLE";
@@ -124,7 +131,7 @@ public class WscService {
 
                     factory.addTable(table);
                 }
-            }
+//            }
         }
 
         return factory;
@@ -309,4 +316,5 @@ public class WscService {
         // Keeping all fields
         return true;
     }
+
 }

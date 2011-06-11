@@ -8,7 +8,15 @@ import com.fidelma.salesforce.misc.Deployer;
 import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Downloader;
-import org.hibernate.type.IntegerType;
+import com.fidelma.salesforce.misc.LoginHelper;
+import com.sforce.soap.metadata.AsyncRequestState;
+import com.sforce.soap.metadata.AsyncResult;
+import com.sforce.soap.metadata.CustomField;
+import com.sforce.soap.metadata.CustomObject;
+import com.sforce.soap.metadata.FileProperties;
+import com.sforce.soap.metadata.ListMetadataQuery;
+import com.sforce.soap.metadata.Metadata;
+import com.sforce.soap.metadata.MetadataConnection;
 
 import java.io.File;
 import java.sql.Connection;
@@ -17,10 +25,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -96,39 +102,57 @@ public class Migrator {
 
         // TODO: Insufficient to just delete tables. Must delete code, case escalation rules, EVERYTHING
 
-        // Decide what to remove
+        // TODO: Document inability to delete "case assignment rules" and "case escalation rules"
+
+        List<String> metaDataToDelete = new ArrayList<String>();
+
+        metaDataToDelete.add("ApexClass");
+        metaDataToDelete.add("ApexComponent");
+        metaDataToDelete.add("ApexPage");
+        metaDataToDelete.add("ApexTrigger");
+
+        metaDataToDelete.add("FieldSet");
+        metaDataToDelete.add("RecordType");
+        metaDataToDelete.add("StaticResource");
+        metaDataToDelete.add("Layout");
+        metaDataToDelete.add("Workflow");
+
+
+        metaDataToDelete.add("ArticleType");
+        metaDataToDelete.add("CustomApplication");
+        metaDataToDelete.add("CustomLabels");
+//        metaDataToDelete.add("CustomObject"); (handled below)
+        metaDataToDelete.add("CustomObjectTranslation");
+        metaDataToDelete.add("CustomPageWebLink");
+        metaDataToDelete.add("CustomSite");
+        metaDataToDelete.add("CustomTab");
+        metaDataToDelete.add("DataCategoryGroup");
+        metaDataToDelete.add("EntitlementTemplate");
+        metaDataToDelete.add("HomePageComponent");
+        metaDataToDelete.add("HomePageLayout");
+        metaDataToDelete.add("Portal");                        // Can I even do this?
+        metaDataToDelete.add("Profile");
+        metaDataToDelete.add("RemoteSiteSetting");
+        metaDataToDelete.add("ReportType");
+        metaDataToDelete.add("Scontrol");
+        metaDataToDelete.add("Translations");
+
+
+// Decide what to remove
         Deployment undeploy = new Deployment();
+        MetadataConnection metadataConnection = targetInstance.getHelper().getMetadataConnection();
 
-        // TODO: * does not work. Need to name them explicitly
-        // simplest option prob to download via * and then
-        // just renamed package.xml to destructiveChanges.xml
+        List<ListMetadataQuery> queryList = new ArrayList<ListMetadataQuery>();
+        for (String m : metaDataToDelete) {
+            ListMetadataQuery mq = new ListMetadataQuery();
+            mq.setType(m);
+            queryList.add(mq);
+            // Salesforce only lets us call with 3 at a time. Thanks Salesforce!
+            if (queryList.size() == 3) {
+                addToUndeploymentList(metadataConnection, undeploy, queryList);
+            }
+        }
 
-//        undeploy.addMember("ApexClass", "*", null);
-//        undeploy.addMember("ArticleType", "*", null);
-//        undeploy.addMember("ApexComponent", "*", null);
-//        undeploy.addMember("ApexPage", "*", null);
-//        undeploy.addMember("ApexTrigger", "*", null);
-//        undeploy.addMember("CustomApplication", "*", null);
-//        undeploy.addMember("CustomLabels", "*", null);
-//        undeploy.addMember("CustomObjectTranslation", "*", null);
-//        undeploy.addMember("CustomPageWebLink", "*", null);
-//        undeploy.addMember("CustomSite", "*", null);
-//        undeploy.addMember("CustomTab", "*", null);
-//        undeploy.addMember("DataCategoryGroup", "*", null);
-//        undeploy.addMember("EntitlementTemplate", "*", null);
-//        undeploy.addMember("FieldSet", "*", null);
-//        undeploy.addMember("HomePageComponent", "*", null);
-//        undeploy.addMember("HomePageLayout", "*", null);
-//        undeploy.addMember("Layout", "*", null);
-//        undeploy.addMember("Portal", "*", null);
-//        undeploy.addMember("Profile", "*", null);
-//        undeploy.addMember("RecordType", "*", null);
-//        undeploy.addMember("RemoteSiteSetting", "*", null);
-//        undeploy.addMember("ReportType", "*", null);
-//        undeploy.addMember("Scontrol", "*", null);
-//        undeploy.addMember("StaticResource", "*", null);
-//        undeploy.addMember("Translations", "*", null);
-//        undeploy.addMember("Workflow", "*", null);
 
         List<Table> tables = targetInstance.getMetaDataFactory().getTables();
         for (Table table : tables) {
@@ -141,14 +165,50 @@ public class Migrator {
                             undeploy.addMember("CustomField", table.getName() + "." + column.getName(), null);
                         }
                     }
-
                 }
             }
         }
 
         Deployer targetDeployer = new Deployer(targetInstance.getHelper().getMetadataConnection());
         targetDeployer.undeploy(undeploy, del);
+
+        /*
+        CustomField cf = new CustomField();
+        cf.setFullName("Account.SLA__c");
+        AsyncResult[] result = metadataConnection.delete(new Metadata[]{cf});
+        AsyncResult asyncResult = result[0];
+        long waitTimeMilliSecs = 1000;
+        while (!asyncResult.isDone()) {
+            Thread.sleep(waitTimeMilliSecs);
+// double the wait time for the next iteration
+            waitTimeMilliSecs *= 2;
+            asyncResult = metadataConnection.checkStatus(
+                    new String[]{asyncResult.getId()})[0];
+            System.out.println("Status is: " + asyncResult.getState());
+        }
+        if (asyncResult.getState() != AsyncRequestState.Completed) {
+            System.out.println(asyncResult.getStatusCode() + " msg: " +
+                    asyncResult.getMessage());
+        }
+        System.out.println("Done!");
+          */
         return targetDeployer;
+    }
+
+    private void addToUndeploymentList(MetadataConnection metadataConnection,
+                                       Deployment undeploy,
+                                       List<ListMetadataQuery> queryList) throws Exception {
+
+        ListMetadataQuery[] queries = new ListMetadataQuery[queryList.size()];
+        queryList.toArray(queries);
+
+        FileProperties[] props = metadataConnection.listMetadata(
+                queries,
+                LoginHelper.SFDC_VERSION);
+
+        for (FileProperties prop : props) {
+            undeploy.addMember(prop.getType(), prop.getFullName(), null);
+        }
     }
 
     public void restoreRows(SfConnection destination,
@@ -414,5 +474,6 @@ public class Migrator {
         }
         return result;
     }
+
 
 }

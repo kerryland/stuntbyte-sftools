@@ -122,7 +122,7 @@ public class SelectEngineTests {
 
             Timestamp created = rs.getTimestamp("CreatedDate");
 
-            Calendar cal = Calendar.getInstance();
+            Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
             cal.setTimeInMillis(created.getTime());
             assertEquals(now.get(Calendar.YEAR), cal.get(Calendar.YEAR));
             assertEquals(now.get(Calendar.MONTH), cal.get(Calendar.MONTH));
@@ -937,6 +937,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
             Timestamp ts = rs.getTimestamp("datetime__c");
             d = new Date(ts.getTime());
             sdf = new SimpleDateFormat(TypeHelper.timestampFormat);
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             assertEquals("2010-10-21T23:15:00.000Z", sdf.format(d));
 
             String pick = rs.getString("picklist__c");

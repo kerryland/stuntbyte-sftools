@@ -518,25 +518,6 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
                                String[] types) throws SQLException {
 
         return metaDataFactory.getTables(tableNamePattern, types);
-
-//        ListMetadataQuery query = new ListMetadataQuery();
-//        query.setType("CustomObject");
-//
-//        try {
-//            FileProperties[] props = meta.listMetadata(
-//                    new ListMetadataQuery[]{query},
-//                    LoginHelper.SFDC_VERSION);
-//
-//            for (FileProperties prop : props) {
-//                System.out.println("Component fullName: " + prop.getFullName());
-//                System.out.println("Component type: " + prop.getType());
-//            }
-//
-//        } catch (ConnectionException e) {
-//            throw new SQLException(e);
-//        }
-//        return null;
-
     }
 
     public ResultSet getSchemas() throws SQLException {
