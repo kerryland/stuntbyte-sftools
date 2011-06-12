@@ -7,6 +7,7 @@ import com.sforce.ws.ConnectionException;
 
 import java.sql.*;
 import java.sql.Statement;
+import java.util.Calendar;
 import java.util.Map;
 import java.util.Properties;
 
@@ -28,6 +29,11 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public SfConnection(String server, String username, String password, Properties info) {
+        System.out.println("WARNING: BETA SALESFORCE JDBC DRIVER EXPIRES 31 December 2011");
+        Calendar now = Calendar.getInstance();
+        if (now.get(Calendar.YEAR) > 2011) {
+            throw new RuntimeException("JDBC Driver has expired. Please visit www.fidelma.com for an update");
+        }
         this.server = server;
         this.username = username;
         this.info = info;

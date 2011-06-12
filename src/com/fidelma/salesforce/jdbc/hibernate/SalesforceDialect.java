@@ -29,20 +29,20 @@ public class SalesforceDialect extends org.hibernate.dialect.Dialect {
         super();
 
         getDefaultProperties().setProperty( Environment.VERSION, DEFAULT_BATCH_SIZE );
-         getDefaultProperties().setProperty(Environment.USE_GET_GENERATED_KEYS, "true");
+        getDefaultProperties().setProperty(Environment.USE_GET_GENERATED_KEYS, "true");
 
-        registerColumnType(Types.VARCHAR, "Text");
-        registerColumnType(Types.BIGINT, "Number");
-        registerColumnType(Types.CHAR, "Text");
-        registerColumnType(Types.DATE, "Date");
-        registerColumnType(Types.TIMESTAMP, "DateTime");
-        registerColumnType(Types.DECIMAL, "Number");
-        registerColumnType(Types.DOUBLE, "Number");
-        registerColumnType(Types.FLOAT, "Number");
-        registerColumnType(Types.INTEGER, "Number");
-        registerColumnType(Types.LONGVARCHAR, "TextArea" );
-        registerColumnType(Types.BOOLEAN, "Checkbox" );
-        registerColumnType(Types.TIME, "Time" );
+        registerColumnType(Types.VARCHAR, "string");
+        registerColumnType(Types.BIGINT, "int");
+        registerColumnType(Types.CHAR, "string");
+        registerColumnType(Types.DATE, "date");
+        registerColumnType(Types.TIMESTAMP, "datetime");
+        registerColumnType(Types.DECIMAL, "decimal");
+        registerColumnType(Types.DOUBLE, "double");
+        registerColumnType(Types.FLOAT, "double");
+        registerColumnType(Types.INTEGER, "int");
+        registerColumnType(Types.LONGVARCHAR, "textarea" );
+        registerColumnType(Types.BOOLEAN, "boolean" );
+        registerColumnType(Types.TIME, "time" );
 
         /*
 

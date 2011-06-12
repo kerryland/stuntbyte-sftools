@@ -35,7 +35,7 @@ public class MigratorTest {
 
         // Create a known table in the hack salesforce instance
         PreparedStatement statement = conn.prepareStatement(
-                "create table i_am_going__c(hello__c Text(20))");
+                "create table i_am_going__c(hello__c string(20))");
 
         statement.execute();
         // Prove the known table really exists

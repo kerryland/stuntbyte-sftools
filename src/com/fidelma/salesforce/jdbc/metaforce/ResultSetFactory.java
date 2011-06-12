@@ -26,12 +26,14 @@ public class ResultSetFactory {
 
     private static class TypeInfo {
         public TypeInfo(
+                String niceName,
                 String typeName,
                 int sqlDataType,
                 int precision,
                 int minScale,
                 int maxScale,
                 int radix) {
+            this.niceName = niceName;
             this.typeName = typeName;
             this.sqlDataType = sqlDataType;
             this.precision = precision;
@@ -40,6 +42,7 @@ public class ResultSetFactory {
             this.radix = radix;
         }
 
+        private String niceName;
         String typeName;
         int sqlDataType;
         int precision;
@@ -48,41 +51,70 @@ public class ResultSetFactory {
         int radix;
     }
 
-    private static TypeInfo TYPE_INFO_DATA[] = {
-            new TypeInfo("id", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("masterrecord", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("reference", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("string", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("encryptedstring", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("email", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("phone", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("url", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("textarea", Types.LONGVARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("base64", Types.LONGVARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("boolean", Types.BOOLEAN, 1, 0, 0, 0),
-            new TypeInfo("_boolean", Types.BOOLEAN, 1, 0, 0, 0),
-            new TypeInfo("byte", Types.VARBINARY, 10, 0, 0, 10),
-            new TypeInfo("_byte", Types.VARBINARY, 10, 0, 0, 10),
-            new TypeInfo("int", Types.INTEGER, 10, 0, 0, 10),
-            new TypeInfo("_int", Types.INTEGER, 10, 0, 0, 10),
-            new TypeInfo("decimal", Types.DECIMAL, 17, -324, 306, 10),
-            new TypeInfo("double", Types.DOUBLE, 17, -324, 306, 10),
-            new TypeInfo("_double", Types.DOUBLE, 17, -324, 306, 10),
-            new TypeInfo("percent", Types.DOUBLE, 17, -324, 306, 10),
-            new TypeInfo("currency", Types.DOUBLE, 17, -324, 306, 10), // TODO: double for currency seems crazy!
-            new TypeInfo("date", Types.DATE, 10, 0, 0, 0),
-            new TypeInfo("time", Types.TIME, 10, 0, 0, 0),
-            new TypeInfo("datetime", Types.TIMESTAMP, 10, 0, 0, 0),
+                /*
+   AutoNumber
+   Lookup
+   MasterDetail
+   Checkbox
+   Currency
+   Date
+   DateTime
+   Email
+   Number
+   Percent
+   Phone
+   Picklist
+   MultiselectPicklist
+   Text
+   TextArea
+   LongTextArea
+   Url
+   EncryptedText
+   Summary
+   Hierarchy
+                */
 
-            new TypeInfo("picklist", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("multipicklist", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("combobox", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+    // LogTextArea
+
+    private static TypeInfo TYPE_INFO_DATA[] = {
+            new TypeInfo("Id", "id", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+
+            new TypeInfo("MasterDetail", "masterrecord", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("Lookup", "reference", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("Text", "string", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("EncryptedText", "encryptedstring", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("Email", "email", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("Phone", "phone", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("Url", "url", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("TextArea", "textarea", Types.LONGVARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("LongTextArea", "base64", Types.LONGVARCHAR, 0x7fffffff, 0, 0, 0),  // LongTextArea?
+            new TypeInfo("Checkbox", "boolean", Types.BOOLEAN, 1, 0, 0, 0),
+            new TypeInfo("Checkbox", "_boolean", Types.BOOLEAN, 1, 0, 0, 0),
+            new TypeInfo("Byte", "byte", Types.VARBINARY, 10, 0, 0, 10),     // Byte ?
+            new TypeInfo("Byte","_byte", Types.VARBINARY, 10, 0, 0, 10),    // Byte?
+            new TypeInfo("Number", "decimal", Types.DECIMAL, 17, -324, 306, 10),
+            new TypeInfo("Number", "int", Types.INTEGER, 10, 0, 0, 10),
+            new TypeInfo("Number", "_int", Types.INTEGER, 10, 0, 0, 10),
+            new TypeInfo("Number", "double", Types.DOUBLE, 17, -324, 306, 10),
+            new TypeInfo("Number", "_double", Types.DOUBLE, 17, -324, 306, 10),
+            new TypeInfo("Percent", "percent", Types.DOUBLE, 17, -324, 306, 10),
+            new TypeInfo("Currency", "currency", Types.DOUBLE, 17, -324, 306, 10), // TODO: double for currency seems crazy!
+            new TypeInfo("Date", "date", Types.DATE, 10, 0, 0, 0),
+            new TypeInfo("Time", "time", Types.TIME, 10, 0, 0, 0),      // Time?
+            new TypeInfo("DateTime", "datetime", Types.TIMESTAMP, 10, 0, 0, 0),
+
+            new TypeInfo("Picklist", "picklist", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("MultiselectPicklist", "multipicklist", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("MultiselectPicklist", "combobox", Types.VARCHAR, 0x7fffffff, 0, 0, 0),  // MultiselectPicklist?
+
+           // TODO: How handle autonumber?
+//            new TypeInfo("AutoNumber", "string", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
 
             // new TypeInfo("picklist", Types.ARRAY, 0, 0, 0, 0),
             // new TypeInfo("multipicklist", Types.ARRAY, 0, 0, 0, 0),
             // new TypeInfo("combobox", Types.ARRAY, 0, 0, 0, 0),
 
-            new TypeInfo("anyType", Types.OTHER, 0, 0, 0, 0),
+            new TypeInfo("Summary", "anyType", Types.OTHER, 0, 0, 0, 0),      // Summary?
     };
 
     private Map<String, Table> tableMap = new HashMap<String, Table>();
@@ -282,22 +314,20 @@ public class ResultSetFactory {
                 return entry;
             }
         }
-        throw new SQLException("Unable to identify type for " + forceTypeName);
+        throw new SQLException("Unable to identify type for '" + forceTypeName + "'");
 //        return null;
     }
 
     public static Integer lookupJdbcType(String forceTypeName) throws SQLException {
         Integer result = lookupTypeInfo(forceTypeName).sqlDataType;
-        if (result == null) {
-            throw new SQLException("Unable to identify JDBC type for " + forceTypeName);
-        }
         return result;
     }
 
-//    public static String lookupJdbcType(String forceTypeName) throws SQLException {
-//          return lookupTypeInfo(forceTypeName).sqlDataType;
-//      }
-//
+    public static String lookupExternalTypeName(String forceTypeName) throws SQLException {
+        return lookupTypeInfo(forceTypeName).niceName;
+    }
+
+
 
     /**
      * Provide table (object) relationship information.

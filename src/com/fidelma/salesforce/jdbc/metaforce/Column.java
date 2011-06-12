@@ -33,7 +33,7 @@ public class Column {
     }
     public Column(String name, String type) {
         this.name = name;
-        this.type = type;
+        setType(type);
     }
 
     public Table getTable() {
@@ -165,6 +165,9 @@ public class Column {
     }
 
     public void setType(String type) {
+        if (type.startsWith("_")) {
+            type = type.substring(1);
+        }
         this.type = type;
     }
 

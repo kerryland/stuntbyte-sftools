@@ -74,11 +74,11 @@ public class ExporterTest {
         sfdc.addBatch("drop table four__c if exists");
         sfdc.executeBatch();
 
-        sfdc.addBatch("create table two__c(Name__c Text(20), SomeDate__c DateTime)");
-        sfdc.addBatch("create table one__c(tworef__c Lookup references(two__c) with (relationshipName 'RefLookup'))");
-        sfdc.addBatch("create table three__c(oneref__c MasterDetail references(one__c) with (relationshipName 'oneChild'))");
+        sfdc.addBatch("create table two__c(Name__c string(20), SomeDate__c DateTime)");
+        sfdc.addBatch("create table one__c(tworef__c reference references(two__c) with (relationshipName 'RefLookup'))");
+        sfdc.addBatch("create table three__c(oneref__c masterrecord references(one__c) with (relationshipName 'oneChild'))");
         sfdc.addBatch("create table four__c(" +
-                     "threeref__c MasterDetail references(three__c) with (relationshipName 'threeChild'))");
+                     "threeref__c masterRecord references(three__c) with (relationshipName 'threeChild'))");
 
         sfdc.executeBatch();
 

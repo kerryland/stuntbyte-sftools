@@ -46,7 +46,7 @@ public class CreateTableTests {
     public void testCreateStatement() throws Exception {
         conn.createStatement().execute("drop table wibble__c if exists");
 
-        String sql = "create table wibble__c(Spang__c Number, Namero__c Text(20), price__c Number(16,2))";
+        String sql = "create table wibble__c(Spang__c int, Namero__c string(20), price__c decimal(16,2))";
         conn.createStatement().execute(sql);
 
 
@@ -73,7 +73,7 @@ public class CreateTableTests {
 
         // TODO: Improve this test
 
-        sql = "alter table wibble__c add Hoover__c Number";
+        sql = "alter table wibble__c add Hoover__c int";
         conn.createStatement().execute(sql);
 
 
@@ -117,10 +117,10 @@ public class CreateTableTests {
         stmt.addBatch("drop table two__c if exists");
         stmt.executeBatch();
 
-        stmt.addBatch("create table two__c(Spang__c Number with (label 'Spang No'), Name__c Text(20))");
-        stmt.addBatch("create table one__c(two_ref__c Lookup references(two__c) " +
+        stmt.addBatch("create table two__c(Spang__c int with (label 'Spang No'), Name__c string(20))");
+        stmt.addBatch("create table one__c(two_ref__c reference references(two__c) " +
                 "with (relationshipName 'RefLookup', relationshipLabel 'RefLookupLbl')," +
-                " Name__c Text(20), ext__c Text(15) with (externalId true))");
+                " Name__c string(20), ext__c string(15) with (externalId true))");
         stmt.executeBatch();
 
         stmt.execute("insert into two__c(Spang__c, Name__c) values (3, 'Norman')");

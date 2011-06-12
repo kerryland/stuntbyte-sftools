@@ -92,7 +92,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public boolean usesLocalFiles() throws SQLException {
-        return false;
+        return true;
     }
 
     public boolean usesLocalFilePerTable() throws SQLException {

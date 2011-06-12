@@ -95,7 +95,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
 
                     // make something up
                     // TODO: Maybe we could figure out the data type for an aggregate result, but it would be hard!
-                    column = new Column(lookup, "Text");
+                    column = new Column(lookup, "string");
                     column.setLabel(lookup);
                     column.setLength(10);
                     column.setCalculated(true);
@@ -217,23 +217,6 @@ public class SfResultSetMetaData implements ResultSetMetaData {
 
     private Column getColumn(int column) throws SQLException {
         return cols.get(column-1);
-        /*
-        String columnName = cols.get(column - 1).column;
-
-        if (cols.get(column - 1).table == null) {
-            // TODO: Look up type somewhere else, somehow
-            Column c = new Column(columnName, "Text");
-            c.setLabel(columnName);
-            return c;
-        }
-
-        Table table = rsf.getTable(cols.get(column - 1).table);
-        try {
-            return table.getColumn(columnName);
-        } catch (SQLException e) {
-            return null;
-        }
-        */
     }
 
 

@@ -982,7 +982,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("", rsm.getCatalogName(5));
         assertEquals("java.lang.Boolean", rsm.getColumnClassName(5));
         assertEquals(5, rsm.getColumnDisplaySize(5));
-        assertEquals("_boolean", rsm.getColumnTypeName(5));
+        assertEquals("boolean", rsm.getColumnTypeName(5));
         assertEquals(Types.BOOLEAN, rsm.getColumnType(5));
 
         assertEquals("currency2dp", rsm.getColumnLabel(6));

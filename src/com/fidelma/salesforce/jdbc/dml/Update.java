@@ -53,7 +53,6 @@ public class Update {
 
             if (!column.equalsIgnoreCase("Id")) {
                 Integer dataType = ResultSetFactory.lookupJdbcType(table.getColumn(column).getType());
-                System.out.println("MAPPED TYPE " + column + " " + table.getColumn(column).getType() + " to "+ dataType);
                 assert dataType != null;
                 values.put(column.toUpperCase(), value.getValue());
             }
