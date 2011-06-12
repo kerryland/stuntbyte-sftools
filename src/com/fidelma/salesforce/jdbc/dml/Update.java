@@ -9,7 +9,6 @@ import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
-import sun.awt.geom.AreaOp;
 
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -54,6 +53,7 @@ public class Update {
 
             if (!column.equalsIgnoreCase("Id")) {
                 Integer dataType = ResultSetFactory.lookupJdbcType(table.getColumn(column).getType());
+                System.out.println("MAPPED TYPE " + column + " " + table.getColumn(column).getType() + " to "+ dataType);
                 assert dataType != null;
                 values.put(column.toUpperCase(), value.getValue());
             }

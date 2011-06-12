@@ -49,7 +49,7 @@ public class SfMetadataResultSetMetadata implements ResultSetMetaData {
     }
     // TODO: Implement properly
     public String getColumnTypeName(int column) throws SQLException {
-        return "string";
+        return "Text";
     }
 
     //--------- Here down not implemented

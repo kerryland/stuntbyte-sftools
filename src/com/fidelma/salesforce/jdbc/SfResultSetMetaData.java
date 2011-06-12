@@ -75,7 +75,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
                     column = null;
 
                     if (lookup.equalsIgnoreCase("CreatedBy") || (lookup.equalsIgnoreCase("LastModifiedBy"))) {
-                        column = new Column(lookup, "reference");
+                        column = new Column(lookup, "reference"); // TODO: Lookup?
                         column.setRelationshipType("User");
                     } else {
                         column = t.getColumn(lookup);
@@ -95,7 +95,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
 
                     // make something up
                     // TODO: Maybe we could figure out the data type for an aggregate result, but it would be hard!
-                    column = new Column(lookup, "string");
+                    column = new Column(lookup, "Text");
                     column.setLabel(lookup);
                     column.setLength(10);
                     column.setCalculated(true);
@@ -222,7 +222,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
 
         if (cols.get(column - 1).table == null) {
             // TODO: Look up type somewhere else, somehow
-            Column c = new Column(columnName, "string");
+            Column c = new Column(columnName, "Text");
             c.setLabel(columnName);
             return c;
         }
