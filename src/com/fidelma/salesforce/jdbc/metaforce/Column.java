@@ -1,7 +1,9 @@
 package com.fidelma.salesforce.jdbc.metaforce;
 
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Column {
@@ -25,6 +27,9 @@ public class Column {
     private String aDefault;
     private boolean hasMultipleRelationships;
     public Map<String, String> extraProperties = new HashMap<String, String>();
+    private List<String> picklistValues = new ArrayList<String>();
+    private String defaultPicklistValue;
+    private boolean picklistIsSorted;
 
 
     public Column(String name, String type, Boolean isCalculated) {
@@ -181,5 +186,29 @@ public class Column {
 
     public Map<String, String> getExtraProperties() {
         return extraProperties;
+    }
+
+    public void addPicklistValue(String value) {
+        picklistValues.add(value);
+    }
+
+    public List<String> getPicklistValues() {
+        return picklistValues;
+    }
+
+    public void setDefaultPicklistValue(String defaultPicklistValue) {
+        this.defaultPicklistValue = defaultPicklistValue;
+    }
+
+    public String getDefaultPicklistValue() {
+        return defaultPicklistValue;
+    }
+
+    public void pickListIsSorted(boolean picklistIsSorted) {
+        this.picklistIsSorted = picklistIsSorted;
+    }
+
+    public boolean isPicklistIsSorted() {
+        return picklistIsSorted;
     }
 }

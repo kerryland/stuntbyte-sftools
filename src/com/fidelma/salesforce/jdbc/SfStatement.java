@@ -162,6 +162,9 @@ public class SfStatement implements java.sql.Statement {
                     dropTable.execute();
                 }
 
+            } else if (token.getValue().equalsIgnoreCase("GRANT")) {
+
+
             } else if (token.getValue().equalsIgnoreCase("COMMIT")) {
             } else if (token.getValue().equalsIgnoreCase("ROLLBACK")) {
             } else {

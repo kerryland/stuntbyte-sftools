@@ -46,7 +46,12 @@ public class CreateTableTests {
     public void testCreateStatement() throws Exception {
         conn.createStatement().execute("drop table wibble__c if exists");
 
-        String sql = "create table wibble__c(Spang__c int, Namero__c string(20), price__c decimal(16,2))";
+        String sql = "create table wibble__c(" +
+                "Spang__c int, " +
+                "Namero__c string(20)," +
+                "price__c decimal(16,2)," +
+                "colour__c picklist('red', 'blue' default, 'green') sorted" +
+                ")";
         conn.createStatement().execute(sql);
 
 
@@ -56,6 +61,7 @@ public class CreateTableTests {
         names.add("Namero__c");
         names.add("Spang__c");
         names.add("price__c");
+        names.add("colour__c");
 //        names.add("Hoover__c");
 
         while (rs.next()) {
@@ -101,10 +107,16 @@ public class CreateTableTests {
         names.add("Namero__c");
         names.add("price__c");
         names.add("Hoover__c");
+        names.add("colour__c");
         while (rs.next()) {
             names.remove(rs.getString("COLUMN_NAME"));
         }
         Assert.assertEquals(0, names.size());
+
+        rs = conn.prepareStatement("select * from wibble__c").executeQuery();
+        Assert.assertTrue(rs.next());
+        Assert.assertEquals("blue", rs.getString("colour__c"));
+        Assert.assertFalse(rs.next());
     }
 
 
