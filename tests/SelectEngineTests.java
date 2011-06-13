@@ -940,12 +940,16 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
             sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             assertEquals("2010-10-21T23:15:00.000Z", sdf.format(d));
 
-            String pick = rs.getString("picklist__c");
-            assertEquals("PickMe", pick);
+            assertEquals("noddy@example.com", rs.getString("email__c"));
+            assertEquals("17.12345", rs.getBigDecimal("number4dp__c").toPlainString());
+            assertEquals("96.7777", rs.getBigDecimal("percent0dp__c").toPlainString());
+            assertEquals("0800-PHONE", rs.getString("phone__c"));
+            assertEquals("PickMe", rs.getString("picklist__c"));
+            assertEquals("red;green;Blue", rs.getString("multipicklist__c"));
+            assertEquals("Text Area", rs.getString("textarea__c"));
+            assertEquals("Text Area Rich", rs.getString("textarearich__c"));
+            assertEquals("http://www.example.com", rs.getString("url__c"));
 
-//            Array ar = rs.getArray("picklist__c");
-//            assertEquals("string", ar.getBaseTypeName());
-//            assertEquals(Types.VARCHAR, ar.getBaseType());
         }
         assertEquals(1, foundCount);
 
