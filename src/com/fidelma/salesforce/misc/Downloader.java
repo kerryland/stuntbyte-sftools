@@ -69,24 +69,28 @@ public class Downloader {
     }
 
     public void download() throws Exception {
-        System.out.println("HERE " + metaDataFiles.keySet().size());
+        com.sforce.soap.metadata.Package p = new com.sforce.soap.metadata.Package();
+
+        PackageTypeMembers[] packageTypeMembers = new PackageTypeMembers[metaDataFiles.keySet().size()];
+        int i =0;
         for (String metadataType : metaDataFiles.keySet()) {
             List<String> files = metaDataFiles.get(metadataType);
 
-            // TODO: Split out package type members so we create one big file
-            // and only do one request/download/unzip regardless of number of metadatatypes
-            com.sforce.soap.metadata.Package p = createPackage(metadataType, files);
-            RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
-
-            zipFile = retrieveZip(retrieveRequest, listener);
-            // Find our file and rewrite the local one
-            unzipFile(srcDir, zipFile);
-            if (crcFile != null) {
-                updateCrcs(crcs, zipFile);
-                crcs.store(new FileWriter(crcFile), "Generated file");
-            }
+            PackageTypeMembers pd = new PackageTypeMembers();
+            pd.setName(metadataType);
+            pd.setMembers((String[]) files.toArray(new String[files.size()]));
+            packageTypeMembers[i++] = pd;
         }
-        System.out.println("HERE DONE");
+        p.setTypes(packageTypeMembers);
+        RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
+
+        zipFile = retrieveZip(retrieveRequest, listener);
+        // Find our file and rewrite the local one
+        unzipFile(srcDir, zipFile);
+        if (crcFile != null) {
+            updateCrcs(crcs, zipFile);
+            crcs.store(new FileWriter(crcFile), "Generated file");
+        }
     }
 
     private void updateCrcs(Properties crcs, File result) throws IOException {
@@ -99,18 +103,6 @@ public class Downloader {
                 crcs.setProperty(f.getName(), String.valueOf(zipEntry.getCrc()));
             }
         }
-    }
-
-
-    private com.sforce.soap.metadata.Package createPackage(String mType, List itemSet) {
-        com.sforce.soap.metadata.Package p = new com.sforce.soap.metadata.Package();
-        PackageTypeMembers pd = new PackageTypeMembers();
-        pd.setName(mType);
-        pd.setMembers((String[]) itemSet.toArray(new String[itemSet.size()]));
-        p.setTypes(new PackageTypeMembers[]{
-                pd
-        });
-        return p;
     }
 
 
@@ -134,10 +126,6 @@ public class Downloader {
 
 
     public File retrieveZip(RetrieveRequest retrieveRequest, DeploymentEventListener listener) throws Exception {
-//        RetrieveRequest retrieveRequest = new RetrieveRequest();
-//        retrieveRequest.setApiVersion(WSDL_VERSION);
-//        setUnpackaged(retrieveRequest);
-
         File resultsFile = File.createTempFile("SFDC", "DOWN");
 
         AsyncResult asyncResult = metaDataConnection.retrieve(retrieveRequest);

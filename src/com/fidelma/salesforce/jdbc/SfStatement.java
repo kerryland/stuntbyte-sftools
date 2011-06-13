@@ -3,6 +3,7 @@ package com.fidelma.salesforce.jdbc;
 import com.fidelma.salesforce.jdbc.ddl.AlterTable;
 import com.fidelma.salesforce.jdbc.ddl.CreateTable;
 import com.fidelma.salesforce.jdbc.ddl.DropTable;
+import com.fidelma.salesforce.jdbc.ddl.Grant;
 import com.fidelma.salesforce.jdbc.dml.Delete;
 import com.fidelma.salesforce.jdbc.dml.Insert;
 import com.fidelma.salesforce.jdbc.dml.Select;
@@ -163,7 +164,10 @@ public class SfStatement implements java.sql.Statement {
                 }
 
             } else if (token.getValue().equalsIgnoreCase("GRANT")) {
+                new Grant(al, sfConnection.getMetaDataFactory(), metadataConnection).execute(true);
 
+            } else if (token.getValue().equalsIgnoreCase("REVOKE")) {
+                new Grant(al, sfConnection.getMetaDataFactory(), metadataConnection).execute(false);
 
             } else if (token.getValue().equalsIgnoreCase("COMMIT")) {
             } else if (token.getValue().equalsIgnoreCase("ROLLBACK")) {
