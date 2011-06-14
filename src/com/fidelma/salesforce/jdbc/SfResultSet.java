@@ -10,8 +10,10 @@ import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.bind.XmlObject;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Array;
@@ -317,6 +319,23 @@ public class SfResultSet implements java.sql.ResultSet {
         }
         return result;
     }
+
+    public Reader getCharacterStream(int columnIndex) throws SQLException {
+        return getCharacterStreamFromString(getString(columnIndex));
+    }
+
+    public Reader getCharacterStream(String columnLabel) throws SQLException {
+        return getCharacterStreamFromString(getString(columnLabel));
+
+    }
+
+    private Reader getCharacterStreamFromString(String value) {
+        if (value == null) {
+            value = "";
+        }
+        return new StringReader(value);
+    }
+
 
     public String getString(String columnName) throws SQLException {
         return (String) getObject(columnName);
@@ -717,14 +736,6 @@ public class SfResultSet implements java.sql.ResultSet {
         throw new SQLFeatureNotSupportedException();
     }
 
-
-    public Reader getCharacterStream(int columnIndex) throws SQLException {
-        return null;
-    }
-
-    public Reader getCharacterStream(String columnLabel) throws SQLException {
-        return null;
-    }
 
 
     public boolean isBeforeFirst() throws SQLException {

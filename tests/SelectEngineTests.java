@@ -9,6 +9,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.LineNumberReader;
+import java.io.Reader;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.text.DecimalFormat;
@@ -786,7 +788,6 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
     }
 
 
-
     @Test
     public void testPreparedUpdate() throws Exception {
 
@@ -947,6 +948,15 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
             assertEquals("PickMe", rs.getString("picklist__c"));
             assertEquals("red;green;Blue", rs.getString("multipicklist__c"));
             assertEquals("Text Area", rs.getString("textarea__c"));
+
+            Reader ta = rs.getCharacterStream("textarea__c");
+            LineNumberReader lnr = new LineNumberReader(ta);
+            String line = lnr.readLine();
+            while (line != null) {
+                assertEquals("Text Area", line);
+                line = lnr.readLine();
+            }
+
             assertEquals("Text Area Rich", rs.getString("textarearich__c"));
             assertEquals("http://www.example.com", rs.getString("url__c"));
 
