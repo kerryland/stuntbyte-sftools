@@ -28,11 +28,12 @@ public class GrantTests {
     @Test
     public void testGrantStatement() throws Exception {
 
-        // TODO: Only allow "grant" -- other permissions are inferred?
+        // TODO: Write a real test!
 
 //        conn.createStatement().execute("revoke object read, delete on abc__c from 'Standard'");
-//        conn.createStatement().execute("grant object create, update, read on abc__c to *");
-//        conn.createStatement().execute("grant object create, update, read on abc__c to 'Standard'");
+        conn.createStatement().execute("grant object create, update, read on abc__c to *");
+//        conn.createStatement().execute("grant object create, read on abc__c to 'MarketingProfile'");
+//        conn.createStatement().execute("revoke object create on abc__c from 'MarketingProfile'");
     }
 
 }

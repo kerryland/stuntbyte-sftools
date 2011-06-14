@@ -39,7 +39,6 @@ public class Downloader {
     private Properties crcs = new Properties();
 
     private Map<String, List<String>> metaDataFiles = new HashMap<String, List<String>>();
-    private File zipFile;
 
 
     public Downloader(MetadataConnection metaDataConnection,
@@ -68,7 +67,7 @@ public class Downloader {
         files.add(name);
     }
 
-    public void download() throws Exception {
+    public File download() throws Exception {
         com.sforce.soap.metadata.Package p = new com.sforce.soap.metadata.Package();
 
         PackageTypeMembers[] packageTypeMembers = new PackageTypeMembers[metaDataFiles.keySet().size()];
@@ -84,13 +83,14 @@ public class Downloader {
         p.setTypes(packageTypeMembers);
         RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
 
-        zipFile = retrieveZip(retrieveRequest, listener);
+        File zipFile = retrieveZip(retrieveRequest, listener);
         // Find our file and rewrite the local one
         unzipFile(srcDir, zipFile);
         if (crcFile != null) {
             updateCrcs(crcs, zipFile);
             crcs.store(new FileWriter(crcFile), "Generated file");
         }
+        return zipFile;
     }
 
     private void updateCrcs(Properties crcs, File result) throws IOException {
@@ -222,7 +222,4 @@ public class Downloader {
         }
     }
 
-    public File getZipFile() {
-        return zipFile;
-    }
 }

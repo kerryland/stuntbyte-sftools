@@ -32,6 +32,9 @@ public class Deployment {
 
 
     public void addMember(String typeName, String member, String code) throws Exception {
+        if (member.endsWith(determineFileSuffix(typeName))) {
+            member = member.substring(0, member.lastIndexOf(determineFileSuffix(typeName))-1);
+        }
         List<String> members = types.get(typeName);
         if (members == null) {
             members = new ArrayList<String>();
@@ -56,6 +59,7 @@ public class Deployment {
         if (typeName.equalsIgnoreCase("ApexTrigger")) return "triggers";
         if (typeName.equalsIgnoreCase("CustomField")) return "objects";
         if (typeName.equalsIgnoreCase("CustomObject")) return "objects";
+        if (typeName.equalsIgnoreCase("Profile")) return "profiles";
         throw new Exception("Unsupported type: " + typeName);
     }
 
@@ -66,6 +70,7 @@ public class Deployment {
         if (typeName.equalsIgnoreCase("ApexTrigger")) return "trigger";
         if (typeName.equalsIgnoreCase("CustomField")) return "object";
         if (typeName.equalsIgnoreCase("CustomObject")) return "object";
+        if (typeName.equalsIgnoreCase("Profile")) return "profile";
         throw new Exception("Unsupported type: " + typeName);
     }
 

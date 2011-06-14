@@ -80,14 +80,14 @@ public class Migrator {
                 sourceDownloader.addPackage("CustomObject", table.getName());
             }
         }
-        sourceDownloader.download();
+        File zipFile = sourceDownloader.download();
 
         // Remove everything!
         Deployer targetDeployer = deleteAllTables(targetInstance, del);
 
 
         // Upload schema to destination instance
-        targetDeployer.deployZip(sourceDownloader.getZipFile(), del);
+        targetDeployer.deployZip(zipFile, del);
 
         // Insert all data from local machine to target instance
         // map the inserted ids to the source ids
