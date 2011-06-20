@@ -50,23 +50,9 @@ public class Deployer {
 
         Deployment deployment = new Deployment();
         deployment.addMember(nonCodeType, nonSuffixedFilename, code);
-//        deployment.assemble();
 
         deploy(deployment, listener);
     }
-
-    /*
-    public void dropNonCode(String nonCodeType, String filename, DeploymentEventListener listener) throws Exception {
-        filename = new File(filename).getName();
-        String nonSuffixedFilename = filename.substring(0, filename.lastIndexOf("."));
-
-        Deployment deployment = new Deployment();
-        deployment.addMember(nonCodeType, nonSuffixedFilename, null);
-//        deployment.assemble();
-
-        undeploy(deployment, listener);
-    }
-    */
 
     public void deploy(Deployment deployment, DeploymentEventListener listener) throws Exception {
         deploy(deployment, listener, "package.xml");
@@ -141,7 +127,6 @@ public class Deployer {
 
 
     public void deployZip(File zipFile, DeploymentEventListener listener) throws Exception {
-//           System.out.println("FILE IS " + zipFile.getAbsolutePath());
         byte zipBytes[] = readZipFile(zipFile);
         DeployOptions deployOptions = new DeployOptions();
 
@@ -185,12 +170,7 @@ public class Deployer {
                     listener.error(error.getProblemType().name() + ": " + error.getFullName() + " " + error.getProblem());
                 }
             }
-//               printErrors(result);            TODO
-
-//            throw new Exception("The files were not successfully deployed");
         }
-
-//        listener.finished("The file " + zipFile.getName() + " was successfully deployed");
     }
 
 

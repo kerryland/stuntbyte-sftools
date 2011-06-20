@@ -449,7 +449,8 @@ public class SfResultSet implements java.sql.ResultSet {
         } else if (o instanceof Number) {
             return ((Number) o).intValue();
         } else if (o instanceof String) {
-            return Integer.valueOf((String) o);
+            BigDecimal bd = new BigDecimal((String) o);
+            return bd.intValue();
         } else {
             throw new SQLException("No type conversion to int available for " + o);
         }

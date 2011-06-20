@@ -9,16 +9,9 @@ import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Downloader;
 import com.fidelma.salesforce.misc.LoginHelper;
 import com.fidelma.salesforce.parse.SimpleParser;
-import com.sforce.soap.metadata.AsyncResult;
 import com.sforce.soap.metadata.FileProperties;
 import com.sforce.soap.metadata.ListMetadataQuery;
-import com.sforce.soap.metadata.Metadata;
 import com.sforce.soap.metadata.MetadataConnection;
-import com.sforce.soap.metadata.Profile;
-import com.sforce.soap.metadata.ProfileFieldLevelSecurity;
-import com.sforce.soap.metadata.ProfileObjectPermissions;
-import com.sforce.soap.metadata.RetrieveRequest;
-import com.sforce.soap.metadata.UpdateMetadata;
 import com.sforce.ws.ConnectionException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -31,6 +24,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -41,12 +35,12 @@ import java.util.Map;
 /**
  * GRANT OBJECT CREATE, READ, UPDATE, DELETE, MODIFYALL, VIEWALL
  * ON <TABLE> TO <PROFILE> | *
- *
+ * <p/>
  * REVOKE OBJECT CREATE, READ, UPDATE, DELETE, MODIFY, VIEW
  * ON <TABLE> FROM <PROFILE> | *
  * <p/>
- * GRANT FIELD HIDDEN, EDITABLE ON <TABLE.COLUMN> TO [ <PROFILE>, <PROFILE>, *]
- * REVOKE FIELD HIDDEN, EDITABLE ON <TABLE.COLUMN> FROM <PROFILE>
+ * GRANT FIELD VISIBLE, EDITABLE ON <TABLE.COLUMN> TO [ <PROFILE>, <PROFILE>, *]
+ * REVOKE FIELD VISIBLE, EDITABLE ON <TABLE.COLUMN> FROM <PROFILE>
  * <p/>
  * GRANT LAYOUT <LAYOUT> ON <TABLE> TO <PROFILE>
  * REVOKE LAYOUT <LAYOUT> FROM <PROFILE>
@@ -67,44 +61,6 @@ public class Grant {
         this.al = al;
         this.metaDataFactory = metaDataFactory;
         this.metadataConnection = metadataConnection;
-
-        // blurg();
-    }
-
-    private void blurg() {
-        ListMetadataQuery lmq = new ListMetadataQuery();
-        lmq.setType("Profile");
-
-        ListMetadataQuery[] list = new ListMetadataQuery[]{lmq};
-
-        try {
-//            FileProperties[] fps = metadataConnection.listMetadata(list, LoginHelper.WSDL_VERSION);
-//            for (FileProperties fp : fps) {
-//                System.out.println("KJS '" + fp.getFullName() + "' " + fp.getType());
-//            }
-
-            File sourceSchemaDir = new File(System.getProperty("java.io.tmpdir"),
-                    "SF-SRC" + System.currentTimeMillis());  // TODO: This must be unique
-            sourceSchemaDir.mkdir();
-
-            Downloader dl = new Downloader(metadataConnection, sourceSchemaDir, new DeploymentEventListener() {
-                public void error(String message) {
-
-                }
-
-                public void finished(String message) {
-
-                }
-            }, null);
-
-            dl.addPackage("Profile", "Standard");
-            dl.addPackage("CustomObject", "abc__c");
-            dl.download();
-
-        } catch (Exception e) {
-            e.printStackTrace();  // TODO properly!
-        }
-
     }
 
     public void execute(boolean grant) throws SQLException {
@@ -125,31 +81,21 @@ public class Grant {
 
 
     /*
-    * GRANT OBJECT CREATE, READ, UPDATE, DELETE, MODIFYALL, VIEWALL
+    * GRANT OBJECT CREATE, READ, UPDATE | EDIT, DELETE, MODIFYALL, VIEWALL
     *       ON <TABLE> TO <PROFILE> ... *
     */
     private void handleParseObject(boolean grant) throws Exception {
 
-        File sourceSchemaDir = new File(System.getProperty("java.io.tmpdir"),
-                "SF-SRC" + System.currentTimeMillis());  // TODO: This must be unique
-        sourceSchemaDir.mkdir();
-        sourceSchemaDir.deleteOnExit();
+        PrepareDownload prepareDownload = new PrepareDownload().invoke();
+        Downloader dl = prepareDownload.getDl();
+        File sourceSchemaDir = prepareDownload.getSourceSchemaDir();
+        final StringBuilder errors = prepareDownload.getErrors();
 
-        final StringBuilder errors = new StringBuilder();
-        Downloader dl = new Downloader(metadataConnection, sourceSchemaDir, new DeploymentEventListener() {
-            public void error(String message) {
-                errors.append(message);
-            }
-            public void finished(String message) {
-            }
-        }, null);
-        if (errors.length() != 0) {
-            throw new SQLException(errors.toString());
-        }
+        // Keyed by Table, Property/Value
+        final Map<String, Map<String, Boolean>> settingsByTable = new HashMap<String, Map<String, Boolean>>();
 
-        Map<String, Map<String, Boolean>> settingsByTable = new HashMap<String, Map<String, Boolean>>();
-
-        Map<String, Boolean> settings = new HashMap<String, Boolean>();
+        // Property/Value
+        final Map<String, Boolean> settings = new HashMap<String, Boolean>();
 
         String value;
         do {
@@ -159,7 +105,7 @@ public class Grant {
                 settings.put("allowCreate", grant);
             } else if (value.equalsIgnoreCase("read")) {
                 settings.put("allowRead", grant);
-            } else if (value.equalsIgnoreCase("update")) {
+            } else if (value.equalsIgnoreCase("update") || value.equalsIgnoreCase("edit")) {
                 settings.put("allowEdit", grant);
             } else if (value.equalsIgnoreCase("delete")) {
                 settings.put("allowDelete", grant);
@@ -181,6 +127,219 @@ public class Grant {
 
         dl.addPackage("CustomObject", table);
 
+        final boolean allProfiles = addProfilesToPackage(grant, dl);
+
+        dl.download();
+
+        final Deployment dep = new Deployment();
+
+        foreachProfile(sourceSchemaDir, new ProfileProcessor() {
+            public void processProfileXml(Document doc, File profileFile) throws Exception {
+                if (allProfiles && !includeThisProfile(doc)) {
+                    return;
+                }
+
+                NodeList downOne = doc.getElementsByTagName("objectPermissions");
+                for (int i = 0; i < downOne.getLength(); i++) {
+
+                    NodeList permsList = downOne.item(i).getChildNodes();
+
+                    for (int j = 0; j < permsList.getLength(); j++) {
+                        Node n = permsList.item(j);
+                        // Identify the table we are changing
+                        if (n.getNodeName().equalsIgnoreCase("object")) {
+                            Map<String, Boolean> settings = settingsByTable.get(n.getTextContent().toUpperCase());
+
+                            if (settings != null) {
+                                // And change the permissions
+                                resetProperties(permsList, settings);
+                            }
+                        }
+                    }
+                }
+                generateProfileXml(dep, profileFile, doc);
+            }
+        });
+
+        deployProfiles(errors, dep);
+
+        sourceSchemaDir.delete();
+    }
+
+    private boolean includeThisProfile(Document doc) {
+        boolean includeProfile = true;
+        NodeList licence = doc.getElementsByTagName("userLicense");
+        if (licence.getLength() == 1) {
+            if (licence.item(0).getTextContent().endsWith("Free")) {
+                // Can't change things that are free.
+                // Salesforce gives a "Cannot rename standard profile" error
+                includeProfile = false;
+            }
+        }
+        return includeProfile;
+    }
+
+
+    interface ProfileProcessor {
+        void processProfileXml(Document doc, File profileFile) throws Exception;
+    }
+
+    private void foreachProfile(File sourceSchemaDir, ProfileProcessor profileProcessor) throws Exception {
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+
+
+        File child = new File(sourceSchemaDir, "profiles");
+        File[] profileFiles = child.listFiles();
+        for (File profileFile : profileFiles) {
+            profileProcessor.processProfileXml(dBuilder.parse(profileFile), profileFile);
+        }
+
+    }
+
+
+    private void deployProfiles(final StringBuilder errors, Deployment dep) throws Exception {
+        Deployer deployer = new Deployer(metadataConnection);
+
+        deployer.deploy(dep, new DeploymentEventListener() {
+            public void error(String message) {
+                errors.append(message).append(". ");
+            }
+
+            public void finished(String message) {
+            }
+        });
+        if (errors.length() != 0) {
+            throw new SQLException(errors.toString());
+        }
+    }
+
+    private void generateProfileXml(Deployment dep, File profileFile, Document doc) throws Exception {
+        StringWriter sw = new StringWriter();
+        DOMSource source = new DOMSource(doc);
+        StreamResult result = new StreamResult(sw);
+
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+        transformer.transform(source, result);
+
+        dep.addMember("Profile", profileFile.getName(), sw.toString());
+    }
+
+
+    /*
+    * GRANT FIELD VISIBLE, EDITABLE ON <TABLE.[COLUMN |* ]> TO <PROFILE>
+    */
+    private void handleParseField(boolean grant) throws Exception {
+
+        PrepareDownload prepareDownload = new PrepareDownload().invoke();
+        Downloader dl = prepareDownload.getDl();
+        File sourceSchemaDir = prepareDownload.getSourceSchemaDir();
+        final StringBuilder errors = prepareDownload.getErrors();
+
+        // Keyed by Table, Property/Value
+        final Map<String, Map<String, Boolean>> settingsByColumn = new HashMap<String, Map<String, Boolean>>();
+
+        // Property/Value
+        Map<String, Boolean> settings = new HashMap<String, Boolean>();
+        String value;
+
+        do {
+            value = al.getValue();
+            if (value.equalsIgnoreCase("visible")) {
+                settings.put("hidden", !grant);
+                // If it's not visible it must also be not editable
+                if (!grant) {
+                    settings.put("editable", false);
+                }
+            } else if (value.equalsIgnoreCase("editable")) {
+                settings.put("editable", grant);
+            } else {
+                throw new Exception("Unexpected value '" + value + "'");
+            }
+            value = al.getValue();
+        } while (value.equals(","));
+
+        assert (value.equalsIgnoreCase("ON"));
+
+        String field = al.getValue();
+
+        String tableName = field.substring(0, field.indexOf("."));
+        Table table = metaDataFactory.getTable(tableName);
+
+        if (field.endsWith(".*")) {
+            for (Column col : table.getColumns()) {
+                if (col.isCustom()) {
+                    settingsByColumn.put((tableName + "." + col.getName()).toUpperCase(), settings);
+                    dl.addPackage("CustomField", tableName + "." + col.getName());
+                }
+            }
+        } else {
+
+            if (!grant) {
+                String columnName = field.substring(field.indexOf(".") + 1);
+                Column col = table.getColumn(columnName);
+                if (!col.isCustom()) {
+                    throw new SQLException("Cannot change permissions of standard fields");
+                }
+            }
+            settingsByColumn.put(field.toUpperCase(), settings);
+            dl.addPackage("CustomField", field);
+        }
+
+        final boolean allProfiles = addProfilesToPackage(grant, dl);
+
+        File zip = dl.download();
+        System.out.println("DOWNLOADED EXISTING PROFILES TO " + zip.getName());
+
+        final Deployment dep = new Deployment();
+
+        foreachProfile(sourceSchemaDir, new ProfileProcessor() {
+            public void processProfileXml(Document doc, File profileFile) throws Exception {
+                if (allProfiles && !includeThisProfile(doc)) {
+                    return;
+                }
+
+                NodeList downOne = doc.getElementsByTagName("fieldLevelSecurities");
+                for (int i = 0; i < downOne.getLength(); i++) {
+
+                    NodeList permsList = downOne.item(i).getChildNodes();
+
+                    for (int j = 0; j < permsList.getLength(); j++) {
+                        Node n = permsList.item(j);
+                        // Identify the field we are changing
+                        if (n.getNodeName().equalsIgnoreCase("field")) {
+                            Map<String, Boolean> settings = settingsByColumn.get(n.getTextContent().toUpperCase());
+                            if (settings != null) {
+                                resetProperties(permsList, settings);
+                            }
+                        }
+                    }
+                }
+                generateProfileXml(dep, profileFile, doc);
+            }
+        });
+
+        deployProfiles(errors, dep);
+
+//        sourceSchemaDir.delete();
+    }
+
+    private void resetProperties(NodeList permsList, Map<String, Boolean> settings) {
+        // And change the permissions
+        for (int k = 0; k < permsList.getLength(); k++) {
+            Node perm = permsList.item(k);
+            Boolean val = settings.get(perm.getNodeName());
+            if (val != null) {
+                perm.setTextContent(Boolean.toString(val));
+            }
+        }
+    }
+
+
+    // @return true if 'ALL' profiles added
+    private boolean addProfilesToPackage(boolean grant, Downloader dl) throws Exception {
+        String value;
         if (grant) {
             al.getToken("TO");
         } else {
@@ -188,8 +347,10 @@ public class Grant {
         }
 
         value = al.getValue();
+
+        boolean allProfiles = (value.equals("*"));
         do {
-            if (value.equals("*")) {
+            if (allProfiles) {
                 for (String profileName : getProfileNames()) {
                     dl.addPackage("Profile", profileName);
                 }
@@ -201,167 +362,7 @@ public class Grant {
             value = al.getValue();
         } while (value != null && value.equals(","));
 
-        dl.download();
-
-        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
-
-        Deployer deployer = new Deployer(metadataConnection);
-        Deployment dep = new Deployment();
-
-        File child = new File(sourceSchemaDir, "profiles");
-        File[] profileFiles = child.listFiles();
-        for (File profileFile : profileFiles) {
-            Document doc = dBuilder.parse(profileFile);
-
-            NodeList licence = doc.getElementsByTagName("userLicense");
-            if (licence.getLength() == 1) {
-                if (licence.item(0).getTextContent().endsWith("Free")) {
-                    // Can't change things that are free
-                    continue;
-                }
-            }
-
-            NodeList downOne = doc.getElementsByTagName("objectPermissions");
-            for (int i = 0; i < downOne.getLength(); i++) {
-
-                NodeList permsList = downOne.item(i).getChildNodes();
-
-                // Identify the table we are changing
-                for (int j = 0; j < permsList.getLength(); j++) {
-                    Node n = permsList.item(j);
-                    if (n.getNodeName().equalsIgnoreCase("object")) {
-                        settings = settingsByTable.get(n.getTextContent().toUpperCase());
-
-                        for (int k = 0; k < permsList.getLength(); k++) {
-                            Node perm = permsList.item(k);
-                            Boolean val = settings.get(perm.getNodeName());
-                            if (val != null) {
-                                perm.setTextContent(Boolean.toString(val));
-                            }
-                        }
-                    }
-                }
-            }
-
-            StringWriter sw = new StringWriter();
-            DOMSource source = new DOMSource(doc);
-            StreamResult result = new StreamResult(sw);
-            transformer.transform(source, result);
-
-            dep.addMember("Profile", profileFile.getName(), sw.toString());
-        }
-
-        deployer.deploy(dep, new DeploymentEventListener() {
-            public void error(String message) {
-                errors.append(message);
-            }
-            public void finished(String message) {
-            }
-        });
-        if (errors.length() != 0) {
-            throw new SQLException(errors.toString());
-        }
-
-        sourceSchemaDir.delete();
-    }
-
-
-    /*
-    * GRANT FIELD HIDDEN, EDITABLE ON <TABLE.[COLUMN |* ]> TO <PROFILE>
-    */
-    private void handleParseField(boolean grant) throws Exception {
-        String value;
-        value = al.getValue();
-        boolean hidden = !grant;
-        boolean editable = !grant;
-        do {
-            if (value.equalsIgnoreCase("hidden")) {
-                hidden = grant;
-            } else if (value.equalsIgnoreCase("editable")) {
-                hidden = grant;
-            }
-            value = al.getValue();
-        } while (value.equals(","));
-
-        assert (value.equalsIgnoreCase("ON"));
-
-        List<ProfileFieldLevelSecurity> pops = new ArrayList<ProfileFieldLevelSecurity>();
-
-        String field = al.getValue();
-        if (field.endsWith(".*")) {
-            String tableName = field.substring(0, field.indexOf("."));
-            Table table = metaDataFactory.getTable(tableName);
-
-            ProfileFieldLevelSecurity pop = new ProfileFieldLevelSecurity();
-            for (Column col : table.getColumns()) {
-                pop.setField(tableName + "." + col.getName());
-                pop.setHidden(hidden);
-                pop.setEditable(editable);
-                pops.add(pop);
-            }
-        } else {
-            ProfileFieldLevelSecurity pop = new ProfileFieldLevelSecurity();
-            pop.setField(field);
-            pop.setHidden(hidden);
-            pop.setEditable(editable);
-            pops.add(pop);
-        }
-
-        List<Profile> profiles = new ArrayList<Profile>();
-
-        ProfileFieldLevelSecurity[] popsArray = new ProfileFieldLevelSecurity[pops.size()];
-        pops.toArray(popsArray);
-
-        if (grant) {
-            assert (value.equalsIgnoreCase("TO"));
-        } else {
-            assert (value.equalsIgnoreCase("FROM"));
-        }
-
-        value = al.getValue();
-        do {
-            if (value.equals("*")) {
-                for (String profileName : getProfileNames()) {
-                    Profile profile = new Profile();
-                    profile.setFullName(profileName);
-                    profile.setFieldLevelSecurities(popsArray);
-                    profiles.add(profile);
-                }
-
-            } else {
-                Profile profile = new Profile();
-                profile.setFullName(al.getValue());
-                profile.setFieldLevelSecurities(popsArray);
-                profiles.add(profile);
-            }
-
-            value = al.getValue();
-        } while (value != null && value.equals(","));
-
-
-        UpdateMetadata[] metadata = new UpdateMetadata[profiles.size()];
-
-        int i = 0;
-        for (Profile profile : profiles) {
-            metadata[i] = new UpdateMetadata();
-            metadata[i].setMetadata(profile);
-            i++;
-        }
-
-        AsyncResult[] asyncResults = metadataConnection.update(metadata);
-
-        for (AsyncResult asyncResult : asyncResults) {
-            while (!asyncResult.isDone()) {
-                Thread.sleep(500);
-
-            }
-            System.out.println("MESSAGE " + asyncResult.getMessage());
-        }
-
+        return allProfiles;
     }
 
 
@@ -382,4 +383,43 @@ public class Grant {
         return profileNames;
     }
 
+    private class PrepareDownload {
+        private File sourceSchemaDir;
+        private StringBuilder errors;
+        private Downloader dl;
+
+        public File getSourceSchemaDir() {
+            return sourceSchemaDir;
+        }
+
+        public StringBuilder getErrors() {
+            return errors;
+        }
+
+        public Downloader getDl() {
+            return dl;
+        }
+
+        public PrepareDownload invoke() throws IOException, SQLException {
+
+            sourceSchemaDir = new File(System.getProperty("java.io.tmpdir"),
+                    "SF-SRC" + System.currentTimeMillis());
+            sourceSchemaDir.mkdir();
+            sourceSchemaDir.deleteOnExit();
+
+            errors = new StringBuilder();
+            dl = new Downloader(metadataConnection, sourceSchemaDir, new DeploymentEventListener() {
+                public void error(String message) {
+                    errors.append(message);
+                }
+
+                public void finished(String message) {
+                }
+            }, null);
+            if (errors.length() != 0) {
+                throw new SQLException(errors.toString());
+            }
+            return this;
+        }
+    }
 }

@@ -18,6 +18,10 @@ public class TestHelper {
     public static String username = "salesforce@fidelma.com";
     public static String password = "u9SABqa2dQxG0Y3kqWiJQVEwnYtryr1Ja1";
 
+    public static String plebUsername = "pleb@fidelma.com";
+    public static String plebPassword = "utC1bQWQOa6JsT8mp3dTD4O6vpwpOdQIv";
+
+
     public static String hackUsername = "kerry@fidelma.com";
     public static String hackPassword = "g2Py8oPzUAsZJ1VuDEw71tfV2pwqMJN5O";
 
@@ -25,6 +29,11 @@ public class TestHelper {
     public static SfConnection getTestConnection() throws SQLException {
         return connect(loginUrl, username, password);
     }
+
+    public static SfConnection getPlebTestConnection() throws SQLException {
+        return connect(loginUrl, plebUsername, plebPassword);
+    }
+
 
     public static SfConnection getHackConnection() throws SQLException {
         return connect(loginUrl, hackUsername, hackPassword);

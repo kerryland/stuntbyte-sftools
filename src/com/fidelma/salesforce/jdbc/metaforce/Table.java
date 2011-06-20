@@ -43,9 +43,11 @@ public class Table {
     public Column getColumn(String columnName) throws SQLException {
         Column result = columnMap.get(columnName.toUpperCase());
         if (result == null) {
-            String msg = "Unable to find '" + columnName + "' in " + name;
+            String msg = "Unable to find '" + columnName + "' in '" + name;
             if (columnMap.get((columnName + "__c").toUpperCase()) != null) {
-                msg += ". Do you mean '" + columnName + "'__c";
+                msg += "'. Do you mean '" + columnName + "'__c";
+            } else {
+                msg += "'";
             }
             throw new SQLException(msg);
         }

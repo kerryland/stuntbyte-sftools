@@ -320,13 +320,13 @@ public class Migrator {
                 }
 
                 if (ok) {
-                    System.out.println("Processing " + table.getName());
+//                    System.out.println("Processing " + table.getName());
                     correctReferences(destination, localDbStatement, table, callback);
                     masterRecordTables.remove(tableName.toUpperCase());
                     processedTables.add(tableName.toUpperCase());
                     processingOccurred = true;
                 } else {
-                    System.out.println("Skipping " + table.getName());
+//                    System.out.println("Skipping " + table.getName());
                 }
             }
         }

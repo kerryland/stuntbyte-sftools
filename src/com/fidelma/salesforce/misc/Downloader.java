@@ -77,7 +77,7 @@ public class Downloader {
 
             PackageTypeMembers pd = new PackageTypeMembers();
             pd.setName(metadataType);
-            pd.setMembers((String[]) files.toArray(new String[files.size()]));
+            pd.setMembers(files.toArray(new String[files.size()]));
             packageTypeMembers[i++] = pd;
         }
         p.setTypes(packageTypeMembers);

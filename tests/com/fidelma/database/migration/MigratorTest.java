@@ -43,7 +43,6 @@ public class MigratorTest {
 
         // Delete all tables from hack instance
         Migrator m = new Migrator();
-        System.out.println("Going now");
         m.deleteAllTables(conn, new StdOutDeploymentEventListener());
 
         // This should now blow up
