@@ -33,7 +33,6 @@ import java.util.zip.ZipOutputStream;
  */
 public class Deployer {
 
-    private static final double WSDL_VERSION = 20D;
     private MetadataConnection metadatabinding;
 
     public Deployer(MetadataConnection metadatabinding) {
@@ -64,9 +63,9 @@ public class Deployer {
 
 
     private void deploy(Deployment deployment, DeploymentEventListener listener, String packageXmlName) throws Exception {
-        deployment.assemble();
+//        deployment.assemble();
         File deploymentFile = File.createTempFile("SFDC", "zip");
-        System.out.println("Deployment file "+deploymentFile.getName());
+        System.out.println("Deployment file " + deploymentFile.getName());
 
         ZipOutputStream out = new ZipOutputStream(new FileOutputStream(deploymentFile));
 
@@ -77,7 +76,7 @@ public class Deployer {
         // Destructive changes need an empty package.xml
         if (packageXmlName.equals("destructiveChanges.xml")) {
             Deployment dummy = new Deployment();
-            dummy.assemble();
+//            dummy.assemble();
             out.putNextEntry(new ZipEntry("package.xml"));
             out.write(dummy.getPackageXml().getBytes());
             out.closeEntry();
@@ -198,6 +197,7 @@ public class Deployer {
     }
 
 
+    // TODO: Use downloader.retrieveZip instead
     public File retrieveZip(RetrieveRequest retrieveRequest, DeploymentEventListener listener) throws Exception {
 //        RetrieveRequest retrieveRequest = new RetrieveRequest();
 //        retrieveRequest.setApiVersion(WSDL_VERSION);

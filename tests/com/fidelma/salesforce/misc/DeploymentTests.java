@@ -20,7 +20,7 @@ public class DeploymentTests {
         Deployment deployment = new Deployment();
         deployment.addMember("ApexClass", "Wibble", "class Wibble {}");
         deployment.addMember("ApexClass", "Wobble", "class Wobble {}");
-        deployment.assemble();
+//        deployment.assemble();
 
         Assert.assertEquals(
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +

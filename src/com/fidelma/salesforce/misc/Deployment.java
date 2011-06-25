@@ -8,6 +8,7 @@ import org.w3c.dom.Text;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -24,11 +25,10 @@ import java.util.Map;
  */
 public class Deployment {
 
-    private String packageXml;
     private Document doc;
-    private Element packge;
     private Map<String, List<String>> types = new HashMap<String, List<String>>();
     private List<DeploymentResource> deploymentResources = new ArrayList<DeploymentResource>();
+    private boolean assembled;
 
 
     public void addMember(String typeName, String member, String code) throws Exception {
@@ -60,6 +60,13 @@ public class Deployment {
         if (typeName.equalsIgnoreCase("CustomField")) return "objects";
         if (typeName.equalsIgnoreCase("CustomObject")) return "objects";
         if (typeName.equalsIgnoreCase("Profile")) return "profiles";
+        if (typeName.equalsIgnoreCase("RecordType")) return "recordtypes";
+        if (typeName.equalsIgnoreCase("StaticResource")) return "staticresources";
+        if (typeName.toUpperCase().startsWith("WORKFLOW")) return "workflows";
+        if (typeName.equalsIgnoreCase("Layout")) return "layouts";
+        if (typeName.equalsIgnoreCase("CustomLabel")) return "labels";
+
+        if (typeName.equalsIgnoreCase("ActionOverride")) return "objects";
         throw new Exception("Unsupported type: " + typeName);
     }
 
@@ -71,15 +78,22 @@ public class Deployment {
         if (typeName.equalsIgnoreCase("CustomField")) return "object";
         if (typeName.equalsIgnoreCase("CustomObject")) return "object";
         if (typeName.equalsIgnoreCase("Profile")) return "profile";
+        if (typeName.equalsIgnoreCase("RecordType")) return "recordtype";
+        if (typeName.equalsIgnoreCase("StaticResource")) return "resource";
+        if (typeName.toUpperCase().startsWith("WORKFLOW")) return "workflows";
+        if (typeName.equalsIgnoreCase("Layout")) return "layout";
+        if (typeName.equalsIgnoreCase("CustomLabel")) return "labels";
+        if (typeName.equalsIgnoreCase("ActionOverride")) return "objects";
+
         throw new Exception("Unsupported type: " + typeName);
     }
 
 
-    public void assemble() throws ParserConfigurationException {
+    private void assemble() throws ParserConfigurationException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder parser = factory.newDocumentBuilder();
         doc = parser.newDocument();
-        packge = doc.createElementNS("http://soap.sforce.com/2006/04/metadata", "Package");
+        Element packge = doc.createElementNS("http://soap.sforce.com/2006/04/metadata", "Package");
         doc.appendChild(packge);
 
         for (String typeName : types.keySet()) {
@@ -92,7 +106,9 @@ public class Deployment {
 
             addTextElement(typesNode, "name", typeName);
         }
-        addTextElement(packge, "version", "20.0");  // TODO not hardcode
+        addTextElement(packge, "version", ""  + LoginHelper.WSDL_VERSION);
+
+        assembled = true;
     }
 
     private Element addTextElement(Node parent, String elementName, String value) {
@@ -103,10 +119,13 @@ public class Deployment {
         return memberElement;
     }
 
-    public String getPackageXml() throws TransformerException {
+    public String getPackageXml() throws Exception {
+        if (!assembled) {
+            assemble();
+        }
         TransformerFactory transfac = TransformerFactory.newInstance();
         Transformer trans = transfac.newTransformer();
-//        trans.setOutputProperty(OutputKeys.INDENT, "yes");
+        trans.setOutputProperty(OutputKeys.INDENT, "yes");
 
         //create string from xml tree
         StringWriter sw = new StringWriter();
@@ -118,5 +137,13 @@ public class Deployment {
 
     public List<DeploymentResource> getDeploymentResources() {
         return deploymentResources;
+    }
+
+    public boolean hasContent() {
+        return types.keySet().size() > 0;
+    }
+
+    public Map<String, List<String>> getTypes() {
+        return types;
     }
 }

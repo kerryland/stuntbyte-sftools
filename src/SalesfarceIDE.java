@@ -174,6 +174,7 @@ public class SalesfarceIDE {
             p.setTypes(new PackageTypeMembers[]{mems});
             RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
 
+            // TODO: Use downloader.retrieveZip instead
             File result = deployer.retrieveZip(retrieveRequest, listener);
             ZipFile zip = new ZipFile(result);
             CrcResults crcResults = pullCrcs(zip, crcs, filenameNoPath);
@@ -202,6 +203,7 @@ public class SalesfarceIDE {
             }
 
             // Get latest CRCs
+            // TODO: Use downloader.retrieveZip instead
             result = deployer.retrieveZip(retrieveRequest, listener);
             zip = new ZipFile(result);
             crcResults = pullCrcs(zip, crcs, filenameNoPath);

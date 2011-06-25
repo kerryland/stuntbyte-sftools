@@ -2,6 +2,7 @@ package com.fidelma.salesforce.jdbc;
 
 import com.fidelma.salesforce.jdbc.ddl.AlterTable;
 import com.fidelma.salesforce.jdbc.ddl.CreateTable;
+import com.fidelma.salesforce.jdbc.ddl.DeployCommand;
 import com.fidelma.salesforce.jdbc.ddl.DropTable;
 import com.fidelma.salesforce.jdbc.ddl.Grant;
 import com.fidelma.salesforce.jdbc.dml.Delete;
@@ -171,6 +172,10 @@ public class SfStatement implements java.sql.Statement {
 
             } else if (token.getValue().equalsIgnoreCase("COMMIT")) {
             } else if (token.getValue().equalsIgnoreCase("ROLLBACK")) {
+            } else if ((token.getValue().equalsIgnoreCase("DEPLOYMENT")) ||
+                       (token.getValue().equalsIgnoreCase("DEP"))) {
+                new DeployCommand(al, sfConnection.getMetaDataFactory(), metadataConnection).execute();
+
             } else {
                 throw new SQLException("Unsupported command " + token.getValue());
             }

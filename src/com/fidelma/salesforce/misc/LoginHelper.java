@@ -30,8 +30,8 @@ public class LoginHelper {
     private String sessionId;
     private boolean trace;
 
-    public static final double SFDC_VERSION = 20D;
-    public static final double WSDL_VERSION = 21D;
+    public static final double SFDC_VERSION = 22D;
+    public static final double WSDL_VERSION = 22D;
 
 
     public LoginHelper(String server, String username, String password) {
