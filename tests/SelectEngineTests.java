@@ -1,10 +1,12 @@
 import com.fidelma.salesforce.jdbc.SfConnection;
+import com.fidelma.salesforce.jdbc.SfPreparedStatement;
 import com.fidelma.salesforce.misc.TestHelper;
 import com.fidelma.salesforce.misc.TypeHelper;
 import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.sobject.SObject;
 import junit.framework.Assert;
+import org.hibernate.id.SequenceHiLoGenerator;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -737,6 +739,64 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals(1, foundCount);
     }
 
+    @Test
+    public void testUpdateOneRowViaIdWithExpression() throws Exception {
+        Statement stmt = conn.createStatement();
+        // Set the lead to a known value
+        stmt.executeUpdate(
+                "update Lead\n" +
+                " set FirstName = 'Mike', lastName='Jones', phone='0800xxxx'," +
+                " AnnualRevenue=3, " +
+                " NumberOfEmployees=6 where Id='" + leadId + "'");
+
+
+        int count = stmt.executeUpdate(
+                "update Lead\n" +
+                " set lastName = firstname + ' ' + lastname, " +
+                        "NumberOfEmployees=NumberOfEmployees*2*annualRevenue" +
+                        " where Id='" + leadId + "'");
+        assertEquals(1, count);
+        assertEquals(1, stmt.getUpdateCount());
+
+        ResultSet rs = stmt.executeQuery("select FirstName, Lastname, AnnualRevenue, NumberOfEmployees, Phone" +
+                " from Lead where Id = '" + leadId + "'");
+
+        int foundCount = 0;
+        while (rs.next()) {
+            foundCount++;
+            assertEquals("Mike", rs.getString("FirstName"));
+            assertEquals("Mike Jones", rs.getString("LastName"));  // Changed!
+            assertEquals("0800xxxx", rs.getString("Phone"));       // Unchanged
+            assertEquals(3f, rs.getDouble("AnnualRevenue"), 0.5f); // Unchanged
+            assertEquals(36, rs.getInt("NumberOfEmployees"));      // Changed!
+        }
+        assertEquals(1, foundCount);
+    }
+
+    @Test
+    public void testUpdateMultipleRowsWithExpression() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(
+                "select Id from Account where billingCountry = ''");
+        List<String> ids = new ArrayList<String>();
+        while (rs.next()) {
+            ids.add(rs.getString("Id"));
+        }
+
+        stmt.executeUpdate("update account set billingCountry= billingCity where billingCountry = ''");
+        // TODO : CHECK it worked!
+
+        // Put the data back the way it was
+        PreparedStatement ps = conn.prepareStatement("update account set billingCountry = '' where id = ?");
+        for (String id : ids) {
+            ps.setString(1, id);
+            ps.addBatch();
+        }
+        ps.executeBatch();
+
+
+    }
+
 
     @Test
     public void testUpdateMultipleRows() throws Exception {
@@ -746,7 +806,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         int rowsNamedMike = rs.getInt(1);
         Assert.assertTrue(rowsNamedMike > 1);
 
-        int count = stmt.executeUpdate("update Lead set LastName = 'wibbleX' where firstName = 'Mike'");
+        int count = stmt.executeUpdate("update Lead set LastName = firstName + ' Wibble' where firstName = 'Mike'");
 
         assertEquals(rowsNamedMike, count);
         assertEquals(rowsNamedMike, stmt.getUpdateCount());
@@ -756,9 +816,10 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         int foundCount = 0;
         while (rs.next()) {
             foundCount++;
-            assertEquals("wibbleX", rs.getString("LastName"));
+            assertEquals("Mike Wibble", rs.getString("LastName"));
         }
         assertEquals(rowsNamedMike, foundCount);
+        Assert.assertTrue(rowsNamedMike > 1);
     }
 
 

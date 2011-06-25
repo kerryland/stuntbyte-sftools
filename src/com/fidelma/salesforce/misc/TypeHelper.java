@@ -73,7 +73,9 @@ public class TypeHelper {
             return value;
         }
         if (dataType == Types.INTEGER) {
-            return Integer.parseInt(value);
+            return new BigDecimal(value).intValue();
+//            return Integer.parseInt(value);
+
         }
         if (dataType == Types.DOUBLE) {
             return Double.parseDouble(value);

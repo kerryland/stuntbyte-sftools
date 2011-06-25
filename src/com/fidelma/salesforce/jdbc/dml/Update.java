@@ -1,5 +1,6 @@
 package com.fidelma.salesforce.jdbc.dml;
 
+import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
@@ -9,13 +10,18 @@ import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
+import org.mvel2.MVEL;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  */
@@ -33,6 +39,7 @@ public class Update {
         this.pc = pc;
     }
 
+
     public int execute(Boolean batchMode, List<SObject> batchSObjects) throws Exception {
         LexicalToken token;
         String tableName = al.getToken().getValue();
@@ -41,7 +48,7 @@ public class Update {
         token = al.getToken();
         String whereClause = "";
 
-        Map<String, Object> values = new HashMap<String, Object>();
+        Map<String, ExpressionHolder> values = new HashMap<String, ExpressionHolder>();
 
         Table table = metaDataFactory.getTable(tableName);
         List<String> whereChunk = new ArrayList<String>();
@@ -49,15 +56,17 @@ public class Update {
         while (token != null) {
             String column = token.getValue();
             al.read("=");
-            LexicalToken value = al.getToken();
+
+            ExpressionHolder expressionHolder = new ExpressionHolder();
+            token = assembleExpression(al, expressionHolder, table);
 
             if (!column.equalsIgnoreCase("Id")) {
                 Integer dataType = ResultSetFactory.lookupJdbcType(table.getColumn(column).getType());
                 assert dataType != null;
-                values.put(column.toUpperCase(), value.getValue());
+                values.put(column.toUpperCase(), expressionHolder);
             }
 
-            token = al.getToken();  // comma, or WHERE or null (end of statement)
+//            token = al.getToken();  // comma, or WHERE or null (end of statement)
             if (token != null) {
                 if (token.getValue().equalsIgnoreCase("WHERE")) {
                     while (token != null) {
@@ -77,19 +86,96 @@ public class Update {
                 } else if (token.getValue().equalsIgnoreCase(",")) {
                     token = al.getToken();
                 } else {
-                    throw new SQLException("Expected WHERE or COMMA");
+                    throw new SQLException("Expected WHERE or COMMA, not " + token.getValue() );
                 }
             }
         }
 
-        int count;
-        String rowId = detectSingleRowUpdate(whereChunk);
-        if (rowId != null) {
-            count = updateSingleRow(batchMode, batchSObjects, tableName, values, table, rowId);
-        } else {
+        int count = -1;
+
+        boolean needMultipleUpdate = true;
+
+        if (noReferenceToOtherColumns(values.values())) {
+            String rowId = detectSingleRowUpdate(whereChunk);
+            if (rowId != null) {
+                count = updateSingleRow(batchMode, batchSObjects, tableName, values, table, rowId);
+                needMultipleUpdate = false;
+            }
+        }
+        if (needMultipleUpdate) {
             count = updateMultipleRows(batchMode, batchSObjects, tableName, whereClause, values, table);
         }
+
         return count;
+    }
+
+    private boolean noReferenceToOtherColumns(Collection<ExpressionHolder> values) {
+        boolean result = true;
+        for (ExpressionHolder value : values) {
+            if (value.referencedColumns.size() > 0) {
+                result = false;
+                break;
+            }
+        }
+        return result;
+    }
+
+
+    private class ExpressionHolder {
+        String expression;
+        List<Column> referencedColumns = new ArrayList<Column>();
+        Serializable compiledExpression;
+    }
+
+
+    private LexicalToken assembleExpression(SimpleParser al, ExpressionHolder expressionHolder, Table table) throws Exception {
+        LexicalToken value = al.getToken();
+
+        StringBuilder expression = new StringBuilder();
+
+        int bracketBalance = 0;
+
+        do {
+            if (value.getType().equals(LexicalToken.Type.STRING)) {
+                expression.append("'").append(value.getValue()).append("'");
+
+            } else if (value.getType().equals(LexicalToken.Type.IDENTIFIER)) {
+
+                String identifier = value.getValue();
+                expression.append(identifier.toLowerCase());
+
+                try {
+                    Column col = table.getColumn(identifier);
+                    expressionHolder.referencedColumns.add(col);
+                } catch (SQLException e) {
+                    // Not a big deal -- it's just not a column
+                }
+
+            } else {
+                expression.append(value.getValue());
+            }
+
+            if (value.getValue().equals("(")
+                    || value.getValue().equals("[")
+                    || value.getValue().equals("{")) {
+                bracketBalance++;
+            } else if (value.getValue().equals(")")
+                    || value.getValue().equals("]")
+                    || value.getValue().equals("}")) {
+                bracketBalance--;
+            }
+            expression.append(" ");
+
+            value = al.getToken();
+//            System.out.println("bb=" + bracketBalance + " " + value.getValue());
+
+        } while (value != null && (bracketBalance !=0 || (!value.getValue().equals(",") && !value.getValue().equalsIgnoreCase("where"))));
+
+        expressionHolder.expression = expression.toString();
+        System.out.println("EXPRESSION: " + expressionHolder.expression);
+        expressionHolder.compiledExpression = MVEL.compileExpression(expressionHolder.expression);
+
+        return value;
     }
 
 
@@ -116,35 +202,49 @@ public class Update {
 
 
     private int updateSingleRow(Boolean batchMode, List<SObject> batchSObjects,
-                                       String tableName,  Map<String, Object> values,
-                                       Table table, String id) throws SQLException, ParseException {
+                                String tableName, Map<String, ExpressionHolder> values,
+                                Table table, String id) throws SQLException, ParseException {
 
         SObject[] sObjects = new SObject[1];
         sObjects[0] = new SObject();
         sObjects[0].setType(tableName);
         sObjects[0].setId(id);
 
-        storeData(batchMode, batchSObjects, tableName, values, table, sObjects);
+        storeData(batchMode, batchSObjects, tableName, values, table, sObjects, new HashSet<String>(0));
         return 1;
     }
 
     private int updateMultipleRows(Boolean batchMode, List<SObject> batchSObjects,
-                                   String tableName, String whereClause, Map<String, Object> values,
+                                   String tableName, String whereClause, Map<String, ExpressionHolder> values,
                                    Table table) throws SQLException, ParseException {
         QueryResult qr;
         int count = 0;
         try {
+            Set<String> referencedColumns = new HashSet<String>();
+            referencedColumns.add("Id");
+            for (ExpressionHolder expressionHolder : values.values()) {
+                for (Column referencedColumn : expressionHolder.referencedColumns) {
+                    referencedColumns.add(referencedColumn.getName());
+                }
+            }
+
             StringBuilder readSoql = new StringBuilder();
-            readSoql.append("select Id ");
+            readSoql.append("select ");
+
+            for (String referencedColumn : referencedColumns) {
+                readSoql.append(referencedColumn).append(",");
+            }
+            readSoql.deleteCharAt(readSoql.lastIndexOf(","));
+
             readSoql.append(" from ").append(tableName).append(" ").append(whereClause);
 
             qr = pc.query(readSoql.toString());
 
             SObjectChunker chunker = new SObjectChunker(MAX_UPDATES_PER_CALL, pc, qr);
             while (chunker.next()) {
-                SObject[] sObjects = chunker.nextChunk();
-                storeData(batchMode, batchSObjects, tableName, values, table, sObjects);
-                count += sObjects.length;
+                SObject[] selectedObjects = chunker.nextChunk();
+                storeData(batchMode, batchSObjects, tableName, values, table, selectedObjects, referencedColumns);
+                count += selectedObjects.length;
             }
 
         } catch (ConnectionException e) {
@@ -153,11 +253,25 @@ public class Update {
         return count;
     }
 
-    private void storeData(Boolean batchMode, List<SObject> batchSObjects, String tableName, Map<String, Object> values, Table table, SObject[] sObjects) throws SQLException, ParseException {
-        SObject[] update = new SObject[sObjects.length];
+    private void storeData(Boolean batchMode,
+                           List<SObject> batchSObjects,
+                           String tableName,
+                           Map<String, ExpressionHolder> values,
+                           Table table,
+                           SObject[] selectedObjects,
+                           Set<String> referencedColumns) throws SQLException, ParseException {
 
-        for (int i = 0; i < sObjects.length; i++) {
-            String id = sObjects[i].getId();
+        SObject[] update = new SObject[selectedObjects.length];
+
+        for (int i = 0; i < selectedObjects.length; i++) {
+
+            Map vars = new HashMap();
+
+            String id = selectedObjects[i].getId();
+
+            for (String referencedColumn : referencedColumns) {
+                vars.put(referencedColumn.toLowerCase(), selectedObjects[i].getField(referencedColumn));
+            }
 
             SObject sObject = new SObject();
             sObject.setType(tableName);
@@ -165,8 +279,19 @@ public class Update {
 
             for (String key : values.keySet()) {
                 Integer dataType = ResultSetFactory.lookupJdbcType(table.getColumn(key).getType());
-                Object value = TypeHelper.dataTypeConvert((String) values.get(key), dataType);
-                sObject.setField(key, value);
+
+                ExpressionHolder expressionHolder = values.get(key);
+                Object value = MVEL.executeExpression(expressionHolder.compiledExpression, vars);
+
+                System.out.println(expressionHolder.expression + "=" +value);
+
+                // TODO: What about "fieldsToNull"...
+                if (value == null) {
+                    sObject.setField(key, "");
+                } else {
+                    value = TypeHelper.dataTypeConvert(value.toString(), dataType);
+                    sObject.setField(key, value);
+                }
             }
 
             if (batchMode) {
