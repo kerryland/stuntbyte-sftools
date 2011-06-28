@@ -20,8 +20,10 @@ import java.io.FileWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Auto deployment creator?
@@ -70,6 +72,9 @@ public class DeployCommand {
             if (value.equalsIgnoreCase("start")) {
                 doStart();
 
+            } else if (value.equalsIgnoreCase("upload")) {
+                doUpload();
+
             } else if (deployment == null) {
                 throw new SQLException("'deploy start' not yet called");
 
@@ -85,9 +90,6 @@ public class DeployCommand {
             } else if (value.equalsIgnoreCase("package")) {
                 doPackage();
 
-            } else if (value.equalsIgnoreCase("upload")) {
-                doUpload();
-
             } else {
                 throw new SQLException("Unexpected token: '" + value + "'");
             }
@@ -102,17 +104,32 @@ public class DeployCommand {
         String fileName = al.getValue("Filename not defined");
         al.read("TO");
         String output = al.getValue("Output file not defined");
-        FileWriter fw = new FileWriter(output);
+
+        Set<Deployer.DeploymentOptions> options = new HashSet<Deployer.DeploymentOptions>();
+
+        String next = al.getValue();
+        if (next != null) {
+            if (next.equalsIgnoreCase("RUNTESTS")) {
+                options.add(Deployer.DeploymentOptions.UNPACKAGED_TESTS);
+            } else {
+                throw new Exception("Expected RUNTESTS, not " + next);
+            }
+        }
 
         Deployer deployer = new Deployer(metadataConnection);
-
         DeploymentEventListenerImpl deploymentEventListener = new DeploymentEventListenerImpl();
 
-        deployer.deployZip(new File(fileName), deploymentEventListener);
+        try {
+            deployer.deployZip(new File(fileName), deploymentEventListener, options);
 
-        fw.write(deploymentEventListener.getErrors().toString());
-        fw.write("Done\n");
-        fw.close();
+        } finally {
+            FileWriter fw = new FileWriter(output);
+            fw.write(deploymentEventListener.getMessages().toString());
+            fw.write("\n");
+            fw.write(deploymentEventListener.getErrors().toString());
+            fw.write("Done\n");
+            fw.close();
+        }
 
         if (deploymentEventListener.getErrors().length() != 0) {
             throw new SQLException(deploymentEventListener.getErrors().toString());
@@ -130,7 +147,7 @@ public class DeployCommand {
 
     private void doCommit() throws Exception {
         snapshot = new File(System.getProperty("java.io.tmpdir"),
-                        "SF-SNAPSHOT" + System.currentTimeMillis());
+                "SF-SNAPSHOT" + System.currentTimeMillis());
 
         snapshot.mkdir();
 
@@ -207,7 +224,7 @@ public class DeployCommand {
         deployment = new Deployment();
         dropDeployment = new Deployment();
 
-        if (1!=3) {
+        if (1 != 3) {
             return;
         }
 
@@ -344,8 +361,6 @@ public class DeployCommand {
         }
         queryList.clear();
     }
-
-
 
 
 }

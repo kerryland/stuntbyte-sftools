@@ -55,6 +55,7 @@ public class Update {
 
         while (token != null) {
             String column = token.getValue();
+            System.out.println("column=" + column);
             al.read("=");
 
             ExpressionHolder expressionHolder = new ExpressionHolder();
@@ -134,8 +135,10 @@ public class Update {
         StringBuilder expression = new StringBuilder();
 
         int bracketBalance = 0;
+        System.out.println("Assembling with " + value.getValue());
 
         do {
+            System.out.println("DOING with " + value.getValue());
             if (value.getType().equals(LexicalToken.Type.STRING)) {
                 expression.append("'").append(value.getValue()).append("'");
 
@@ -152,6 +155,7 @@ public class Update {
                 }
 
             } else {
+                System.out.println("APPENDING " + value.getValue() + " " + value.getType().name());
                 expression.append(value.getValue());
             }
 
@@ -167,10 +171,15 @@ public class Update {
             expression.append(" ");
 
             value = al.getToken();
-//            System.out.println("bb=" + bracketBalance + " " + value.getValue());
+            if (value != null) {
+                System.out.println("bb=" + bracketBalance + " " + value.getValue() + " " + (!value.getValue().equals(",") && !value.getValue().equalsIgnoreCase("where")));
+            }  else {
+                System.out.println("value is null");
+            }
 
         } while (value != null && (bracketBalance !=0 || (!value.getValue().equals(",") && !value.getValue().equalsIgnoreCase("where"))));
 
+        System.out.println("BAIL!");
         expressionHolder.expression = expression.toString();
         System.out.println("EXPRESSION: " + expressionHolder.expression);
         expressionHolder.compiledExpression = MVEL.compileExpression(expressionHolder.expression);

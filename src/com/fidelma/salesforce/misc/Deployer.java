@@ -1,10 +1,14 @@
 package com.fidelma.salesforce.misc;
 
+import com.sforce.soap.apex.RunTestFailure;
+import com.sforce.soap.apex.RunTestsResult;
 import com.sforce.soap.metadata.AsyncRequestState;
 import com.sforce.soap.metadata.AsyncResult;
 import com.sforce.soap.metadata.DeployMessage;
 import com.sforce.soap.metadata.DeployOptions;
 import com.sforce.soap.metadata.DeployResult;
+import com.sforce.soap.metadata.FileProperties;
+import com.sforce.soap.metadata.ListMetadataQuery;
 import com.sforce.soap.metadata.MetadataConnection;
 import com.sforce.soap.metadata.RetrieveMessage;
 import com.sforce.soap.metadata.RetrieveRequest;
@@ -23,7 +27,10 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -107,7 +114,7 @@ public class Deployer {
 
         out.close();
 
-        deployZip(deploymentFile, listener);
+        deployZip(deploymentFile, listener, new HashSet<DeploymentOptions>());
     }
 
 
@@ -124,8 +131,12 @@ public class Deployer {
 
     private static final int MAX_NUM_POLL_REQUESTS = 50;
 
+    public enum DeploymentOptions {
+        UNPACKAGED_TESTS,
+        ALL_TESTS }; // TODO
 
-    public void deployZip(File zipFile, DeploymentEventListener listener) throws Exception {
+
+    public void deployZip(File zipFile, DeploymentEventListener listener, Set<DeploymentOptions> deploymentOptions) throws Exception {
         byte zipBytes[] = readZipFile(zipFile);
         DeployOptions deployOptions = new DeployOptions();
 
@@ -133,9 +144,29 @@ public class Deployer {
         deployOptions.setRollbackOnError(true);
         deployOptions.setSinglePackage(true);
 
+        if (deploymentOptions.contains(DeploymentOptions.UNPACKAGED_TESTS)) {
+            ListMetadataQuery mdq = new ListMetadataQuery();
+            mdq.setType("ApexClass");
+
+            FileProperties[] codeFiles = metadatabinding.listMetadata(new ListMetadataQuery[]{mdq}, LoginHelper.SFDC_VERSION);
+            List<String> testFiles = new ArrayList<String>();
+            for (FileProperties fileProperties : codeFiles) {
+                if ((fileProperties.getFullName().endsWith("Test")) ||
+                    (fileProperties.getFullName().endsWith("Tests")))
+                {
+                    testFiles.add(fileProperties.getFullName());
+                }
+            }
+            String[] testFileArray = new String[testFiles.size()];
+            testFiles.toArray(testFileArray);
+            deployOptions.setRunTests(testFileArray);
+        }
+
 //           deployOptions.setAllowMissingFiles(true);
 
         AsyncResult asyncResult = metadatabinding.deploy(zipBytes, deployOptions);
+
+        listener.finished("Deployment started. id=" + asyncResult.getId() + "\n");
 
         // Wait for the deploy to complete
         int poll = 0;
@@ -146,9 +177,7 @@ public class Deployer {
 
             waitTimeMilliSecs *= 2;
             if (poll++ > MAX_NUM_POLL_REQUESTS) {
-                throw new Exception("Request timed out. If this is a large set " +
-                        "of metadata components, check that the time allowed by " +
-                        "MAX_NUM_POLL_REQUESTS is sufficient.");
+                throw new Exception("Request timed out. Check deployment state within Salesforce");
             }
             asyncResult = metadatabinding.checkStatus(
                     new String[]{asyncResult.getId()})[0];
@@ -167,6 +196,21 @@ public class Deployer {
             for (DeployMessage error : errors) {
                 if (!error.getSuccess()) {
                     listener.error(error.getProblemType().name() + ": " + error.getFullName() + " " + error.getProblem());
+                }
+            }
+        }
+
+        if (deploymentOptions.contains(DeploymentOptions.UNPACKAGED_TESTS)) {
+            com.sforce.soap.metadata.RunTestsResult res = result.getRunTestResult();
+
+            listener.finished("Number of tests: " + res.getNumTestsRun() + "\n");
+            listener.finished("Number of failures: " + res.getNumFailures() + "\n");
+            if (res.getNumFailures() > 0) {
+                for (com.sforce.soap.metadata.RunTestFailure rtf : res.getFailures()) {
+                    listener.finished("Failure: " + (rtf.getNamespace() ==
+                            null ? "" : rtf.getNamespace() + ".")
+                            + rtf.getName() + "." + rtf.getMethodName() + ": "
+                            + rtf.getMessage() + "\n" + rtf.getStackTrace() + "\n");
                 }
             }
         }

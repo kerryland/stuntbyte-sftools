@@ -87,7 +87,7 @@ public class Migrator {
 
 
         // Upload schema to destination instance
-        targetDeployer.deployZip(zipFile, del);
+        targetDeployer.deployZip(zipFile, del, new HashSet<Deployer.DeploymentOptions>());
 
         // Insert all data from local machine to target instance
         // map the inserted ids to the source ids

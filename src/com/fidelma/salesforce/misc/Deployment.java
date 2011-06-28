@@ -32,7 +32,7 @@ public class Deployment {
 
 
     public void addMember(String typeName, String member, String code) throws Exception {
-        if (member.endsWith(determineFileSuffix(typeName))) {
+        if (member.contains(".") && member.endsWith(determineFileSuffix(typeName))) {
             member = member.substring(0, member.lastIndexOf(determineFileSuffix(typeName))-1);
         }
         List<String> members = types.get(typeName);
