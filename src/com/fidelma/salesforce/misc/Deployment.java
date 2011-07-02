@@ -31,7 +31,7 @@ public class Deployment {
     private boolean assembled;
 
 
-    public void addMember(String typeName, String member, String code) throws Exception {
+    public void addMember(String typeName, String member, String code, String metaData) throws Exception {
         if (member.contains(".") && member.endsWith(determineFileSuffix(typeName))) {
             member = member.substring(0, member.lastIndexOf(determineFileSuffix(typeName))-1);
         }
@@ -45,6 +45,7 @@ public class Deployment {
         if (code != null) {
             DeploymentResource resource = new DeploymentResource();
             resource.setCode(code);
+            resource.setMetaData(metaData);
             resource.setFilepath(determineDirectoryName(typeName) + "/" + member + "." + determineFileSuffix(typeName));
             deploymentResources.add(resource);
         }

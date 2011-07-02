@@ -8,12 +8,9 @@ import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.parse.SimpleParser;
 import com.sforce.soap.metadata.MetadataConnection;
-import com.sforce.soap.metadata.PicklistValueTranslation;
-import com.sforce.soap.partner.PartnerConnection;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import javax.swing.table.TableStringConverter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
@@ -21,10 +18,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.StringWriter;
-import java.net.CookieHandler;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -70,7 +65,7 @@ public class CreateTable {
 
             for (Table table : tables) {
                 String xml = createMetadataXml(table);
-                deployment.addMember("CustomObject", table.getName(), xml);
+                deployment.addMember("CustomObject", table.getName(), xml, null);
             }
 
             deployer.deploy(deployment, new DeploymentEventListener() {

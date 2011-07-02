@@ -1,7 +1,5 @@
 package com.fidelma.salesforce.misc;
 
-import com.sforce.soap.apex.RunTestFailure;
-import com.sforce.soap.apex.RunTestsResult;
 import com.sforce.soap.metadata.AsyncRequestState;
 import com.sforce.soap.metadata.AsyncResult;
 import com.sforce.soap.metadata.DeployMessage;
@@ -49,13 +47,13 @@ public class Deployer {
 
     public void uploadNonCode(String nonCodeType, String filename,
                               String srcDirectory, String code,
-                              DeploymentEventListener listener) throws Exception {
+                              String metaData, DeploymentEventListener listener) throws Exception {
 
         filename = new File(filename).getName();
         String nonSuffixedFilename = filename.substring(0, filename.lastIndexOf("."));
 
         Deployment deployment = new Deployment();
-        deployment.addMember(nonCodeType, nonSuffixedFilename, code);
+        deployment.addMember(nonCodeType, nonSuffixedFilename, code, metaData);
 
         deploy(deployment, listener);
     }

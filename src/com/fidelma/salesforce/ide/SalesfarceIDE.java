@@ -1,3 +1,5 @@
+package com.fidelma.salesforce.ide;
+
 import com.fidelma.salesforce.misc.Deployer;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Downloader;
@@ -58,14 +60,12 @@ import java.util.zip.ZipFile;
 public class SalesfarceIDE {
 
 
-    private double apiversion = 20d;
+    private double apiversion = 20d; // TODO:
 
     private LoginHelper loginHelper;
     private Deployer deployer;
     private SimpleListener listener = new SimpleListener();
     private MetadataConnection metaDataConnection;
-
-//    private PrintWriter messageLog;
 
 
     public static void main(String[] args) throws Exception {
@@ -90,11 +90,11 @@ public class SalesfarceIDE {
     private static void usage() {
         String msg =
                 "ARGS:\n" +
-                "\n" +
-                "    <filename>           == upload and compile/test file\n" +
-                "    -downloadall         == download 'everything'\n" +
-                "    -download <filename> == download just this file\n" +
-                "    -force    <filename> == force upload, regardless of crc";
+                        "\n" +
+                        "    <filename>           == upload and compile/test file\n" +
+                        "    -downloadall         == download 'everything'\n" +
+                        "    -download <filename> == download just this file\n" +
+                        "    -force    <filename> == force upload, regardless of crc";
         System.err.println(msg);
     }
 
@@ -146,33 +146,23 @@ public class SalesfarceIDE {
                 return;
             }
 
-            StringBuilder sourceCode = new StringBuilder();
-            {
-                LineNumberReader read = new LineNumberReader(new FileReader(filename));
-                String line = read.readLine();
-                while (line != null) {
-                    sourceCode.append(line).append('\n');
-                    line = read.readLine();
-                }
-            }
-
             // Download latest for checksum
-            Properties crcs = new Properties();
-            crcs.load(new FileReader(crcFile));
-
             PackageTypeMembers mems = new PackageTypeMembers();
-
             String typeName = detemineApexType(filename);
 
             mems.setName(typeName);
             String noSuffix = getNoSuffix(filename);
             mems.setMembers(new String[]{noSuffix});
 
-//        System.out.println("DOWNLOADING " + typeName + " - " + mems.getMembers()[0]);
-
             Package p = new Package();
             p.setTypes(new PackageTypeMembers[]{mems});
             RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
+
+            Properties crcs = new Properties();
+            crcs.load(new FileReader(crcFile));
+
+//        System.out.println("DOWNLOADING " + typeName + " - " + mems.getMembers()[0]);
+
 
             // TODO: Use downloader.retrieveZip instead
             File result = deployer.retrieveZip(retrieveRequest, listener);
@@ -180,41 +170,88 @@ public class SalesfarceIDE {
             CrcResults crcResults = pullCrcs(zip, crcs, filenameNoPath);
 
             boolean runTests = true;
+            boolean uploadCode = true;
 
-            if ((crcResults.serverCrc != null) && (crcResults.localCrc != null) && (!crcResults.serverCrc.equals(crcResults.localCrc))) {
+            if ((crcResults.serverCrc != null) && (crcResults.localCrc != null) &&
+                    (!crcResults.serverCrc.equals(crcResults.localCrc))) {
                 if (arg.equals("-force")) {
                     message("Saving even though checksums mismatch");
                     runTests = false;
 
                 } else {
                     err(filename, -1, -1, "E", "Code NOT saved due to checksum issue. Use -download to get latest or -force to force upload");
-                    return;
+                    uploadCode = false;
                 }
             }
 
-            if (filename.endsWith(".trigger") || filename.endsWith(".cls")) {
-                compileAndUploadCode(filename, prop, srcDirectory, debugFile, sourceCode, runTests);
-            } else {
-
-                String partFilename = new File(filename).getName();
-                String aTypeName = determineTypeName(partFilename);
-
-                deployer.uploadNonCode(aTypeName, filename, srcDirectory, sourceCode.toString(), listener);
+            if (uploadCode) {
+                uploadCode(filename, prop, srcDirectory, debugFile, crcFile, filenameNoPath, crcs, retrieveRequest, runTests);
+                crcs.store(new FileWriter(crcFile), "Automatically generated for " + crcResults.crcKey);
             }
 
-            // Get latest CRCs
-            // TODO: Use downloader.retrieveZip instead
-            result = deployer.retrieveZip(retrieveRequest, listener);
-            zip = new ZipFile(result);
-            crcResults = pullCrcs(zip, crcs, filenameNoPath);
-
-            // Store checksum locally
-            crcs.setProperty(crcResults.crcKey, String.valueOf(crcResults.serverCrc));
-            crcs.store(new FileWriter(crcFile), "Automatically generated for " + crcResults.crcKey);
 //        System.out.println("STORED CRC OF " + crcResults.serverCrc);
         } finally {
 //            messageLog.close();
         }
+    }
+
+    private void uploadCode(String filename, Properties prop, String srcDirectory, String debugFile,
+                            String crcFile, String filenameNoPath,
+                            Properties crcs, RetrieveRequest retrieveRequest, boolean runTests) throws Exception {
+        File result;
+        ZipFile zip;
+        CrcResults crcResults;
+        StringBuilder sourceCode = new StringBuilder();
+        {
+            LineNumberReader read = new LineNumberReader(new FileReader(filename));
+            String line = read.readLine();
+            while (line != null) {
+                sourceCode.append(line).append('\n');
+                line = read.readLine();
+            }
+            read.close();
+        }
+
+        File metaFile = new File(filename + "-meta.xml");
+        if (!metaFile.exists()) {
+            err(filename, -1, -1, "E", "Code NOT saved due to missing -meta.xml");
+            return;
+        }
+
+        StringBuilder metaData = new StringBuilder();
+        {
+            LineNumberReader read = new LineNumberReader(new FileReader(metaFile));
+            String line = read.readLine();
+            while (line != null) {
+                metaData.append(line).append('\n');
+                line = read.readLine();
+            }
+            read.close();
+        }
+
+
+        if (filename.endsWith(".trigger") || filename.endsWith(".cls")) {
+            compileAndUploadCode(filename, prop, srcDirectory, debugFile, sourceCode, runTests);
+        } else {
+
+            String partFilename = new File(filename).getName();
+            String aTypeName = determineTypeName(partFilename);
+
+            deployer.uploadNonCode(aTypeName, filename, srcDirectory, sourceCode.toString(), metaData.toString(), listener);
+        }
+
+        // Get latest CRCs
+        // TODO: Use downloader.retrieveZip instead
+        result = deployer.retrieveZip(retrieveRequest, listener);
+        zip = new ZipFile(result);
+        crcResults = pullCrcs(zip, crcs, filenameNoPath);
+
+        // Store checksum locally
+        if (crcResults.serverCrc == null) { // ie: File doesn't exist on server
+            crcResults.serverCrc = -999l;
+            crcResults.crcKey = filenameNoPath;
+        }
+        crcs.setProperty(crcResults.crcKey, String.valueOf(crcResults.serverCrc));
     }
 
 
@@ -253,7 +290,11 @@ public class SalesfarceIDE {
                 result.crcKey = f.getName();
 
                 result.serverCrc = zipEntry.getCrc();
-                result.localCrc = Long.valueOf(crcs.getProperty(result.crcKey));
+                String crc = crcs.getProperty(result.crcKey);
+                if (crc == null) {
+                    crc = "-999";
+                }
+                result.localCrc = Long.valueOf(crc);
 
 //                System.out.println("SERVER CRC " + result.crcKey + " " + result.serverCrc + " vs stored " + result.localCrc);
                 break;
@@ -275,13 +316,11 @@ public class SalesfarceIDE {
     }
 
 
-
 //    private void uploadNonCode(String filename, String srcDirectory, String code) throws Exception {
 //        File deploymentFile = File.createTempFile("SFDC", "zip");
 //        createDeploymentFile(filename, srcDirectory, code, deploymentFile);
 //        deployZip(deploymentFile);
 //    }
-
 
 
 //    private void createDeploymentFile(String filename, String srcDirectory, String apexCode, File deploymentFile) throws IOException {
@@ -323,7 +362,6 @@ public class SalesfarceIDE {
 //        out.closeEntry();
 //        out.close();
 //    }
-
 
 
     private void compileAndUploadCode(String filename, Properties prop, String src, String debugFile, StringBuilder sourceCode, boolean runTests) throws ConnectionException, IOException {
@@ -629,8 +667,6 @@ public class SalesfarceIDE {
             }
         });
     }
-
-
 
 
     private void doDiff() throws Exception {

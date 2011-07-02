@@ -9,13 +9,8 @@ import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Downloader;
 import com.fidelma.salesforce.misc.LoginHelper;
-import com.sforce.soap.metadata.AsyncRequestState;
-import com.sforce.soap.metadata.AsyncResult;
-import com.sforce.soap.metadata.CustomField;
-import com.sforce.soap.metadata.CustomObject;
 import com.sforce.soap.metadata.FileProperties;
 import com.sforce.soap.metadata.ListMetadataQuery;
-import com.sforce.soap.metadata.Metadata;
 import com.sforce.soap.metadata.MetadataConnection;
 
 import java.io.File;
@@ -158,11 +153,11 @@ public class Migrator {
         for (Table table : tables) {
             if (table.getType().equals("TABLE")) {
                 if (table.isCustom()) {
-                    undeploy.addMember("CustomObject", table.getName(), null);
+                    undeploy.addMember("CustomObject", table.getName(), null, null);
                 } else {
                     for (Column column : table.getColumns()) {
                         if (column.isCustom()) {
-                            undeploy.addMember("CustomField", table.getName() + "." + column.getName(), null);
+                            undeploy.addMember("CustomField", table.getName() + "." + column.getName(), null, null);
                         }
                     }
                 }
@@ -207,7 +202,7 @@ public class Migrator {
                 LoginHelper.SFDC_VERSION);
 
         for (FileProperties prop : props) {
-            undeploy.addMember(prop.getType(), prop.getFullName(), null);
+            undeploy.addMember(prop.getType(), prop.getFullName(), null, null);
         }
     }
 

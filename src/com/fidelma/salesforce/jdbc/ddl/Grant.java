@@ -223,7 +223,7 @@ public class Grant {
         Transformer transformer = transformerFactory.newTransformer();
         transformer.transform(source, result);
 
-        dep.addMember("Profile", profileFile.getName(), sw.toString());
+        dep.addMember("Profile", profileFile.getName(), sw.toString(), null);
     }
 
 

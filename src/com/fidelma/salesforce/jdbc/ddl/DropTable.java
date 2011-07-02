@@ -6,9 +6,6 @@ import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.parse.SimpleParser;
 import com.sforce.soap.metadata.MetadataConnection;
-import com.sforce.soap.partner.PartnerConnection;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -68,7 +65,7 @@ public class DropTable {
 
         try {
             for (String tableName : tablesToDrop) {
-                deployment.addMember("CustomObject", tableName, null);
+                deployment.addMember("CustomObject", tableName, null, null);
             }
             deployer.undeploy(deployment,
                     new DeploymentEventListener() {

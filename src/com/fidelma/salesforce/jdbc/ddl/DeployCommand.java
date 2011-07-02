@@ -213,9 +213,9 @@ public class DeployCommand {
         }
 
         if (drop) {
-            dropDeployment.addMember(type, name, null);
+            dropDeployment.addMember(type, name, null, null);
         } else {
-            deployment.addMember(type, name, null);
+            deployment.addMember(type, name, null, null);
         }
     }
 

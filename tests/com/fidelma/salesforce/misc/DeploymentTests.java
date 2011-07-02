@@ -18,8 +18,8 @@ public class DeploymentTests {
     public void testDeployment() throws Exception {
 
         Deployment deployment = new Deployment();
-        deployment.addMember("ApexClass", "Wibble", "class Wibble {}");
-        deployment.addMember("ApexClass", "Wobble", "class Wobble {}");
+        deployment.addMember("ApexClass", "Wibble", "class Wibble {}", null);
+        deployment.addMember("ApexClass", "Wobble", "class Wobble {}", null);
 //        deployment.assemble();
 
         Assert.assertEquals(
