@@ -783,12 +783,12 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
             ids.add(rs.getString("Id"));
         }
 
-        stmt.executeUpdate("update account set billingCountry= billingCity where billingCountry = ''");
+        stmt.executeUpdate("update account set billingCountry= billingCity where billingCountry = 'x'");
         // TODO : CHECK it worked!
 
         // Put the data back the way it was
         System.out.println("BAD STARTS");
-        PreparedStatement ps = conn.prepareStatement("update account set billingCountry = '' where id = ?");
+        PreparedStatement ps = conn.prepareStatement("update account set billingCountry = 'x' where id = ?");
         for (String id : ids) {
             ps.setString(1, id);
             ps.addBatch();
