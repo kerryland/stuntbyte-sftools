@@ -3,6 +3,8 @@ package com.fidelma.salesforce.misc;
 import junit.framework.Assert;
 import org.junit.Test;
 
+import java.io.LineNumberReader;
+import java.io.StringReader;
 import java.util.List;
 
 /**
@@ -22,6 +24,16 @@ public class DeploymentTests {
         deployment.addMember("ApexClass", "Wobble", "class Wobble {}", null);
 //        deployment.assemble();
 
+
+        String xml = deployment.getPackageXml();
+        LineNumberReader lnr = new LineNumberReader(new StringReader(xml));
+        String line = lnr.readLine();
+        String trimmedXml = "";
+        while (line != null) {
+            trimmedXml += line;
+            line = lnr.readLine();
+        }
+
         Assert.assertEquals(
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<Package xmlns=\"http://soap.sforce.com/2006/04/metadata\">" +
@@ -30,9 +42,9 @@ public class DeploymentTests {
                         "<members>Wobble</members>" +
                         "<name>ApexClass</name>" +
                         "</types>" +
-                        "<version>20.0</version></Package>",
+                        "<version>22.0</version></Package>",
 
-                deployment.getPackageXml());
+                trimmedXml);
 
         List<DeploymentResource> resources = deployment.getDeploymentResources();
         for (DeploymentResource resource : resources) {

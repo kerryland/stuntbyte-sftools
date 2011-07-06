@@ -54,7 +54,11 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
         int paramCount = 0;
         int paramPointer = 0;
         while (token != null) {
-            tokenizedSoql.add(token.getValue());
+            if (token.getType().equals(LexicalToken.Type.STRING)) {
+                tokenizedSoql.add("'" + token.getValue() + "'");
+            } else {
+                tokenizedSoql.add(token.getValue());
+            }
             if (token.getValue().equals("?")) {
                 paramMap.put(++paramCount, paramPointer);
             }
@@ -262,6 +266,7 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
     }
 
     public void addBatch() throws SQLException {
+        // TODO: Handle batched SELECTs?
         executeUpdate(assembleSoql(), true);
     }
 
