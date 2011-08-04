@@ -19,6 +19,10 @@ public class DeploymentEventListenerImpl implements DeploymentEventListener {
         messages.append(message).append(".\n");
     }
 
+    public void progress(String message) {
+
+    }
+
     public StringBuilder getErrors() {
         return errors;
     }

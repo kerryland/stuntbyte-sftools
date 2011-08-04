@@ -237,6 +237,10 @@ public class DeployCommand {
 
             public void finished(String message) {
             }
+
+            public void progress(String message) {
+
+            }
         };
 
         sourceSchemaDir = new File(System.getProperty("java.io.tmpdir"),

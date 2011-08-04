@@ -47,6 +47,10 @@ public class DropColumn {
                     public void finished(String message) {
 
                     }
+
+                    public void progress(String message) {
+
+                    }
                 });
         if (deployError.length() != 0) {
             throw new SQLException(deployError.toString());

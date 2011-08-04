@@ -131,7 +131,10 @@ public class Deployer {
 
     public enum DeploymentOptions {
         UNPACKAGED_TESTS,
-        ALL_TESTS }; // TODO
+        ALL_TESTS
+    }
+
+    ; // TODO
 
 
     public void deployZip(File zipFile, DeploymentEventListener listener, Set<DeploymentOptions> deploymentOptions) throws Exception {
@@ -150,8 +153,7 @@ public class Deployer {
             List<String> testFiles = new ArrayList<String>();
             for (FileProperties fileProperties : codeFiles) {
                 if ((fileProperties.getFullName().endsWith("Test")) ||
-                    (fileProperties.getFullName().endsWith("Tests")))
-                {
+                        (fileProperties.getFullName().endsWith("Tests"))) {
                     testFiles.add(fileProperties.getFullName());
                 }
             }
@@ -173,13 +175,27 @@ public class Deployer {
             Thread.sleep(waitTimeMilliSecs);
             // double the wait time for the next iteration
 
-            waitTimeMilliSecs *= 2;
+            if (waitTimeMilliSecs >= 8000) {
+                waitTimeMilliSecs = 10000;
+            } else {
+                waitTimeMilliSecs *= 2;
+            }
+
+            // TODO: Instead check differences is async results figures...
             if (poll++ > MAX_NUM_POLL_REQUESTS) {
                 throw new Exception("Request timed out. Check deployment state within Salesforce");
             }
-            asyncResult = metadatabinding.checkStatus(
-                    new String[]{asyncResult.getId()})[0];
-//               System.out.println("Status is: " + asyncResult.getState());
+            asyncResult = metadatabinding.checkStatus(new String[]{asyncResult.getId()})[0];
+            listener.progress("Deployed: " + asyncResult.getNumberComponentsDeployed() + " of " +
+                    asyncResult.getNumberComponentsTotal() + " errors " +
+                    asyncResult.getNumberComponentErrors());
+
+            listener.progress("Tests: " + asyncResult.getNumberTestsCompleted() + " of " +
+                    asyncResult.getNumberTestsTotal() + " errors " +
+                    asyncResult.getNumberTestErrors());
+
+            listener.progress("MSG:   " + asyncResult.getMessage());
+            listener.progress("State: " + asyncResult.getState());
         }
 
         if (asyncResult.getState() != AsyncRequestState.Completed) {

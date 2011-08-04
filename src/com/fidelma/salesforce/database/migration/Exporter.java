@@ -27,6 +27,8 @@ import java.util.Map;
 
 
 /**
+ * Export data from Salesforce and push it into a local JDBC database
+ *
  * http://www.salesforce.com/us/developer/docs/api_asynch/index_Left.htm#StartTopic=Content/asynch_api_quickstart.htm
  */
 public class Exporter {
@@ -38,6 +40,9 @@ public class Exporter {
     }
 
 
+    /**
+     * Create a H2 schema based on the provided Salesforce instance
+     */
     public List<Table> createLocalSchema(SfConnection sfConnection, Connection localConnection) throws SQLException {
         ResultSetFactory rsf = sfConnection.getMetaDataFactory();
         List<Table> tables = rsf.getTables();

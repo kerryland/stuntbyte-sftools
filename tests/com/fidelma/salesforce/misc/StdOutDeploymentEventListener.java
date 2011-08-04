@@ -15,4 +15,8 @@ public class StdOutDeploymentEventListener implements DeploymentEventListener {
     public void finished(String message) {
         System.out.println(message);
     }
+
+    public void progress(String message) {
+
+    }
 }

@@ -71,7 +71,7 @@ public class Downloader {
         com.sforce.soap.metadata.Package p = new com.sforce.soap.metadata.Package();
 
         PackageTypeMembers[] packageTypeMembers = new PackageTypeMembers[metaDataFiles.keySet().size()];
-        int i =0;
+        int i = 0;
         for (String metadataType : metaDataFiles.keySet()) {
             List<String> files = metaDataFiles.get(metadataType);
 
@@ -85,10 +85,13 @@ public class Downloader {
 
         File zipFile = retrieveZip(retrieveRequest, listener);
         // Find our file and rewrite the local one
-        unzipFile(srcDir, zipFile);
-        if (crcFile != null) {
-            updateCrcs(crcs, zipFile);
-            crcs.store(new FileWriter(crcFile), "Generated file");
+
+        if (srcDir != null) {
+            unzipFile(srcDir, zipFile);
+            if (crcFile != null) {
+                updateCrcs(crcs, zipFile);
+                crcs.store(new FileWriter(crcFile), "Generated file");
+            }
         }
         return zipFile;
     }
@@ -137,13 +140,19 @@ public class Downloader {
             Thread.sleep(waitTimeMilliSecs);
             // double the wait time for the next iteration
 
-            waitTimeMilliSecs *= 2;
+            if (waitTimeMilliSecs >= 8000) {
+                waitTimeMilliSecs = 10000;
+            } else {
+                waitTimeMilliSecs *= 2;
+            }
+
             if (poll++ > MAX_NUM_POLL_REQUESTS) {
                 throw new Exception("Request timed out. Make or may not have completed successfully...");
             }
             asyncResult = metaDataConnection.checkStatus(
                     new String[]{asyncResult.getId()})[0];
 //            System.out.println("Status is: " + asyncResult.getState());
+            listener.progress("Status is: " + asyncResult.getState());
         }
 
         if (asyncResult.getState() != AsyncRequestState.Completed) {

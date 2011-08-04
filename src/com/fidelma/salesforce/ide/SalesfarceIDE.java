@@ -565,7 +565,6 @@ public class SalesfarceIDE {
 
         for (String metadataType : metadataTypes) {
             downloader.addPackage(metadataType, "*");
-            downloader.download();
 
 //            List<String> files = new ArrayList<String>();
 //            files.add("*");
@@ -576,6 +575,8 @@ public class SalesfarceIDE {
 //            updateCrcs(crcs, result);
 //            deployer.unzipFile(srcDir, result);
         }
+
+        downloader.download();
 
 //        crcs.store(new FileWriter(crcFile), "Generated file");
 
@@ -815,6 +816,10 @@ public class SalesfarceIDE {
         }
 
         public void finished(String message) {
+            message(message);
+        }
+
+        public void progress(String message) {
             message(message);
         }
     }

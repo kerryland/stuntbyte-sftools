@@ -208,6 +208,10 @@ public class Grant {
 
             public void finished(String message) {
             }
+
+            public void progress(String message) {
+
+            }
         });
         if (errors.length() != 0) {
             throw new SQLException(errors.toString());
@@ -414,6 +418,10 @@ public class Grant {
                 }
 
                 public void finished(String message) {
+                }
+
+                public void progress(String message) {
+
                 }
             }, null);
             if (errors.length() != 0) {
