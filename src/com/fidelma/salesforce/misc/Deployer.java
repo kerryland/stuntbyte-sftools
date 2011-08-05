@@ -169,11 +169,16 @@ public class Deployer {
         listener.finished("Deployment started. id=" + asyncResult.getId() + "\n");
 
         // Wait for the deploy to complete
-        int poll = 0;
+        long lastChangeTime = System.currentTimeMillis();
+        String lastChangeValue = "";
+
         long waitTimeMilliSecs = ONE_SECOND;
+        long FIVE_MINUTES = 60000 * 5;
+
         while (!asyncResult.isDone()) {
             Thread.sleep(waitTimeMilliSecs);
-            // double the wait time for the next iteration
+            // double the wait time for the next iteration,
+            // but no more that 10 secs per iteration
 
             if (waitTimeMilliSecs >= 8000) {
                 waitTimeMilliSecs = 10000;
@@ -181,8 +186,7 @@ public class Deployer {
                 waitTimeMilliSecs *= 2;
             }
 
-            // TODO: Instead check differences is async results figures...
-            if (poll++ > MAX_NUM_POLL_REQUESTS) {
+            if (lastChangeTime > System.currentTimeMillis() + FIVE_MINUTES) {
                 throw new Exception("Request timed out. Check deployment state within Salesforce");
             }
             asyncResult = metadatabinding.checkStatus(new String[]{asyncResult.getId()})[0];
@@ -196,6 +200,18 @@ public class Deployer {
 
             listener.progress("MSG:   " + asyncResult.getMessage());
             listener.progress("State: " + asyncResult.getState());
+
+            String thisChangeValue = asyncResult.getMessage() +
+                    asyncResult.getState() +
+                    asyncResult.getNumberComponentsDeployed() +
+                    asyncResult.getNumberComponentErrors() +
+                    asyncResult.getNumberTestsCompleted() +
+                    asyncResult.getNumberTestErrors();
+
+            if (!thisChangeValue.equals(lastChangeValue)) {
+                lastChangeTime = System.currentTimeMillis();
+                lastChangeValue = thisChangeValue;
+            }
         }
 
         if (asyncResult.getState() != AsyncRequestState.Completed) {

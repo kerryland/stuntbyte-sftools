@@ -94,7 +94,8 @@ public class SalesfarceIDE {
                         "    <filename>           == upload and compile/test file\n" +
                         "    -downloadall         == download 'everything'\n" +
                         "    -download <filename> == download just this file\n" +
-                        "    -force    <filename> == force upload, regardless of crc";
+                        "    -force    <filename> == force upload, regardless of crc\n" +
+                        "    -runtests            == run all tests for downloaded code";
         System.err.println(msg);
     }
 
@@ -731,7 +732,7 @@ public class SalesfarceIDE {
 
         for (int i = 0; i < testClasses.length; i++) {
             testClasses[i] = testClasses[i].substring(0, testClasses[i].indexOf(".cls"));
-            System.out.println(testClasses[i]);
+//            System.out.println(testClasses[i]);
 
         }
 
@@ -754,11 +755,16 @@ public class SalesfarceIDE {
             }
         }
         if (res.getCodeCoverage() != null) {
+            int grandTotal = 0;
+            int grandNot = 0;
             for (CodeCoverageResult ccr : res.getCodeCoverage()) {
-                Float not = Float.parseFloat("" + ccr.getNumLocationsNotCovered());
-                Float total = Float.parseFloat("" + ccr.getNumLocations());
+                int not = ccr.getNumLocationsNotCovered();
+                int total = ccr.getNumLocations();
 
-                Float percentage = ((total - not) / total) * 100;
+                grandTotal += total;
+                grandNot += not;
+
+                Float percentage = (((float)total - (float)not) / (float)total) * 100;
 
                 System.out.println("Code coverage for " + ccr.getType() + " " +
                         (ccr.getNamespace() == null ? "" : ccr.getNamespace() + ".")
@@ -797,6 +803,15 @@ public class SalesfarceIDE {
                 }
                 */
             }
+            Float percentage = (((float)grandTotal - (float)grandNot) / (float)grandTotal) * 100;
+
+            System.out.println("Code coverage totals: " +
+                        + grandNot
+                        + " locations not covered out of "
+                        + grandTotal + " " + percentage + "%"
+
+                );
+
         }
     }
 
@@ -806,10 +821,6 @@ public class SalesfarceIDE {
     }
 
     private class SimpleListener implements DeploymentEventListener {
-
-        public void heyListen(String message) {
-            message(message);
-        }
 
         public void error(String message) {
             message(message);
