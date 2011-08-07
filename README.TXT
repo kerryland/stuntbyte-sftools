@@ -47,3 +47,4 @@ Via a combination of the VIM editor, CTAGS, and Salesforce's "Apex" API.
 
   
 
+mvn install:install-file -Dfile=c:/apps/sql-workbench/drivers/sfdc-kjs-driver-2.jar -DgroupId=com.fidelma -DartifactId=farce-base -Dversion=1.1 -Dpackaging=jar -DgeneratePom=true

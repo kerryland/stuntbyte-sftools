@@ -46,5 +46,9 @@ public class DownloaderTests {
         public void finished(String message) {
             System.out.println("DONE " + message);
         }
+
+        public void progress(String message) {
+
+        }
     }
 }

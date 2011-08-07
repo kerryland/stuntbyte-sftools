@@ -827,24 +827,24 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
     @Test
     public void testUpdateMultipleRowsBatch() throws Exception {
         Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("select count(*) from Lead where firstName = 'Mike'");
+        ResultSet rs = stmt.executeQuery("select count(*) from Lead where firstName = 'Mike' and lastName = '" + surname + "'");
         rs.next();
         int rowsNamedMike = rs.getInt(1);
-        Assert.assertTrue(rowsNamedMike > 1);
+        Assert.assertTrue(rowsNamedMike > 0);
 
-        stmt.addBatch("update Lead set LastName = 'wibbleX' where firstName = 'Mike'");
+        stmt.addBatch("update Lead set FirstName = 'wibbleX' where firstName = 'Mike' and lastName = '" + surname + "'");
 
         int count = stmt.executeBatch()[0];
 
         assertEquals(rowsNamedMike, count);
         assertEquals(rowsNamedMike, stmt.getUpdateCount());
 
-        rs = stmt.executeQuery("select Lastname from Lead where firstName = 'Mike'");
+        rs = stmt.executeQuery("select FirstName from Lead where firstName = 'wibbleX' and lastName = '" + surname + "'");
 
         int foundCount = 0;
         while (rs.next()) {
             foundCount++;
-            assertEquals("wibbleX", rs.getString("LastName"));
+            assertEquals("wibbleX", rs.getString("FirstName"));
         }
         assertEquals(rowsNamedMike, foundCount);
     }

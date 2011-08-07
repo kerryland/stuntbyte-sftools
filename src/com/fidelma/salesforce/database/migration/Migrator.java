@@ -25,15 +25,18 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
- * User: kerry
- * Date: 28/05/11
- * Time: 9:14 AM
- * To change this template use File | Settings | File Templates.
+ * Migrate data from one instance of Salesforce to another
  */
 public class Migrator {
 
-
+    /**
+     * Migrate Salesforce data
+     *
+     * @param sourceInstance Salesforce instance to pull data from
+     * @param targetInstance Salesforce to push data into
+     * @param localdb        Local JDBC database to use a a temporary store
+     * @throws Exception
+     */
     public void replicate(SfConnection sourceInstance, SfConnection targetInstance, Connection localdb) throws Exception {
 
         // Pull source schema down to local database
@@ -65,6 +68,10 @@ public class Migrator {
 
             public void finished(String message) {
                 System.out.println("FINISHED: " + message);
+
+            }
+
+            public void progress(String message) {
 
             }
         };

@@ -76,6 +76,10 @@ public class DropTable {
                         public void finished(String message) {
 
                         }
+
+                        public void progress(String message) {
+
+                        }
                     });
 
         } catch (Exception e) {

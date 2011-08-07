@@ -131,7 +131,10 @@ public class Deployer {
 
     public enum DeploymentOptions {
         UNPACKAGED_TESTS,
-        ALL_TESTS }; // TODO
+        ALL_TESTS, // TODO
+        IGNORE_ERRORS
+
+    };
 
 
     public void deployZip(File zipFile, DeploymentEventListener listener, Set<DeploymentOptions> deploymentOptions) throws Exception {
@@ -139,7 +142,7 @@ public class Deployer {
         DeployOptions deployOptions = new DeployOptions();
 
         deployOptions.setPerformRetrieve(false);
-        deployOptions.setRollbackOnError(true);
+        deployOptions.setRollbackOnError(!deploymentOptions.contains(Deployer.DeploymentOptions.IGNORE_ERRORS));
         deployOptions.setSinglePackage(true);
 
         if (deploymentOptions.contains(DeploymentOptions.UNPACKAGED_TESTS)) {
@@ -150,8 +153,7 @@ public class Deployer {
             List<String> testFiles = new ArrayList<String>();
             for (FileProperties fileProperties : codeFiles) {
                 if ((fileProperties.getFullName().endsWith("Test")) ||
-                    (fileProperties.getFullName().endsWith("Tests")))
-                {
+                        (fileProperties.getFullName().endsWith("Tests"))) {
                     testFiles.add(fileProperties.getFullName());
                 }
             }
@@ -164,22 +166,57 @@ public class Deployer {
 
         AsyncResult asyncResult = metadatabinding.deploy(zipBytes, deployOptions);
 
-        listener.finished("Deployment started. id=" + asyncResult.getId() + "\n");
+        listener.progress("Deployment started. id=" + asyncResult.getId() + "\n");
 
         // Wait for the deploy to complete
-        int poll = 0;
+        long lastChangeTime = System.currentTimeMillis();
+        String lastChangeValue = "";
+
         long waitTimeMilliSecs = ONE_SECOND;
+        long FIVE_MINUTES = 60000 * 5;
+
         while (!asyncResult.isDone()) {
             Thread.sleep(waitTimeMilliSecs);
-            // double the wait time for the next iteration
+            // double the wait time for the next iteration,
+            // but no more that 10 secs per iteration
 
-            waitTimeMilliSecs *= 2;
-            if (poll++ > MAX_NUM_POLL_REQUESTS) {
-                throw new Exception("Request timed out. Check deployment state within Salesforce");
+            if (waitTimeMilliSecs >= 8000) {
+                waitTimeMilliSecs = 10000;
+            } else {
+                waitTimeMilliSecs *= 2;
             }
-            asyncResult = metadatabinding.checkStatus(
-                    new String[]{asyncResult.getId()})[0];
-//               System.out.println("Status is: " + asyncResult.getState());
+
+            if (System.currentTimeMillis() > lastChangeTime + FIVE_MINUTES) {
+                listener.finished("XXX Request timed out. Check deployment state within Salesforce");
+                throw new Exception("YYY Request timed out. Check deployment state within Salesforce");
+            }
+            asyncResult = metadatabinding.checkStatus(new String[]{asyncResult.getId()})[0];
+
+            String msg = asyncResult.getState() + " " +
+                    "Deployed: " + asyncResult.getNumberComponentsDeployed() + " of " +
+                    asyncResult.getNumberComponentsTotal() + " (errors " +
+                    asyncResult.getNumberComponentErrors() + ") " +
+
+                    "Tests: " + asyncResult.getNumberTestsCompleted() + " of " +
+                    asyncResult.getNumberTestsTotal() + " (errors " +
+                    asyncResult.getNumberTestErrors() + ")";
+            if (asyncResult.getMessage() != null) {
+                msg += asyncResult.getMessage();
+            }
+
+            listener.progress(msg);
+
+            String thisChangeValue = asyncResult.getMessage() +
+                    asyncResult.getState() +
+                    asyncResult.getNumberComponentsDeployed() +
+                    asyncResult.getNumberComponentErrors() +
+                    asyncResult.getNumberTestsCompleted() +
+                    asyncResult.getNumberTestErrors();
+
+            if (!thisChangeValue.equals(lastChangeValue)) {
+                lastChangeTime = System.currentTimeMillis();
+                lastChangeValue = thisChangeValue;
+            }
         }
 
         if (asyncResult.getState() != AsyncRequestState.Completed) {
