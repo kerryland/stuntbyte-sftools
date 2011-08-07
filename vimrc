@@ -23,7 +23,7 @@ else
 endif
 
 " Setup :mak command. It likes spaces to be escaped:
-let runIde='java\ -cp\ classes' . delim . 'lib/ant-salesforce.jar' . delim . '.\ com.fidelma.salesforce.ide.SalesfarceIDE\ '
+let runIde='java\ -cp\ classes' . delim . 'c:/apps/sql-workbench/drivers/sfdc-kjs-driver-2.jar' . delim . '.\ com.fidelma.salesforce.ide.SalesfarceIDE\ '
 execute ":set makeprg=" . runIde . "%"
 
 " Define the error format we use
@@ -84,5 +84,5 @@ map <F12> :%s,static /\*testMethod\*/ void,static testMethod void,<CR> " Enable 
 
 execute "map ,d :!" . runIde . " -download %<CR>"
 execute "map ,da :!" . runIde . " -downloadall<CR>"
-execute "map ,uf :!" . runIde . " -upload %<CR>"
+execute "map ,uf :!" . runIde . " -force %<CR>"
 execute "map ,tag :!ant tag<CR>"
