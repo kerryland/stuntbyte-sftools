@@ -15,8 +15,10 @@ import com.sforce.soap.metadata.FileProperties;
 import com.sforce.soap.metadata.ListMetadataQuery;
 import com.sforce.soap.metadata.MetadataConnection;
 
+import javax.swing.text.AbstractDocument;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,7 +47,7 @@ import java.util.Set;
  * <p/>
  * DEPLOYMENT wibble PACKAGE TO "/tmp/package.zip"
  * <p/>
- * DEPLOYMENT UPLOAD PACKAGE FROM "/tmp/package.zip" OUTPUT TO "/tmp/out.txt"
+ * DEPLOYMENT UPLOAD PACKAGE FROM "/tmp/package.zip" OUTPUT TO "/tmp/out.txt" [ RUNTESTS | IGNORE_ERRORS ]
  */
 public class DeployCommand {
 
@@ -111,29 +113,66 @@ public class DeployCommand {
         if (next != null) {
             if (next.equalsIgnoreCase("RUNTESTS")) {
                 options.add(Deployer.DeploymentOptions.UNPACKAGED_TESTS);
+            } else if (next.equalsIgnoreCase("IGNORE_ERRORS")) {
+                options.add(Deployer.DeploymentOptions.IGNORE_ERRORS);
             } else {
-                throw new Exception("Expected RUNTESTS, not " + next);
+                throw new Exception("Expected RUNTESTS or IGNORE_ERRORS, not " + next);
             }
         }
 
         Deployer deployer = new Deployer(metadataConnection);
-        DeploymentEventListenerImpl deploymentEventListener = new DeploymentEventListenerImpl();
+        EventFileWriter deploymentEventListener = new EventFileWriter(output);
 
         try {
             deployer.deployZip(new File(fileName), deploymentEventListener, options);
+            deploymentEventListener.finished("Done");
 
         } finally {
-            FileWriter fw = new FileWriter(output);
-            fw.write(deploymentEventListener.getMessages().toString());
+            deploymentEventListener.close();
+        }
+
+        if (deploymentEventListener.getErrors().size() != 0) {
+            throw new SQLException(deploymentEventListener.getErrors().toString());
+        }
+    }
+    
+    private class EventFileWriter implements DeploymentEventListener {
+        private FileWriter fw;
+        private List<String> errors = new ArrayList<String>();
+
+        public List<String> getErrors() {
+            return errors;
+        }
+        public EventFileWriter(String filename) throws IOException {
+            fw = new FileWriter(filename);
+        }
+
+        public void error(String message) throws Exception {
+            errors.add(message);
+            errors.add("\n");
+            write(message);
+        }
+
+        private void write(String message) throws IOException {
+            fw.write(message);
             fw.write("\n");
-            fw.write(deploymentEventListener.getErrors().toString());
-            fw.write("Done\n");
+            fw.flush();
+            System.out.println(message);
+        }
+
+        public void finished(String message) throws IOException {
+            write(message);
+        }
+
+        public void progress(String message) throws IOException {
+            write(message);
+        }
+
+        public void close() throws IOException {
             fw.close();
         }
 
-        if (deploymentEventListener.getErrors().length() != 0) {
-            throw new SQLException(deploymentEventListener.getErrors().toString());
-        }
+        
     }
 
     private void doPackage() throws Exception {

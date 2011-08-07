@@ -131,10 +131,10 @@ public class Deployer {
 
     public enum DeploymentOptions {
         UNPACKAGED_TESTS,
-        ALL_TESTS
-    }
+        ALL_TESTS, // TODO
+        IGNORE_ERRORS
 
-    ; // TODO
+    };
 
 
     public void deployZip(File zipFile, DeploymentEventListener listener, Set<DeploymentOptions> deploymentOptions) throws Exception {
@@ -142,7 +142,7 @@ public class Deployer {
         DeployOptions deployOptions = new DeployOptions();
 
         deployOptions.setPerformRetrieve(false);
-        deployOptions.setRollbackOnError(true);
+        deployOptions.setRollbackOnError(!deploymentOptions.contains(Deployer.DeploymentOptions.IGNORE_ERRORS));
         deployOptions.setSinglePackage(true);
 
         if (deploymentOptions.contains(DeploymentOptions.UNPACKAGED_TESTS)) {
@@ -166,7 +166,7 @@ public class Deployer {
 
         AsyncResult asyncResult = metadatabinding.deploy(zipBytes, deployOptions);
 
-        listener.finished("Deployment started. id=" + asyncResult.getId() + "\n");
+        listener.progress("Deployment started. id=" + asyncResult.getId() + "\n");
 
         // Wait for the deploy to complete
         long lastChangeTime = System.currentTimeMillis();
@@ -186,20 +186,25 @@ public class Deployer {
                 waitTimeMilliSecs *= 2;
             }
 
-            if (lastChangeTime > System.currentTimeMillis() + FIVE_MINUTES) {
-                throw new Exception("Request timed out. Check deployment state within Salesforce");
+            if (System.currentTimeMillis() > lastChangeTime + FIVE_MINUTES) {
+                listener.finished("XXX Request timed out. Check deployment state within Salesforce");
+                throw new Exception("YYY Request timed out. Check deployment state within Salesforce");
             }
             asyncResult = metadatabinding.checkStatus(new String[]{asyncResult.getId()})[0];
-            listener.progress("Deployed: " + asyncResult.getNumberComponentsDeployed() + " of " +
-                    asyncResult.getNumberComponentsTotal() + " errors " +
-                    asyncResult.getNumberComponentErrors());
 
-            listener.progress("Tests: " + asyncResult.getNumberTestsCompleted() + " of " +
-                    asyncResult.getNumberTestsTotal() + " errors " +
-                    asyncResult.getNumberTestErrors());
+            String msg = asyncResult.getState() + " " +
+                    "Deployed: " + asyncResult.getNumberComponentsDeployed() + " of " +
+                    asyncResult.getNumberComponentsTotal() + " (errors " +
+                    asyncResult.getNumberComponentErrors() + ") " +
 
-            listener.progress("MSG:   " + asyncResult.getMessage());
-            listener.progress("State: " + asyncResult.getState());
+                    "Tests: " + asyncResult.getNumberTestsCompleted() + " of " +
+                    asyncResult.getNumberTestsTotal() + " (errors " +
+                    asyncResult.getNumberTestErrors() + ")";
+            if (asyncResult.getMessage() != null) {
+                msg += asyncResult.getMessage();
+            }
+
+            listener.progress(msg);
 
             String thisChangeValue = asyncResult.getMessage() +
                     asyncResult.getState() +

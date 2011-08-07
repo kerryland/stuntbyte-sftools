@@ -20,7 +20,7 @@ public class DeploymentEventListenerImpl implements DeploymentEventListener {
     }
 
     public void progress(String message) {
-
+        messages.append(message);
     }
 
     public StringBuilder getErrors() {

@@ -21,9 +21,11 @@ import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -38,7 +40,7 @@ public class Downloader {
     private File crcFile;
     private Properties crcs = new Properties();
 
-    private Map<String, List<String>> metaDataFiles = new HashMap<String, List<String>>();
+    private Map<String, Set<String>> metaDataFiles = new HashMap<String, Set<String>>();
 
 
     public Downloader(MetadataConnection metaDataConnection,
@@ -58,9 +60,9 @@ public class Downloader {
 
     // http://www.salesforce.com/us/developer/docs/daas/Content/daas_package.htm
     public void addPackage(String metadataType, String name) {
-        List<String> files = metaDataFiles.get(metadataType);
+        Set<String> files = metaDataFiles.get(metadataType);
         if (files == null) {
-            files = new ArrayList<String>();
+            files = new HashSet<String>();
             metaDataFiles.put(metadataType, files);
         }
 
@@ -73,7 +75,7 @@ public class Downloader {
         PackageTypeMembers[] packageTypeMembers = new PackageTypeMembers[metaDataFiles.keySet().size()];
         int i = 0;
         for (String metadataType : metaDataFiles.keySet()) {
-            List<String> files = metaDataFiles.get(metadataType);
+            Set<String> files = metaDataFiles.get(metadataType);
 
             PackageTypeMembers pd = new PackageTypeMembers();
             pd.setName(metadataType);
@@ -167,7 +169,7 @@ public class Downloader {
         StringBuilder buf = new StringBuilder();
         if (result.getMessages() != null) {
             for (RetrieveMessage rm : result.getMessages()) {
-                buf.append(rm.getFileName() + " - " + rm.getProblem());
+                buf.append(rm.getFileName() + " - " + rm.getProblem()+"\n");
             }
         }
         if (buf.length() > 0) {
