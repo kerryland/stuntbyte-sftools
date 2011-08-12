@@ -282,12 +282,10 @@ public class Update {
                 ExpressionHolder expressionHolder = values.get(key);
                 Object value = MVEL.executeExpression(expressionHolder.compiledExpression, vars);
 
-                System.out.println("KEY " + key + " evaluates to " + value);
-                // TODO: What about "fieldsToNull"...
                 if (value == null) {
-//                    fieldsToNull.add(key);
+                    // Not that it seems to matter...
+                    fieldsToNull.add(key);
                     sObject.setField(key, null);
-                    System.out.println(key + " is KEY TO NULL!");
                 } else {
                     value = TypeHelper.dataTypeConvert(value.toString(), dataType);
                     sObject.setField(key, value);

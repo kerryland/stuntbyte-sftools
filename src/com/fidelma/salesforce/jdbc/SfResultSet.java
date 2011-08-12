@@ -317,7 +317,6 @@ public class SfResultSet implements java.sql.ResultSet {
         } else {
             result = parent.getField(columnLabel);
         }
-        System.out.println("KJS1 " + columnLabel + " read " + result);
         return result;
     }
 
@@ -377,8 +376,6 @@ public class SfResultSet implements java.sql.ResultSet {
             result = drillToChild(obj, realColumnName);
         }
         wasNull = (result == null);
-
-        System.out.println("KJS " + columnLabel + " read " + result + " wasNull=" + wasNull);
         return result;
     }
 
