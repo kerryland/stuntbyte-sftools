@@ -274,6 +274,7 @@ public class Update {
             SObject sObject = new SObject();
             sObject.setType(tableName);
             sObject.setId(id);
+            List<String> fieldsToNull = new ArrayList<String>();
 
             for (String key : values.keySet()) {
                 Integer dataType = ResultSetFactory.lookupJdbcType(table.getColumn(key).getType());
@@ -281,13 +282,22 @@ public class Update {
                 ExpressionHolder expressionHolder = values.get(key);
                 Object value = MVEL.executeExpression(expressionHolder.compiledExpression, vars);
 
+                System.out.println("KEY " + key + " evaluates to " + value);
                 // TODO: What about "fieldsToNull"...
                 if (value == null) {
-                    sObject.setField(key, "");
+//                    fieldsToNull.add(key);
+                    sObject.setField(key, null);
+                    System.out.println(key + " is KEY TO NULL!");
                 } else {
                     value = TypeHelper.dataTypeConvert(value.toString(), dataType);
                     sObject.setField(key, value);
                 }
+            }
+
+            if (fieldsToNull.size() > 0) {
+                String[] nullFields = new String[fieldsToNull.size()];
+                fieldsToNull.toArray(nullFields);
+                sObject.setFieldsToNull(nullFields);
             }
 
             if (batchMode) {
@@ -316,7 +326,5 @@ public class Update {
         } catch (ConnectionException e) {
             throw new SQLException(e);
         }
-
-
     }
 }

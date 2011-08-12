@@ -112,7 +112,8 @@ public class Deployer {
 
         out.close();
 
-        deployZip(deploymentFile, listener, new HashSet<DeploymentOptions>());
+        String deploymentId = deployZip(deploymentFile, new HashSet<DeploymentOptions>());
+        checkDeploymentComplete(deploymentId, listener);
     }
 
 
@@ -134,10 +135,10 @@ public class Deployer {
         ALL_TESTS, // TODO
         IGNORE_ERRORS
 
-    };
+    }
 
 
-    public void deployZip(File zipFile, DeploymentEventListener listener, Set<DeploymentOptions> deploymentOptions) throws Exception {
+    public String deployZip(File zipFile, Set<DeploymentOptions> deploymentOptions) throws Exception {
         byte zipBytes[] = readZipFile(zipFile);
         DeployOptions deployOptions = new DeployOptions();
 
@@ -166,16 +167,30 @@ public class Deployer {
 
         AsyncResult asyncResult = metadatabinding.deploy(zipBytes, deployOptions);
 
-        listener.progress("Deployment started. id=" + asyncResult.getId() + "\n");
+        String deploymentId = asyncResult.getId();
 
+        return deploymentId;
+
+
+        //checkDeploymentComplete(deploymentId, listener);
+    }
+
+
+    public AsyncResult checkDeploymentComplete(String deploymentId, DeploymentEventListener listener) throws Exception {
         // Wait for the deploy to complete
+        listener.progress("Awaiting deployment of id=" + deploymentId + "\n");
+
         long lastChangeTime = System.currentTimeMillis();
         String lastChangeValue = "";
 
         long waitTimeMilliSecs = ONE_SECOND;
         long FIVE_MINUTES = 60000 * 5;
 
-        while (!asyncResult.isDone()) {
+        AsyncResult asyncResult = null;
+
+        boolean finished = false;
+
+        while (!finished) {
             Thread.sleep(waitTimeMilliSecs);
             // double the wait time for the next iteration,
             // but no more that 10 secs per iteration
@@ -187,10 +202,9 @@ public class Deployer {
             }
 
             if (System.currentTimeMillis() > lastChangeTime + FIVE_MINUTES) {
-                listener.finished("XXX Request timed out. Check deployment state within Salesforce");
-                throw new Exception("YYY Request timed out. Check deployment state within Salesforce");
+                throw new Exception("Request timed out. Check deployment state within Salesforce");
             }
-            asyncResult = metadatabinding.checkStatus(new String[]{asyncResult.getId()})[0];
+            asyncResult = metadatabinding.checkStatus(new String[]{deploymentId})[0];
 
             String msg = asyncResult.getState() + " " +
                     "Deployed: " + asyncResult.getNumberComponentsDeployed() + " of " +
@@ -217,6 +231,8 @@ public class Deployer {
                 lastChangeTime = System.currentTimeMillis();
                 lastChangeValue = thisChangeValue;
             }
+
+            finished = asyncResult.isDone();
         }
 
         if (asyncResult.getState() != AsyncRequestState.Completed) {
@@ -224,7 +240,7 @@ public class Deployer {
                     asyncResult.getMessage());
         }
 
-        DeployResult result = metadatabinding.checkDeployStatus(asyncResult.getId());
+        DeployResult result = metadatabinding.checkDeployStatus(deploymentId);
         if (!result.isSuccess()) {
             DeployMessage[] errors = result.getMessages();
 
@@ -235,9 +251,9 @@ public class Deployer {
             }
         }
 
-        if (deploymentOptions.contains(DeploymentOptions.UNPACKAGED_TESTS)) {
-            com.sforce.soap.metadata.RunTestsResult res = result.getRunTestResult();
-
+//        if (deploymentOptions.contains(DeploymentOptions.UNPACKAGED_TESTS)) {
+        com.sforce.soap.metadata.RunTestsResult res = result.getRunTestResult();
+        if (res != null) {
             listener.finished("Number of tests: " + res.getNumTestsRun() + "\n");
             listener.finished("Number of failures: " + res.getNumFailures() + "\n");
             if (res.getNumFailures() > 0) {
@@ -249,6 +265,7 @@ public class Deployer {
                 }
             }
         }
+        return asyncResult;
     }
 
 

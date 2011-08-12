@@ -130,7 +130,7 @@ public class Downloader {
     private static final int MAX_NUM_POLL_REQUESTS = 50;
 
 
-    public File retrieveZip(RetrieveRequest retrieveRequest, DeploymentEventListener listener) throws Exception {
+    private File retrieveZip(RetrieveRequest retrieveRequest, DeploymentEventListener listener) throws Exception {
         File resultsFile = File.createTempFile("SFDC", "DOWN");
 
         AsyncResult asyncResult = metaDataConnection.retrieve(retrieveRequest);

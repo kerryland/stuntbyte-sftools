@@ -697,9 +697,9 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
     public void testUpdateOneRowViaId() throws Exception {
         Statement stmt = conn.createStatement();
         int count = stmt.executeUpdate("update Lead\n" +
-                " set FirstName = 'wibbleX', phone='0800xxxx'," +
-                " AnnualRevenue=475000, " +
-                " NumberOfEmployees=6 where Id='" + leadId + "'");
+                " set FirstName = 'wibbleX', phone=null," +
+                " AnnualRevenue=null, " +
+                " NumberOfEmployees=null where Id='" + leadId + "'");
         assertEquals(1, count);
         assertEquals(1, stmt.getUpdateCount());
 
@@ -711,9 +711,12 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
             foundCount++;
             assertEquals("wibbleX", rs.getString("FirstName"));
             assertEquals(surname, rs.getString("LastName"));
-            assertEquals("0800xxxx", rs.getString("Phone"));
-            assertEquals(475000f, rs.getDouble("AnnualRevenue"), 0.5f);
-            assertEquals(6, rs.getInt("NumberOfEmployees"));
+            assertEquals(null, rs.getString("Phone"));
+            assertTrue(rs.wasNull());
+            assertEquals(0f, rs.getDouble("AnnualRevenue"), 0.5f);
+            assertTrue(rs.wasNull());
+            assertEquals(0, rs.getInt("NumberOfEmployees"));
+            assertTrue(rs.wasNull());
         }
         assertEquals(1, foundCount);
     }

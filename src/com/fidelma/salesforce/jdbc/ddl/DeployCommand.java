@@ -47,7 +47,7 @@ import java.util.Set;
  * <p/>
  * DEPLOYMENT wibble PACKAGE TO "/tmp/package.zip"
  * <p/>
- * DEPLOYMENT UPLOAD PACKAGE FROM "/tmp/package.zip" OUTPUT TO "/tmp/out.txt" [ RUNTESTS | IGNORE_ERRORS ]
+ * DEPLOYMENT UPLOAD PACKAGE FROM "/tmp/package.zip" OUTPUT TO "/tmp/out.txt" [ RUNTESTS | IGNORE_ERRORS | STATUS "<id>" ]
  */
 public class DeployCommand {
 
@@ -109,9 +109,14 @@ public class DeployCommand {
 
         Set<Deployer.DeploymentOptions> options = new HashSet<Deployer.DeploymentOptions>();
 
+        String deploymentId = null;
+
         String next = al.getValue();
         if (next != null) {
-            if (next.equalsIgnoreCase("RUNTESTS")) {
+            if (next.equalsIgnoreCase("STATUS")) {
+                deploymentId = al.getValue("Deployment id missing");
+
+            } else if (next.equalsIgnoreCase("RUNTESTS")) {
                 options.add(Deployer.DeploymentOptions.UNPACKAGED_TESTS);
             } else if (next.equalsIgnoreCase("IGNORE_ERRORS")) {
                 options.add(Deployer.DeploymentOptions.IGNORE_ERRORS);
@@ -121,10 +126,13 @@ public class DeployCommand {
         }
 
         Deployer deployer = new Deployer(metadataConnection);
-        EventFileWriter deploymentEventListener = new EventFileWriter(output);
+        EventFileWriter deploymentEventListener = new EventFileWriter(output, deploymentId != null);
 
         try {
-            deployer.deployZip(new File(fileName), deploymentEventListener, options);
+            if (deploymentId == null) {
+                deploymentId = deployer.deployZip(new File(fileName), options);
+            }
+            deployer.checkDeploymentComplete(deploymentId, deploymentEventListener);
             deploymentEventListener.finished("Done");
 
         } finally {
@@ -143,8 +151,8 @@ public class DeployCommand {
         public List<String> getErrors() {
             return errors;
         }
-        public EventFileWriter(String filename) throws IOException {
-            fw = new FileWriter(filename);
+        public EventFileWriter(String filename, Boolean append) throws IOException {
+            fw = new FileWriter(filename, append);
         }
 
         public void error(String message) throws Exception {
