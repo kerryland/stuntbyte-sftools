@@ -1,10 +1,10 @@
 package com.fidelma.salesforce.jdbc.dml;
 
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
 import com.sforce.soap.partner.DeleteResult;
 import com.sforce.soap.partner.Error;
-import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.QueryResult;
 import com.sforce.soap.partner.fault.ApiFault;
 import com.sforce.soap.partner.sobject.SObject;
@@ -19,11 +19,11 @@ public class Delete {
 
     private static int MAX_DELETES_PER_CALL = 200;
     private SimpleParser al;
-    private PartnerConnection pc;
+    private Reconnector reconnector;
 
-    public Delete(SimpleParser al, PartnerConnection pc) {
+    public Delete(SimpleParser al, Reconnector reconnector) {
         this.al = al;
-        this.pc = pc;
+        this.reconnector = reconnector;
     }
 
     public int execute(Boolean batchMode, List<SObject> batchSObjects) throws Exception {
@@ -59,9 +59,9 @@ public class Delete {
             StringBuilder readSoql = new StringBuilder(selectPrefix);
             readSoql.append(" from ").append(table).append(" ").append(whereClause);
 
-            qr = pc.query(readSoql.toString());
+            qr = reconnector.query(readSoql.toString());
 
-            SObjectChunker chunker = new SObjectChunker(MAX_DELETES_PER_CALL, pc, qr);
+            SObjectChunker chunker = new SObjectChunker(MAX_DELETES_PER_CALL, reconnector, qr);
             while (chunker.next()) {
                 SObject[] sObjects = chunker.nextChunk();
                 if (batchMode) {
@@ -95,7 +95,7 @@ public class Delete {
                 SObject sObject = chunk[i];
                 delete[i] = sObject.getId();
             }
-            DeleteResult[] sr = pc.delete(delete);
+            DeleteResult[] sr = reconnector.delete(delete);
             for (DeleteResult deleteResult : sr) {
                 if (!deleteResult.isSuccess()) {
                     Error[] errors = deleteResult.getErrors();

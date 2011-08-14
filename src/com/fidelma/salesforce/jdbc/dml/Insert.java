@@ -3,6 +3,7 @@ package com.fidelma.salesforce.jdbc.dml;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
 import com.fidelma.salesforce.misc.TypeHelper;
 import com.sforce.soap.partner.*;
@@ -12,7 +13,6 @@ import com.sforce.ws.ConnectionException;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -21,16 +21,16 @@ public class Insert {
 
     private SimpleParser al;
     private ResultSetFactory metaDataFactory;
-    private PartnerConnection pc;
+    private Reconnector reconnector;
     private String generatedId;
 
     public Insert(SimpleParser al,
                   ResultSetFactory metaDataFactory,
-                  PartnerConnection pc) {
+                  Reconnector reconnector) {
 
         this.al = al;
         this.metaDataFactory = metaDataFactory;
-        this.pc = pc;
+        this.reconnector = reconnector;
     }
 
     public int execute(Boolean batchMode, List<SObject> batchSObjects) throws SQLException {
@@ -53,7 +53,7 @@ public class Insert {
 
 
     public int saveSObjects(SObject[] sObjects) throws ConnectionException, SQLException {
-        SaveResult[] sr = pc.create(sObjects);
+        SaveResult[] sr = reconnector.create(sObjects);
         int row = 0;
         for (SaveResult saveResult : sr) {
             if (!saveResult.isSuccess()) {

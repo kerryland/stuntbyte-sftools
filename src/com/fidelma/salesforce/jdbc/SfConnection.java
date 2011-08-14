@@ -39,11 +39,8 @@ public class SfConnection implements java.sql.Connection {
         this.info = info;
         helper = new LoginHelper(server, username, password);
 
-        WscService svc = null;
         try {
-            svc = new WscService(helper.getPartnerConnection(), info);
-            metaDataFactory = svc.createResultSetFactory();
-
+            metaDataFactory = helper.createResultSetFactory(info);
             closed = false;
         } catch (Exception e) {
             throw new RuntimeException(e);

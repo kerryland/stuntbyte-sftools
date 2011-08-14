@@ -10,6 +10,7 @@ import com.fidelma.salesforce.misc.DeploymentEventListenerImpl;
 import com.fidelma.salesforce.misc.Downloader;
 import com.fidelma.salesforce.misc.FolderZipper;
 import com.fidelma.salesforce.misc.LoginHelper;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
 import com.sforce.soap.metadata.FileProperties;
 import com.sforce.soap.metadata.ListMetadataQuery;
@@ -54,7 +55,8 @@ public class DeployCommand {
 
     private SimpleParser al;
     private ResultSetFactory metaDataFactory;
-    private MetadataConnection metadataConnection;
+    private Reconnector reconnector;
+//    private MetadataConnection metadataConnection;
 
     // There is only one active at a time...
     private static Deployment deployment;
@@ -62,10 +64,10 @@ public class DeployCommand {
     private static File sourceSchemaDir;
     private static File snapshot;
 
-    public DeployCommand(SimpleParser al, ResultSetFactory metaDataFactory, MetadataConnection metadataConnection) throws Exception, SQLException {
+    public DeployCommand(SimpleParser al, ResultSetFactory metaDataFactory, Reconnector reconnector) throws Exception, SQLException {
         this.al = al;
         this.metaDataFactory = metaDataFactory;
-        this.metadataConnection = metadataConnection;
+        this.reconnector = reconnector;
     }
 
     public void execute() throws SQLException {
@@ -125,7 +127,7 @@ public class DeployCommand {
             }
         }
 
-        Deployer deployer = new Deployer(metadataConnection);
+        Deployer deployer = new Deployer(reconnector);
         EventFileWriter deploymentEventListener = new EventFileWriter(output, deploymentId != null);
 
         try {
@@ -201,7 +203,7 @@ public class DeployCommand {
         DeploymentEventListenerImpl deploymentEventListener = new DeploymentEventListenerImpl();
         Map<String, List<String>> types = deployment.getTypes();
 
-        Downloader dl = new Downloader(metadataConnection, snapshot, deploymentEventListener, null);
+        Downloader dl = new Downloader(reconnector, snapshot, deploymentEventListener, null);
 
         for (String type : types.keySet()) {
             List<String> members = types.get(type);
@@ -295,7 +297,7 @@ public class DeployCommand {
         sourceSchemaDir.mkdir();
 
 
-        Downloader downloader = new Downloader(metadataConnection, sourceSchemaDir, deploymentEventListener, null);
+        Downloader downloader = new Downloader(reconnector, sourceSchemaDir, deploymentEventListener, null);
 
 //        Deployment deployment = new Deployment();
 
@@ -348,7 +350,7 @@ public class DeployCommand {
             queryList.add(mq);
             // Salesforce only lets us call with 3 at a time. Thanks Salesforce!
             if (queryList.size() == 3) {
-                addToDownloadList(metadataConnection, objectsByMetaDataType, queryList);
+                addToDownloadList(reconnector, objectsByMetaDataType, queryList);
             }
         }
 
@@ -396,7 +398,7 @@ public class DeployCommand {
 
     }
 
-    private void addToDownloadList(MetadataConnection metadataConnection,
+    private void addToDownloadList(Reconnector metadataConnection,
                                    Map<String, List<String>> objectsByMetaDataType,
                                    List<ListMetadataQuery> queryList) throws Exception {
 

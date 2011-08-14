@@ -60,7 +60,7 @@ public class SelectEngineTests {
                 , info);
 
         SfConnection sfConnection = conn;
-        PartnerConnection pc = sfConnection.getHelper().getPartnerConnection();
+        PartnerConnection pc = sfConnection.getHelper().getPartnerConnectionForTestingOnly();
 
         surname = "Smith" + System.currentTimeMillis();
 
@@ -85,7 +85,7 @@ public class SelectEngineTests {
     @AfterClass
     public static void oneTimeTearDown() throws Exception {
         SfConnection sfConnection = (SfConnection) conn;
-        PartnerConnection pc = sfConnection.getHelper().getPartnerConnection();
+        PartnerConnection pc = sfConnection.getHelper().getPartnerConnectionForTestingOnly();
 
         String[] delete = new String[deleteMe.size()];
         deleteMe.toArray(delete);
@@ -325,7 +325,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         stmt.executeUpdate("delete from aaa__c");
 
 
-        PartnerConnection pc = conn.getHelper().getPartnerConnection();
+        PartnerConnection pc = conn.getHelper().getPartnerConnectionForTestingOnly();
 
         // Add a 300 rows to 'AAA__C' table
         SObject[] heaps = new SObject[300];
@@ -482,7 +482,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
     public void testRelationship() throws Exception {
 
         SfConnection sfConnection = conn;
-        PartnerConnection pc = sfConnection.getHelper().getPartnerConnection();
+        PartnerConnection pc = sfConnection.getHelper().getPartnerConnectionForTestingOnly();
 
         String id;
         ddd = new SObject();
@@ -661,7 +661,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
     public void testNonRelationship() throws Exception {
 
         SfConnection sfConnection = conn;
-        PartnerConnection pc = sfConnection.getHelper().getPartnerConnection();
+        PartnerConnection pc = sfConnection.getHelper().getPartnerConnectionForTestingOnly();
 
         // Create aaa__c with no reference to bbb__c, but write a query that looks at bbb__r.name
         aaa = new SObject();
@@ -928,7 +928,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
     @Test
     public void testDatatypes() throws Exception {
 
-        PartnerConnection pc = conn.getHelper().getPartnerConnection();
+        PartnerConnection pc = conn.getHelper().getPartnerConnectionForTestingOnly();
 
         bbb = new SObject();
         bbb.setType("bbb__c");

@@ -9,6 +9,7 @@ import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Downloader;
 import com.fidelma.salesforce.misc.LoginHelper;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.sforce.soap.metadata.FileProperties;
 import com.sforce.soap.metadata.ListMetadataQuery;
 import com.sforce.soap.metadata.MetadataConnection;
@@ -76,7 +77,9 @@ public class Migrator {
             }
         };
 
-        Downloader sourceDownloader = new Downloader(sourceInstance.getHelper().getMetadataConnection(), sourceSchemaDir, del, null);
+        Reconnector reconnector = new Reconnector(sourceInstance.getHelper());
+
+        Downloader sourceDownloader = new Downloader(reconnector, sourceSchemaDir, del, null);
         for (Table table : tables) {
             if (table.getType().equals("TABLE")) {
                 sourceDownloader.addPackage("CustomObject", table.getName());
@@ -143,7 +146,8 @@ public class Migrator {
 
 // Decide what to remove
         Deployment undeploy = new Deployment();
-        MetadataConnection metadataConnection = targetInstance.getHelper().getMetadataConnection();
+//        MetadataConnection metadataConnection = targetInstance.getHelper().getMetadataConnection();
+        Reconnector reconnector = new Reconnector(targetInstance.getHelper());
 
         List<ListMetadataQuery> queryList = new ArrayList<ListMetadataQuery>();
         for (String m : metaDataToDelete) {
@@ -152,7 +156,7 @@ public class Migrator {
             queryList.add(mq);
             // Salesforce only lets us call with 3 at a time. Thanks Salesforce!
             if (queryList.size() == 3) {
-                addToUndeploymentList(metadataConnection, undeploy, queryList);
+                addToUndeploymentList(reconnector, undeploy, queryList);
             }
         }
 
@@ -172,7 +176,7 @@ public class Migrator {
             }
         }
 
-        Deployer targetDeployer = new Deployer(targetInstance.getHelper().getMetadataConnection());
+        Deployer targetDeployer = new Deployer(reconnector);
         targetDeployer.undeploy(undeploy, del);
 
         /*
@@ -198,7 +202,7 @@ public class Migrator {
         return targetDeployer;
     }
 
-    private void addToUndeploymentList(MetadataConnection metadataConnection,
+    private void addToUndeploymentList(Reconnector metadataConnection,
                                        Deployment undeploy,
                                        List<ListMetadataQuery> queryList) throws Exception {
 

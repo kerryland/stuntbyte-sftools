@@ -5,6 +5,7 @@ import com.fidelma.salesforce.jdbc.SfResultSet;
 import com.fidelma.salesforce.jdbc.SfStatement;
 import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.ParsedColumn;
 import com.fidelma.salesforce.parse.ParsedSelect;
 import com.fidelma.salesforce.parse.SimpleParser;
@@ -22,10 +23,10 @@ import java.util.List;
 public class Select {
 
     private SfStatement statement;
-    private PartnerConnection pc;
+    private Reconnector pc;
     private String table;
 
-    public Select(SfStatement statement, PartnerConnection pc) {
+    public Select(SfStatement statement, Reconnector pc) {
         this.statement = statement;
         this.pc = pc;
     }

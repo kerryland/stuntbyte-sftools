@@ -4,6 +4,7 @@ import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
 import com.fidelma.salesforce.misc.TypeHelper;
 import com.sforce.soap.partner.*;
@@ -31,12 +32,12 @@ public class Update {
 
     private SimpleParser al;
     private ResultSetFactory metaDataFactory;
-    private PartnerConnection pc;
+    private Reconnector reconnector;
 
-    public Update(SimpleParser al, ResultSetFactory metaDataFactory, PartnerConnection pc) {
+    public Update(SimpleParser al, ResultSetFactory metaDataFactory, Reconnector reconnector) {
         this.al = al;
         this.metaDataFactory = metaDataFactory;
-        this.pc = pc;
+        this.reconnector = reconnector;
     }
 
 
@@ -236,9 +237,9 @@ public class Update {
 
             readSoql.append(" from ").append(tableName).append(" ").append(whereClause);
 
-            qr = pc.query(readSoql.toString());
+            qr = reconnector.query(readSoql.toString());
 
-            SObjectChunker chunker = new SObjectChunker(MAX_UPDATES_PER_CALL, pc, qr);
+            SObjectChunker chunker = new SObjectChunker(MAX_UPDATES_PER_CALL, reconnector, qr);
             while (chunker.next()) {
                 SObject[] selectedObjects = chunker.nextChunk();
                 storeData(batchMode, batchSObjects, tableName, values, table, selectedObjects, referencedColumns);
@@ -312,7 +313,7 @@ public class Update {
 
     public void saveSObjects(SObject[] update) throws SQLException {
         try {
-            SaveResult[] sr = pc.update(update);
+            SaveResult[] sr = reconnector.update(update);
             for (SaveResult saveResult : sr) {
                 if (!saveResult.isSuccess()) {
                     Error[] errors = saveResult.getErrors();

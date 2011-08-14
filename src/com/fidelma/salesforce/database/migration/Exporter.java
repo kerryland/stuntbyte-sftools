@@ -185,7 +185,7 @@ public class Exporter {
     /*
     http://www.salesforce.com/us/developer/docs/api_asynch/index_Left.htm#StartTopic=Content/asynch_api_reference_jobinfo.htm
 
-     */
+
     public void exportSalesforceViaBatch() throws Exception {
         LoginHelper.RubbishRestConnection conn = loginHelper.getBulkConnection();
 
@@ -196,10 +196,8 @@ public class Exporter {
         connection.setDoOutput(true);
         connection.setAllowUserInteraction(false);
         connection.setReadTimeout(10000);
-        /*
-        X-SFDC-Session: sessionId" -H "Content-Type: application/xml; charset=UTF-8" -d
+//        X-SFDC-Session: sessionId" -H "Content-Type: application/xml; charset=UTF-8" -d
 @create-job.xml
-         */
         connection.addRequestProperty("Content-Type", "application/xml; charset=UTF-8");
         connection.addRequestProperty("X-SFDC-Session", conn.sessionId);
 
@@ -257,7 +255,7 @@ public class Exporter {
         exporter.exportSalesforceViaBatch();
 
     }
-
+    */
 }
 
 

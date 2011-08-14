@@ -8,7 +8,6 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -18,11 +17,9 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -34,7 +31,7 @@ import java.util.zip.ZipInputStream;
  * Download Salesforce metadata
  */
 public class Downloader {
-    private MetadataConnection metaDataConnection;
+    private Reconnector reconnector;
     private File srcDir;
     private DeploymentEventListener listener;
     private File crcFile;
@@ -43,11 +40,11 @@ public class Downloader {
     private Map<String, Set<String>> metaDataFiles = new HashMap<String, Set<String>>();
 
 
-    public Downloader(MetadataConnection metaDataConnection,
+    public Downloader(Reconnector reconnector,
                       File srcDir,
                       DeploymentEventListener listener,
                       File crcFile) throws IOException {
-        this.metaDataConnection = metaDataConnection;
+        this.reconnector = reconnector;
         this.srcDir = srcDir;
         this.listener = listener;
         this.crcFile = crcFile;
@@ -133,7 +130,7 @@ public class Downloader {
     private File retrieveZip(RetrieveRequest retrieveRequest, DeploymentEventListener listener) throws Exception {
         File resultsFile = File.createTempFile("SFDC", "DOWN");
 
-        AsyncResult asyncResult = metaDataConnection.retrieve(retrieveRequest);
+        AsyncResult asyncResult = reconnector.retrieve(retrieveRequest);
         // Wait for the retrieve to complete
 
         int poll = 0;
@@ -151,7 +148,7 @@ public class Downloader {
             if (poll++ > MAX_NUM_POLL_REQUESTS) {
                 throw new Exception("Request timed out. Make or may not have completed successfully...");
             }
-            asyncResult = metaDataConnection.checkStatus(
+            asyncResult = reconnector.checkStatus(
                     new String[]{asyncResult.getId()})[0];
 //            System.out.println("Status is: " + asyncResult.getState());
             listener.progress("Status is: " + asyncResult.getState());
@@ -162,7 +159,7 @@ public class Downloader {
                     asyncResult.getMessage());
         }
 
-        RetrieveResult result = metaDataConnection.checkRetrieveStatus(asyncResult.getId());
+        RetrieveResult result = reconnector.checkRetrieveStatus(asyncResult.getId());
 
         // Print out any warning messages
 

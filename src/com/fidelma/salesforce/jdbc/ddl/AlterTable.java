@@ -1,24 +1,8 @@
 package com.fidelma.salesforce.jdbc.ddl;
 
-import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
-import com.fidelma.salesforce.jdbc.metaforce.Table;
-import com.fidelma.salesforce.misc.Deployer;
-import com.fidelma.salesforce.misc.DeploymentEventListener;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
-import com.sforce.soap.metadata.MetadataConnection;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.StringWriter;
-import java.sql.SQLException;
-import java.util.List;
 
 /**
  * ALTER TABLE <tableName> (
@@ -35,12 +19,12 @@ import java.util.List;
 public class AlterTable {
     private SimpleParser al;
     private ResultSetFactory metaDataFactory;
-    private MetadataConnection metadataConnection;
+    private Reconnector reconnector;
 
-    public AlterTable(SimpleParser al, ResultSetFactory metaDataFactory, MetadataConnection metadataConnection) {
+    public AlterTable(SimpleParser al, ResultSetFactory metaDataFactory, Reconnector reconnector) {
         this.al = al;
         this.metaDataFactory = metaDataFactory;
-        this.metadataConnection = metadataConnection;
+        this.reconnector = reconnector;
     }
 
 
@@ -50,13 +34,13 @@ public class AlterTable {
         String addOrDrop = al.getValue();
         if (addOrDrop.equalsIgnoreCase("ADD")) {
 
-            CreateTable createTable = new CreateTable(al, metaDataFactory, metadataConnection);
+            CreateTable createTable = new CreateTable(al, metaDataFactory, reconnector);
             createTable.executeAlter(tableName);
 
         } else if (addOrDrop.equalsIgnoreCase("DROP")) {
 
             al.read("COLUMN");
-            DropColumn dropColumn = new DropColumn(al, metaDataFactory, metadataConnection);
+            DropColumn dropColumn = new DropColumn(al, metaDataFactory, reconnector);
             dropColumn.execute(tableName);
         }
     }

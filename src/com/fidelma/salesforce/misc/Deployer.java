@@ -7,7 +7,6 @@ import com.sforce.soap.metadata.DeployOptions;
 import com.sforce.soap.metadata.DeployResult;
 import com.sforce.soap.metadata.FileProperties;
 import com.sforce.soap.metadata.ListMetadataQuery;
-import com.sforce.soap.metadata.MetadataConnection;
 import com.sforce.soap.metadata.RetrieveMessage;
 import com.sforce.soap.metadata.RetrieveRequest;
 import com.sforce.soap.metadata.RetrieveResult;
@@ -38,10 +37,10 @@ import java.util.zip.ZipOutputStream;
  */
 public class Deployer {
 
-    private MetadataConnection metadatabinding;
+    private Reconnector reconnector;
 
-    public Deployer(MetadataConnection metadatabinding) {
-        this.metadatabinding = metadatabinding;
+    public Deployer(Reconnector reconnector) {
+        this.reconnector = reconnector;
     }
 
 
@@ -150,7 +149,7 @@ public class Deployer {
             ListMetadataQuery mdq = new ListMetadataQuery();
             mdq.setType("ApexClass");
 
-            FileProperties[] codeFiles = metadatabinding.listMetadata(new ListMetadataQuery[]{mdq}, LoginHelper.SFDC_VERSION);
+            FileProperties[] codeFiles = reconnector.listMetadata(new ListMetadataQuery[]{mdq}, LoginHelper.SFDC_VERSION);
             List<String> testFiles = new ArrayList<String>();
             for (FileProperties fileProperties : codeFiles) {
                 if ((fileProperties.getFullName().endsWith("Test")) ||
@@ -165,7 +164,7 @@ public class Deployer {
 
 //           deployOptions.setAllowMissingFiles(true);
 
-        AsyncResult asyncResult = metadatabinding.deploy(zipBytes, deployOptions);
+        AsyncResult asyncResult = reconnector.deploy(zipBytes, deployOptions);
 
         String deploymentId = asyncResult.getId();
 
@@ -204,7 +203,7 @@ public class Deployer {
             if (System.currentTimeMillis() > lastChangeTime + FIVE_MINUTES) {
                 throw new Exception("Request timed out. Check deployment state within Salesforce");
             }
-            asyncResult = metadatabinding.checkStatus(new String[]{deploymentId})[0];
+            asyncResult = reconnector.checkStatus(new String[]{deploymentId})[0];
 
             String msg = asyncResult.getState() + " " +
                     "Deployed: " + asyncResult.getNumberComponentsDeployed() + " of " +
@@ -240,7 +239,7 @@ public class Deployer {
                     asyncResult.getMessage());
         }
 
-        DeployResult result = metadatabinding.checkDeployStatus(deploymentId);
+        DeployResult result = reconnector.checkDeployStatus(deploymentId);
         if (!result.isSuccess()) {
             DeployMessage[] errors = result.getMessages();
 
@@ -301,7 +300,7 @@ public class Deployer {
 
         File resultsFile = File.createTempFile("SFDC", "DOWN");
 
-        AsyncResult asyncResult = metadatabinding.retrieve(retrieveRequest);
+        AsyncResult asyncResult = reconnector.retrieve(retrieveRequest);
         // Wait for the retrieve to complete
 
         int poll = 0;
@@ -314,7 +313,7 @@ public class Deployer {
             if (poll++ > MAX_NUM_POLL_REQUESTS) {
                 throw new Exception("Request timed out. Make or may not have completed successfully...");
             }
-            asyncResult = metadatabinding.checkStatus(
+            asyncResult = reconnector.checkStatus(
                     new String[]{asyncResult.getId()})[0];
 //            System.out.println("Status is: " + asyncResult.getState());
         }
@@ -324,7 +323,7 @@ public class Deployer {
                     asyncResult.getMessage());
         }
 
-        RetrieveResult result = metadatabinding.checkRetrieveStatus(asyncResult.getId());
+        RetrieveResult result = reconnector.checkRetrieveStatus(asyncResult.getId());
 
         // Print out any warning messages
 

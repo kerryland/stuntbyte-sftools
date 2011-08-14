@@ -4,8 +4,8 @@ import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.misc.Deployer;
 import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
-import com.sforce.soap.metadata.MetadataConnection;
 
 import java.sql.SQLException;
 
@@ -15,12 +15,12 @@ import java.sql.SQLException;
 public class DropColumn {
     private SimpleParser al;
     private ResultSetFactory metaDataFactory;
-    private MetadataConnection metadataConnection;
+    private Reconnector reconnector;
 
-    public DropColumn(SimpleParser al, ResultSetFactory metaDataFactory, MetadataConnection metadataConnection) {
+    public DropColumn(SimpleParser al, ResultSetFactory metaDataFactory, Reconnector reconnector) {
         this.al = al;
         this.metaDataFactory = metaDataFactory;
-        this.metadataConnection = metadataConnection;
+        this.reconnector = reconnector;
     }
 
     public void execute(String tableName) throws Exception {
@@ -36,7 +36,7 @@ public class DropColumn {
         deployment.addMember("CustomField", tableName + "." + columnName, null, null);
 //        deployment.assemble();
 
-        Deployer deployer = new Deployer(metadataConnection);
+        Deployer deployer = new Deployer(reconnector);
         final StringBuilder deployError = new StringBuilder();
         deployer.undeploy(deployment,
                 new DeploymentEventListener() {

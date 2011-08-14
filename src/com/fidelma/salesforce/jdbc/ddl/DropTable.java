@@ -4,8 +4,8 @@ import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.misc.Deployer;
 import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
-import com.sforce.soap.metadata.MetadataConnection;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -17,12 +17,12 @@ import java.util.List;
 public class DropTable {
     private SimpleParser al;
     private ResultSetFactory metaDataFactory;
-    private MetadataConnection metadataConnection;
+    private Reconnector reconnector;
 
-    public DropTable(SimpleParser al, ResultSetFactory metaDataFactory, MetadataConnection metadataConnection) {
+    public DropTable(SimpleParser al, ResultSetFactory metaDataFactory, Reconnector reconnector) {
         this.al = al;
         this.metaDataFactory = metaDataFactory;
-        this.metadataConnection = metadataConnection;
+        this.reconnector = reconnector;
     }
 
     public void execute() throws SQLException {
@@ -58,7 +58,7 @@ public class DropTable {
 
 
     public void dropTables(List<String> tablesToDrop) throws SQLException {
-        Deployer deployer = new Deployer(metadataConnection);
+        Deployer deployer = new Deployer(reconnector);
         final StringBuilder deployError = new StringBuilder();
 
         Deployment deployment = new Deployment();

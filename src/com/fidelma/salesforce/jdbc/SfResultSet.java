@@ -1,16 +1,15 @@
 package com.fidelma.salesforce.jdbc;
 
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.ParsedColumn;
 import com.fidelma.salesforce.misc.TypeHelper;
 import com.fidelma.salesforce.parse.ParsedSelect;
-import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.QueryResult;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.bind.XmlObject;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
@@ -50,7 +49,7 @@ import java.util.TimeZone;
 // http://wiki.developerforce.com/index.php/Introduction_to_the_Force.com_Web_Services_Connector
 public class SfResultSet implements java.sql.ResultSet {
     private SObject[] records;
-    private PartnerConnection pc;
+    private Reconnector reconnector;
     private QueryResult qr;
     private int maxRows;
     private List<String> columnsInResult;
@@ -69,7 +68,7 @@ public class SfResultSet implements java.sql.ResultSet {
     private SimpleDateFormat dateSdf = new SimpleDateFormat(TypeHelper.dateFormat);
 
     public SfResultSet() {
-        // Create an empty resultset
+        // Create an empty result set
         metaData = new SfResultSetMetaData();
         rowCount = 2;
         maxRows = 1;
@@ -77,7 +76,7 @@ public class SfResultSet implements java.sql.ResultSet {
 
 
     public SfResultSet(SfStatement statement,
-                       PartnerConnection pc,
+                       Reconnector reconnector,
                        QueryResult qr,
                        List<ParsedSelect> parsedSelects) throws SQLException {
 
@@ -85,9 +84,13 @@ public class SfResultSet implements java.sql.ResultSet {
         SfConnection conn = (SfConnection) statement.getConnection();
         ResultSetFactory rsf = (conn).getMetaDataFactory();
         boolean useLabels = Boolean.parseBoolean(conn.getClientInfo("useLabels"));
-        batchSize = pc.getQueryOptions().getBatchSize();
+        try {
+            batchSize = reconnector.getQueryOptions().getBatchSize();
+        } catch (ConnectionException e) {
+            throw new SQLException(e);
+        }
 
-        this.pc = pc;
+        this.reconnector = reconnector;
         this.qr = qr;
         this.maxRows = statement.getMaxRows();
 
@@ -137,7 +140,7 @@ public class SfResultSet implements java.sql.ResultSet {
             }
 
             if (!qr.isDone()) {
-                qr = pc.queryMore(qr.getQueryLocator());
+                qr = reconnector.queryMore(qr.getQueryLocator());
                 records = qr.getRecords();
                 batchEnd = records.length - 1;
                 ptr = -1;

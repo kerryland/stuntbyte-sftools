@@ -4,6 +4,7 @@ import com.fidelma.salesforce.misc.Deployer;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Downloader;
 import com.fidelma.salesforce.misc.LoginHelper;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.sforce.soap.apex.CodeCoverageResult;
 import com.sforce.soap.apex.CompileAndTestRequest;
 import com.sforce.soap.apex.CompileAndTestResult;
@@ -17,15 +18,9 @@ import com.sforce.soap.apex.RunTestFailure;
 import com.sforce.soap.apex.RunTestsRequest;
 import com.sforce.soap.apex.RunTestsResult;
 import com.sforce.soap.apex.SoapConnection;
-import com.sforce.soap.metadata.FileProperties;
-import com.sforce.soap.metadata.ListMetadataQuery;
-import com.sforce.soap.metadata.MetadataConnection;
 import com.sforce.soap.metadata.Package;
 import com.sforce.soap.metadata.PackageTypeMembers;
 import com.sforce.soap.metadata.RetrieveRequest;
-import com.sforce.soap.partner.DescribeSObjectResult;
-import com.sforce.soap.partner.Field;
-import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 
 import java.io.File;
@@ -65,7 +60,7 @@ public class SalesfarceIDE {
     private LoginHelper loginHelper;
     private Deployer deployer;
     private SimpleListener listener = new SimpleListener();
-    private MetadataConnection metaDataConnection;
+    private Reconnector reconnector;
 
 
     public static void main(String[] args) throws Exception {
@@ -109,8 +104,10 @@ public class SalesfarceIDE {
         String password = prop.getProperty("sf.password");
 
         loginHelper = new LoginHelper(server, username, password);
-        metaDataConnection = loginHelper.getMetadataConnection();
-        deployer = new Deployer(metaDataConnection);
+
+//        metaDataConnection = loginHelper.getMetadataConnection();
+        reconnector = new Reconnector(loginHelper);
+        deployer = new Deployer(reconnector);
 
         return prop;
     }
@@ -137,10 +134,10 @@ public class SalesfarceIDE {
                 return;
             }
 
-            if (arg.equals("-diff")) {
-                doDiff();
-                return;
-            }
+//            if (arg.equals("-diff")) {
+//                doDiff();
+//                return;
+//            }
 
             if (arg.equals("-runtests")) {
                 runTests(srcDirectory + "/classes");
@@ -385,7 +382,7 @@ public class SalesfarceIDE {
         request.setTriggers(triggers);
         request.setCheckOnly(false);
 
-        SoapConnection connection = loginHelper.getApexConnection();
+        SoapConnection connection = reconnector.getApexConnection();
 
         String name = new File(filename).getName();
 
@@ -529,26 +526,9 @@ public class SalesfarceIDE {
         String filenameNoPath = new File(filename).getName();
         filenameNoPath = getNoSuffix(filenameNoPath);
 
-        Downloader downloader = new Downloader(metaDataConnection, new File(srcDir), listener, crcFile);
+        Downloader downloader = new Downloader(reconnector, new File(srcDir), listener, crcFile);
         downloader.addPackage(metadataType, filenameNoPath);
         downloader.download();
-/*
-
-        // TODOL: Fix ugly code duplication here and in downloadFiles
-        List<String> files = new ArrayList<String>();
-        files.add(filenameNoPath);
-
-        Package p = createPackage(metadataType, files);
-        RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
-
-        File result = deployer.retrieveZip(retrieveRequest, listener);
-        // Find our file and rewrite the local one
-        deployer.unzipFile(srcDir, result);
-
-        updateCrcs(crcs, result);
-        crcs.store(new FileWriter(crcFile), "Generated file");
-        */
-
     }
 
 
@@ -562,7 +542,7 @@ public class SalesfarceIDE {
                 "ApexPage",
                 "ApexTrigger"};
 
-        Downloader downloader = new Downloader(metaDataConnection, new File(srcDir), listener, crcFile);
+        Downloader downloader = new Downloader(reconnector, new File(srcDir), listener, crcFile);
 
         for (String metadataType : metadataTypes) {
             downloader.addPackage(metadataType, "*");
@@ -619,7 +599,7 @@ public class SalesfarceIDE {
         return p;
     }
 
-
+                                                       /*
     private List<String> generateItemList(String metadataType, String folderName) throws Exception {
         List<String> items = new ArrayList<String>();
 
@@ -640,6 +620,7 @@ public class SalesfarceIDE {
         }
         return items;
     }
+    */
 
 
     private void err(String filename, int line, int col, String ew, String msg) {
@@ -670,22 +651,19 @@ public class SalesfarceIDE {
         });
     }
 
-
+              /*
     private void doDiff() throws Exception {
 
         MetadataConnection metadataConnection = loginHelper.getMetadataConnection();
         PartnerConnection partnerConnection = loginHelper.getPartnerConnection();
 
-        /*
-        DescribeSObjectResult[] resu = partnerConnection.describeSObjects(new String[]{"Account"});
-        for (DescribeSObjectResult describeSObjectResult : resu) {
-            Field[] fields = describeSObjectResult.getFields();
-            for (Field field : fields) {
-                System.out.println("FIELD: " + field.getName());
-            }
-        }
-        */
-
+//        DescribeSObjectResult[] resu = partnerConnection.describeSObjects(new String[]{"Account"});
+//        for (DescribeSObjectResult describeSObjectResult : resu) {
+//            Field[] fields = describeSObjectResult.getFields();
+//            for (Field field : fields) {
+//                System.out.println("FIELD: " + field.getName());
+//            }
+//        }
 
         ListMetadataQuery query = new ListMetadataQuery();
         query.setType("CustomObject");
@@ -720,6 +698,7 @@ public class SalesfarceIDE {
 
     }
 
+*/
 
     private void runTests(String directory) throws Exception {
         File dir = new File(directory);
@@ -736,7 +715,7 @@ public class SalesfarceIDE {
 
         }
 
-        SoapConnection connection = loginHelper.getApexConnection();
+        SoapConnection connection = reconnector.getApexConnection();
 
         RunTestsRequest request = new RunTestsRequest();
         request.setClasses(testClasses);

@@ -8,10 +8,10 @@ import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Downloader;
 import com.fidelma.salesforce.misc.LoginHelper;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
 import com.sforce.soap.metadata.FileProperties;
 import com.sforce.soap.metadata.ListMetadataQuery;
-import com.sforce.soap.metadata.MetadataConnection;
 import com.sforce.ws.ConnectionException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -54,13 +54,14 @@ import java.util.Map;
 public class Grant {
     private SimpleParser al;
     private ResultSetFactory metaDataFactory;
-    private MetadataConnection metadataConnection;
+    private Reconnector reconnector;
     private List<String> profileNames = null;
 
-    public Grant(SimpleParser al, ResultSetFactory metaDataFactory, MetadataConnection metadataConnection) {
+    public Grant(SimpleParser al, ResultSetFactory metaDataFactory,
+                 Reconnector reconnector) {
         this.al = al;
         this.metaDataFactory = metaDataFactory;
-        this.metadataConnection = metadataConnection;
+        this.reconnector = reconnector;
     }
 
     public void execute(boolean grant) throws SQLException {
@@ -199,7 +200,7 @@ public class Grant {
 
 
     private void deployProfiles(final StringBuilder errors, Deployment dep) throws Exception {
-        Deployer deployer = new Deployer(metadataConnection);
+        Deployer deployer = new Deployer(reconnector);
 
         deployer.deploy(dep, new DeploymentEventListener() {
             public void error(String message) {
@@ -377,7 +378,7 @@ public class Grant {
             ListMetadataQuery lmdq = new ListMetadataQuery();
             lmdq.setType("Profile");
 
-            FileProperties[] metadata = metadataConnection.listMetadata(new ListMetadataQuery[]{lmdq}, LoginHelper.WSDL_VERSION);
+            FileProperties[] metadata = reconnector.listMetadata(new ListMetadataQuery[]{lmdq}, LoginHelper.WSDL_VERSION);
             for (int i = 0; i < metadata.length; i++) {
                 FileProperties fileProperties = metadata[i];
                 profileNames.add(fileProperties.getFullName());
@@ -412,7 +413,7 @@ public class Grant {
             sourceSchemaDir.deleteOnExit();
 
             errors = new StringBuilder();
-            dl = new Downloader(metadataConnection, sourceSchemaDir, new DeploymentEventListener() {
+            dl = new Downloader(reconnector, sourceSchemaDir, new DeploymentEventListener() {
                 public void error(String message) {
                     errors.append(message);
                 }

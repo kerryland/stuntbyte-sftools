@@ -1,6 +1,6 @@
 package com.fidelma.salesforce.jdbc.dml;
 
-import com.sforce.soap.partner.PartnerConnection;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.sforce.soap.partner.QueryResult;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
@@ -9,14 +9,14 @@ import java.util.Arrays;
 
 public class SObjectChunker {
     private int chunkSize;
-    private PartnerConnection pc;
+    private Reconnector reconnector;
     private QueryResult qr;
     private int ptr;
     private SObject[] input;
 
-    public SObjectChunker(int chunkSize, PartnerConnection pc, QueryResult qr) {
+    public SObjectChunker(int chunkSize, Reconnector reconnector, QueryResult qr) {
         this.chunkSize = chunkSize;
-        this.pc = pc;
+        this.reconnector = reconnector;
         this.qr = qr;
         input = qr.getRecords();
         ptr = 0;
@@ -41,7 +41,7 @@ public class SObjectChunker {
         }
         if (!qr.isDone()) {
             ptr = 0;
-            qr = pc.queryMore(qr.getQueryLocator());
+            qr = reconnector.queryMore(qr.getQueryLocator());
             input = qr.getRecords();
             return true;
         }

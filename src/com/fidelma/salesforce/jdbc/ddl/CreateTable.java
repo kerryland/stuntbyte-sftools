@@ -6,8 +6,8 @@ import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.misc.Deployer;
 import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
-import com.sforce.soap.metadata.MetadataConnection;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -39,12 +39,12 @@ import java.util.List;
 public class CreateTable {
     private SimpleParser al;
     private ResultSetFactory metaDataFactory;
-    private MetadataConnection metadataConnection;
+    private Reconnector reconnector;
 
-    public CreateTable(SimpleParser al, ResultSetFactory metaDataFactory, MetadataConnection metadataConnection) {
+    public CreateTable(SimpleParser al, ResultSetFactory metaDataFactory, Reconnector reconnector) {
         this.al = al;
         this.metaDataFactory = metaDataFactory;
-        this.metadataConnection = metadataConnection;
+        this.reconnector = reconnector;
     }
 
     public void executeCreate() throws Exception {
@@ -60,7 +60,7 @@ public class CreateTable {
     public void createTables(List<Table> tables) throws SQLException {
         try {
             final StringBuilder deployError = new StringBuilder();
-            Deployer deployer = new Deployer(metadataConnection);
+            Deployer deployer = new Deployer(reconnector);
             Deployment deployment = new Deployment();
 
             for (Table table : tables) {

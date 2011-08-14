@@ -1,5 +1,7 @@
 package com.fidelma.salesforce.misc;
 
+import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
+import com.fidelma.salesforce.jdbc.metaforce.WscService;
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.RestConnection;
 import com.sforce.soap.apex.SoapConnection;
@@ -10,6 +12,8 @@ import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 import com.sforce.ws.wsdl.Part;
+
+import java.util.Properties;
 
 /**
  * Created by IntelliJ IDEA.
@@ -27,19 +31,30 @@ public class LoginHelper {
     private String username;
     private String password;
 
-    private String sessionId;
-    private boolean trace;
+    private boolean trace = false;
 
     public static final double SFDC_VERSION = 22D;
     public static final double WSDL_VERSION = 22D;
 
+//    private SoapConnection soapConnection;
+    private MetadataConnection metadataConnection;
+    private PartnerConnection partnerConnection;
+    private RubbishRestConnection bulkConnection;
+
 
     public LoginHelper(String server, String username, String password) {
-
         this.server = server;
         this.username = username;
         this.password = password;
     }
+
+    public void reconnect() {
+//        SoapConnection soapConnection = null;
+        metadataConnection = null;
+        partnerConnection = null;
+        bulkConnection = null;
+    }
+
 
     private LoginResult doLogin() throws ConnectionException {
         ConnectorConfig cc;
@@ -57,23 +72,22 @@ public class LoginHelper {
             throw new RuntimeException("Server URL should point to API Version: " + WSDL_VERSION);
         cc.setAuthEndpoint(serverEndpoint);
         cc.setServiceEndpoint(serverEndpoint);
-        if (sessionId != null) {
-            LoginResult lResult = new LoginResult();
-            lResult.setSessionId(sessionId);
-            lResult.setServerUrl(serverEndpoint);
-            lResult.setMetadataServerUrl(serverEndpoint.replaceFirst("/u/", "/m/"));
-            return lResult;
-        }
+//        if (sessionId != null) {
+//            LoginResult lResult = new LoginResult();
+//            lResult.setSessionId(sessionId);
+//            lResult.setServerUrl(serverEndpoint);
+//            lResult.setMetadataServerUrl(serverEndpoint.replaceFirst("/u/", "/m/"));
+//            return lResult;
+//        }
 
         cc.setManualLogin(true);
         PartnerConnection pConn = Connector.newConnection(cc);
         return pConn.login(username, password);
     }
 
-    private SoapConnection soapConnection;
 
-    public SoapConnection getApexConnection() throws ConnectionException {
-        if (soapConnection == null) {
+    SoapConnection getApexConnection() throws ConnectionException {
+//        if (soapConnection == null) {
             ConnectorConfig cc;
             LoginResult lResult = doLogin();
             cc = new ConnectorConfig();
@@ -84,14 +98,12 @@ public class LoginHelper {
             int baseUrl = endpoint.indexOf("/services/Soap/u");
             String serviceUrl = endpoint.substring(0, baseUrl);
             cc.setServiceEndpoint((new StringBuilder()).append(serviceUrl).append("/services/Soap/s/").append(WSDL_VERSION).toString());
-            soapConnection = com.sforce.soap.apex.Connector.newConnection(cc);
-        }
+            SoapConnection soapConnection = com.sforce.soap.apex.Connector.newConnection(cc);
+//        }
         return soapConnection;
     }
 
-    private MetadataConnection metadataConnection;
-
-    public MetadataConnection getMetadataConnection() throws ConnectionException {
+    MetadataConnection getMetadataConnection() throws ConnectionException {
         if (metadataConnection == null) {
             ConnectorConfig cc;
             LoginResult lResult = doLogin();
@@ -106,9 +118,12 @@ public class LoginHelper {
         return metadataConnection;
     }
 
-    private PartnerConnection partnerConnection;
+    public PartnerConnection getPartnerConnectionForTestingOnly() throws ConnectionException {
+        return getPartnerConnection();
+    }
 
-    public PartnerConnection getPartnerConnection() throws ConnectionException {
+
+    PartnerConnection getPartnerConnection() throws ConnectionException {
         if (partnerConnection == null) {
             ConnectorConfig cc;
             LoginResult lResult = doLogin();
@@ -122,15 +137,25 @@ public class LoginHelper {
         return partnerConnection;
     }
 
+    public ResultSetFactory createResultSetFactory(Properties info) throws ConnectionException {
+        WscService svc;
+        try {
+            svc = new WscService(getPartnerConnection(), info);
+        } catch (ConnectionException e) {
+            reconnect();
+            svc = new WscService(getPartnerConnection(), info);
+        }
+        return svc.createResultSetFactory();
+    }
+
     public class RubbishRestConnection {
         RestConnection conn;
         public String url;
         public String sessionId;
     }
 
-    private RubbishRestConnection bulkConnection;
 
-    public RubbishRestConnection getBulkConnection() throws ConnectionException, AsyncApiException {
+    RubbishRestConnection getBulkConnection() throws ConnectionException, AsyncApiException {
         if (bulkConnection == null) {
             ConnectorConfig cc;
             LoginResult lResult = doLogin();

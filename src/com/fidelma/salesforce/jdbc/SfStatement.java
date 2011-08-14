@@ -14,8 +14,8 @@ import com.fidelma.salesforce.jdbc.metaforce.ForceResultSet;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
 import com.fidelma.salesforce.misc.LoginHelper;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
-import com.sforce.soap.metadata.MetadataConnection;
 import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
@@ -29,7 +29,6 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -37,8 +36,8 @@ import java.util.List;
 public class SfStatement implements java.sql.Statement {
 
     private SfConnection sfConnection;
-    private PartnerConnection pc;
-    private MetadataConnection metadataConnection;
+//    private PartnerConnection pc;
+    private Reconnector reconnector;
     private int updateCount = -1;
     private String generatedId;
     private List<String> generatedIds = new ArrayList<String>();
@@ -46,15 +45,15 @@ public class SfStatement implements java.sql.Statement {
 
     public SfStatement(SfConnection sfConnection, LoginHelper helper) throws ConnectionException, SQLException {
         this.sfConnection = sfConnection;
-        pc = helper.getPartnerConnection();
-        metadataConnection = helper.getMetadataConnection();
+//        pc = helper.getPartnerConnection();
+        reconnector = new Reconnector(helper);
     }
 
     public ResultSet executeQuery(String sql) throws SQLException {
         generatedIds.clear();
         sql = stripComments(sql);
         if (sql.toUpperCase().startsWith("SELECT")) {
-            Select select = new Select(this, pc);
+            Select select = new Select(this, reconnector);
             return select.execute(sql);
         } else {
             throw new SQLFeatureNotSupportedException("Don't understand that SQL command");
@@ -114,18 +113,18 @@ public class SfStatement implements java.sql.Statement {
             updateCount = 0;
             if (token.getValue().equalsIgnoreCase("UPDATE")) {
                 checkBatchMode(batchMode, DmlType.UPDATE);
-                Update update = new Update(al, sfConnection.getMetaDataFactory(), pc);
+                Update update = new Update(al, sfConnection.getMetaDataFactory(), reconnector);
                 updateCount = update.execute(batchMode, batchSObjects);
 
             } else if (token.getValue().equalsIgnoreCase("INSERT")) {
                 checkBatchMode(batchMode, DmlType.INSERT);
-                Insert insert = new Insert(al, sfConnection.getMetaDataFactory(), pc);
+                Insert insert = new Insert(al, sfConnection.getMetaDataFactory(), reconnector);
                 updateCount = insert.execute(batchMode, batchSObjects);
                 generatedIds.add(insert.getGeneratedId());
 
             } else if (token.getValue().equalsIgnoreCase("DELETE")) {
                 checkBatchMode(batchMode, DmlType.DELETE);
-                Delete delete = new Delete(al, pc);
+                Delete delete = new Delete(al, reconnector);
                 updateCount = delete.execute(batchMode, batchSObjects);
 
 //            } else if (batchMode) {
@@ -133,7 +132,7 @@ public class SfStatement implements java.sql.Statement {
 
             } else if (token.getValue().equalsIgnoreCase("CREATE")) {
                 al.read("TABLE");
-                CreateTable createTable = new CreateTable(al, sfConnection.getMetaDataFactory(), metadataConnection);
+                CreateTable createTable = new CreateTable(al, sfConnection.getMetaDataFactory(), reconnector);
 
                 if (batchMode) {
                     checkBatchMode(batchMode, DmlType.CREATE_TABLE);
@@ -146,14 +145,14 @@ public class SfStatement implements java.sql.Statement {
             } else if (token.getValue().equalsIgnoreCase("ALTER")) {
                 al.read("TABLE");
 
-                AlterTable alterTable = new AlterTable(al, sfConnection.getMetaDataFactory(), metadataConnection);
+                AlterTable alterTable = new AlterTable(al, sfConnection.getMetaDataFactory(), reconnector);
                 alterTable.execute();
                 // TODO: Support batch? (Can you alter two columns on the same table?)
 
             } else if (token.getValue().equalsIgnoreCase("DROP")) {
                 al.read("TABLE");
 
-                DropTable dropTable = new DropTable(al, sfConnection.getMetaDataFactory(), metadataConnection);
+                DropTable dropTable = new DropTable(al, sfConnection.getMetaDataFactory(), reconnector);
                 if (batchMode) {
                     checkBatchMode(batchMode, DmlType.DROP_TABLE);
                     String tableName = dropTable.parse();
@@ -165,16 +164,16 @@ public class SfStatement implements java.sql.Statement {
                 }
 
             } else if (token.getValue().equalsIgnoreCase("GRANT")) {
-                new Grant(al, sfConnection.getMetaDataFactory(), metadataConnection).execute(true);
+                new Grant(al, sfConnection.getMetaDataFactory(), reconnector).execute(true);
 
             } else if (token.getValue().equalsIgnoreCase("REVOKE")) {
-                new Grant(al, sfConnection.getMetaDataFactory(), metadataConnection).execute(false);
+                new Grant(al, sfConnection.getMetaDataFactory(), reconnector).execute(false);
 
             } else if (token.getValue().equalsIgnoreCase("COMMIT")) {
             } else if (token.getValue().equalsIgnoreCase("ROLLBACK")) {
             } else if ((token.getValue().equalsIgnoreCase("DEPLOYMENT")) ||
                        (token.getValue().equalsIgnoreCase("DEP"))) {
-                new DeployCommand(al, sfConnection.getMetaDataFactory(), metadataConnection).execute();
+                new DeployCommand(al, sfConnection.getMetaDataFactory(), reconnector).execute();
 
             } else {
                 throw new SQLException("Unsupported command " + token.getValue());
@@ -355,22 +354,22 @@ public class SfStatement implements java.sql.Statement {
 
             // TODO: Handle max sobjects per call of 200!
             if (batchDmlType == DmlType.INSERT) {
-                Insert insert = new Insert(null, sfConnection.getMetaDataFactory(), pc);
+                Insert insert = new Insert(null, sfConnection.getMetaDataFactory(), reconnector);
                 insert.saveSObjects(arr);
                 for (SObject sObject : arr) {
                     generatedIds.add(sObject.getId());
                 }
 
             } else if (batchDmlType == DmlType.UPDATE) {
-                Update update = new Update(null, sfConnection.getMetaDataFactory(), pc);
+                Update update = new Update(null, sfConnection.getMetaDataFactory(), reconnector);
                 update.saveSObjects(arr);
 
             } else if (batchDmlType == DmlType.DELETE) {
-                Delete delete = new Delete(null, pc);
+                Delete delete = new Delete(null, reconnector);
                 delete.deleteSObjects(arr);
 
             } else if (batchDmlType == DmlType.DROP_TABLE) {
-                DropTable dropTable = new DropTable(null, sfConnection.getMetaDataFactory(), metadataConnection);
+                DropTable dropTable = new DropTable(null, sfConnection.getMetaDataFactory(), reconnector);
                 List<String> tablesToDrop = new ArrayList<String>();
                 for (Object tableName : batchDDL) {
                     tablesToDrop.add((String) tableName);
@@ -378,7 +377,7 @@ public class SfStatement implements java.sql.Statement {
                 dropTable.dropTables(tablesToDrop);
 
             } else if (batchDmlType == DmlType.CREATE_TABLE) {
-                CreateTable createTable = new CreateTable(null, sfConnection.getMetaDataFactory(), metadataConnection);
+                CreateTable createTable = new CreateTable(null, sfConnection.getMetaDataFactory(), reconnector);
 
                 List<Table> tables = new ArrayList<Table>();
                 for (Object table : batchDDL) {
