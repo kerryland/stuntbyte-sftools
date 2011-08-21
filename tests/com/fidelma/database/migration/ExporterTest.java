@@ -15,7 +15,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -141,7 +140,7 @@ public class ExporterTest {
         criteriaList.add(criteria);
 
 
-        Exporter exporter = new Exporter(null);
+        Exporter exporter = new Exporter();
         exporter.createLocalSchema(sfconn, h2Conn);
         exporter.downloadData(sfconn, h2Conn, criteriaList);
 

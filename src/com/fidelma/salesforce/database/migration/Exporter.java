@@ -9,12 +9,6 @@ import com.sforce.soap.metadata.MetadataConnection;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.dialect.H2Dialect;
 
-import javax.net.ssl.HttpsURLConnection;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,13 +26,6 @@ import java.util.Map;
  * http://www.salesforce.com/us/developer/docs/api_asynch/index_Left.htm#StartTopic=Content/asynch_api_quickstart.htm
  */
 public class Exporter {
-
-    private LoginHelper loginHelper;
-
-    public Exporter(LoginHelper loginHelper) {
-        this.loginHelper = loginHelper;
-    }
-
 
     /**
      * Create a H2 schema based on the provided Salesforce instance

@@ -12,7 +12,6 @@ import com.fidelma.salesforce.misc.LoginHelper;
 import com.fidelma.salesforce.misc.Reconnector;
 import com.sforce.soap.metadata.FileProperties;
 import com.sforce.soap.metadata.ListMetadataQuery;
-import com.sforce.soap.metadata.MetadataConnection;
 
 import java.io.File;
 import java.sql.Connection;
@@ -41,7 +40,7 @@ public class Migrator {
     public void replicate(SfConnection sourceInstance, SfConnection targetInstance, Connection localdb) throws Exception {
 
         // Pull source schema down to local database
-        Exporter exporter = new Exporter(null);
+        Exporter exporter = new Exporter();
         List<Table> tables = exporter.createLocalSchema(sourceInstance, localdb);
 
         /*
@@ -222,7 +221,7 @@ public class Migrator {
                             Connection localDb,
                             List<MigrationCriteria> restoreRequests) throws SQLException {
 
-        Exporter exporter = new Exporter(null);
+        Exporter exporter = new Exporter();
 
         // Insert all data, except for references and unwritable fields
 
