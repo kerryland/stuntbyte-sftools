@@ -4,24 +4,49 @@ import com.fidelma.salesforce.database.migration.Exporter;
 import com.fidelma.salesforce.database.migration.MigrationCriteria;
 import com.fidelma.salesforce.database.migration.Migrator;
 import com.fidelma.salesforce.jdbc.SfConnection;
+import com.fidelma.salesforce.misc.Deployer;
+import com.fidelma.salesforce.misc.Deployment;
+import com.fidelma.salesforce.misc.DeploymentEventListener;
+import com.fidelma.salesforce.misc.DeploymentEventListenerImpl;
+import com.fidelma.salesforce.misc.Downloader;
+import com.fidelma.salesforce.misc.FolderZipper;
+import com.fidelma.salesforce.misc.LoginHelper;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.misc.StdOutDeploymentEventListener;
 import com.fidelma.salesforce.misc.TestHelper;
 import org.h2.util.ScriptReader;
 import org.junit.Assert;
 import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
+import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.zip.ZipFile;
 
 import static org.junit.Assert.assertEquals;
 
@@ -107,7 +132,7 @@ public class MigratorTest {
 
     public static void main(String[] args) throws Exception {
 
-         Class.forName("com.fidelma.salesforce.jdbc.SfDriver");
+        Class.forName("com.fidelma.salesforce.jdbc.SfDriver");
 
         Properties info = new Properties();
         info.put("user", "fronde.admin@localist.co.nz");
@@ -124,9 +149,14 @@ public class MigratorTest {
                 "jdbc:h2:/tmp/sfdc-prod"
                 , info);
 
+//        String destUser = "fronde.admin@localist.co.nz.dev1";
+//        String destPwd = "jrP2U0TnW09DesQIaxOmAb3yWiN9lRLu";
+
+        String destUser = "fronde.admin@localist.co.nz.devkerry";
+        String destPwd = "jrP2U0TnCWok3CTtOfnhPC6UjYrOgQzI";
         info = new Properties();
-        info.put("user", "fronde.admin@localist.co.nz.dev1");
-        info.put("password", "jrP2U0TnW09DesQIaxOmAb3yWiN9lRLu");
+        info.put("user", destUser);
+        info.put("password", destPwd);
 
         // Get a connection to the database
         SfConnection destSalesforce = (SfConnection) DriverManager.getConnection(
@@ -137,7 +167,7 @@ public class MigratorTest {
 
         // TODO: Handle record type and ownerid as special cases
 
-        String[] tables = new String[] {
+        String[] tables = new String[]{
 //                "Reference_Item__c",
                 "Location__c",
                 "Location_Relationship__c",
@@ -150,25 +180,131 @@ public class MigratorTest {
                 "product2"
         };
 
+        DeploymentEventListenerImpl del = new DeploymentEventListenerImpl();
+
+        File sourceSchemaDir = new File(System.getProperty("java.io.tmpdir"),
+                "SF-TRIGGERS" + System.currentTimeMillis());
+        sourceSchemaDir.mkdir();
+
+        Reconnector destinationConnector = new Reconnector(
+                destSalesforce.getHelper());
+
+        Downloader dl = new Downloader(destinationConnector, sourceSchemaDir,
+                del, null);
+
+
+        List<String> triggersToEnable = new ArrayList<String>();
+        PreparedStatement findTrigger = destSalesforce.prepareStatement(
+                "select Name from ApexTrigger " +
+                        "where Status = 'Active' " +
+                        "and NamespacePrefix = '' " +
+                        "and TableEnumOrId=?");
+
+        Deployment deployment = new Deployment();
+
         for (int i = 0; i < tables.length; i++) {
             String table = tables[i];
-            destSalesforce.createStatement().execute("delete from " + table);
+            dl.addPackage("Workflow", table);
+            dl.addPackage("CustomObject", table); // for validation rules
+            deployment.addMember("Workflow", table, null, null);
+            deployment.addMember("CustomObject", table, null, null);
+
+            findTrigger.setString(1, table);
+
+            ResultSet rs = findTrigger.executeQuery();
+            while (rs.next()) {
+                dl.addPackage("ApexTrigger", rs.getString("Name"));
+                deployment.addMember("ApexTrigger", rs.getString("Name"), null, null);
+                triggersToEnable.add(rs.getString("Name"));
+            }
         }
 
+        File orginalFile = dl.download();
 
-        for (int i = 0; i < tables.length; i++) {
-            String table = tables[i];
-            MigrationCriteria criteria = new MigrationCriteria();
-            criteria.tableName = table;
-            criteria.sql = "";
-            criteriaList.add(criteria);
+        System.out.println("KJS backup file is " + orginalFile.getAbsolutePath());
+
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+
+        unenableThings(dBuilder, new File(sourceSchemaDir, "workflows"), ".workflow", "active", "false");
+        unenableThings(dBuilder, new File(sourceSchemaDir, "triggers"), ".xml", "status", "Inactive");
+        unenableThings(dBuilder, new File(sourceSchemaDir, "objects"), ".object", "active", "false");
+
+        File up = File.createTempFile("SFDC-UP-UNENABLED", ".ZIP");
+        FolderZipper zipper = new FolderZipper();
+        zipper.zipFolder(sourceSchemaDir, up.getAbsolutePath());
+
+        Deployer deployer = new Deployer(destinationConnector);
+        String deploymentId = deployer.deployZip(up, new HashSet<Deployer.DeploymentOptions>());
+        deployer.checkDeploymentComplete(deploymentId, del);
+
+        if (del.getErrors().length() != 0) {
+            throw new Exception("Disable of components failed " + del.getErrors().toString());
         }
-        Exporter exporter = new Exporter();
-        exporter.createLocalSchema(sourceSalesforce, h2Conn);
-        exporter.downloadData(sourceSalesforce, h2Conn, criteriaList);
+
+        try {
+
+            for (int i = 0; i < tables.length; i++) {
+                String table = tables[i];
+                destSalesforce.createStatement().execute("delete from " + table);
+            }
 
 
-        Migrator migrator = new Migrator();
-        migrator.restoreRows(destSalesforce, h2Conn, criteriaList);
+            for (int i = 0; i < tables.length; i++) {
+                String table = tables[i];
+                MigrationCriteria criteria = new MigrationCriteria();
+                criteria.tableName = table;
+                criteria.sql = "";
+                criteriaList.add(criteria);
+            }
+            Exporter exporter = new Exporter();
+            exporter.createLocalSchema(sourceSalesforce, h2Conn);
+            exporter.downloadData(sourceSalesforce, h2Conn, criteriaList);
+
+            Migrator migrator = new Migrator();
+            migrator.restoreRows(destSalesforce, h2Conn, criteriaList);
+
+
+        } finally {
+            String deployId = deployer.deployZip(orginalFile, new HashSet<Deployer.DeploymentOptions>());
+            deployer.checkDeploymentComplete(deployId, del);
+            if (del.getErrors().length() != 0) {
+                throw new Exception("Restore of components in " + orginalFile.getAbsolutePath() +
+                        " failed " + del.getErrors().toString());
+            }
+
+        }
+
+    }
+
+    private static void unenableThings(DocumentBuilder dBuilder, File child, String suffix, String tagname, String inactiveValue) throws SAXException, IOException, TransformerException {
+        File[] profileFiles = child.listFiles();
+        for (File profileFile : profileFiles) {
+            if (profileFile.getName().toLowerCase().endsWith(suffix.toLowerCase())) {
+                System.out.println("Processing " + profileFile.getAbsolutePath());
+                Document doc = dBuilder.parse(profileFile);
+
+                NodeList downOne = doc.getElementsByTagName(tagname);
+                for (int i = 0; i < downOne.getLength(); i++) {
+                    Node n = downOne.item(i);
+                    System.out.println(n.getNodeName() + " " + n.getTextContent());
+                    n.setTextContent(inactiveValue);
+                }
+
+
+//                StringWriter sw = new StringWriter();
+                FileWriter sw = new FileWriter(profileFile);
+                DOMSource source = new DOMSource(doc);
+                StreamResult result = new StreamResult(sw);
+
+                TransformerFactory transformerFactory = TransformerFactory.newInstance();
+                Transformer transformer = transformerFactory.newTransformer();
+                transformer.transform(source, result);
+            } else {
+                System.out.println("NOT Processing " + profileFile.getAbsolutePath());
+            }
+
+
+        }
     }
 }
