@@ -192,7 +192,18 @@ public class WscService {
 
         // NB Not implemented; see comment in
         // ResultSetFactory class
-        column.setCalculated(field.isCalculated() || field.isAutoNumber());
+        Boolean calculated = field.isCalculated() || field.isAutoNumber();
+        if (field.getName().equalsIgnoreCase("Id") ||
+            field.getName().equalsIgnoreCase("CreatedDate") ||
+            field.getName().equalsIgnoreCase("CreatedById") ||
+            field.getName().equalsIgnoreCase("LastModifiedDate") ||
+            field.getName().equalsIgnoreCase("LastModifiedById") ||
+            field.getName().equalsIgnoreCase("SystemModstamp") ||
+            field.getName().equalsIgnoreCase("IsDeleted")) {
+            calculated = true;
+        }
+
+        column.setCalculated(calculated);
 
         String[] referenceTos = field.getReferenceTo();
         if (referenceTos != null) {

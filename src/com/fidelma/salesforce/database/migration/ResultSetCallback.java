@@ -18,4 +18,6 @@ public interface ResultSetCallback {
     void afterBatchInsert(String tableName, List<String> sourceIds, PreparedStatement pinsert) throws SQLException;
 
     boolean shouldInsert(String tableName, ResultSet rs, int col) throws SQLException;
+
+    Object alterValue(String tableName, String columnName, Object value) throws SQLException;
 }

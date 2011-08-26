@@ -69,6 +69,9 @@ public class TypeHelper {
     // TODO: See TYPE_INFO_DATA for all the ones we need to cover
     public static Object dataTypeConvert(String value, Integer dataType) throws ParseException {
 
+        if (value == null) {
+            return value;
+        }
         if (dataType == null) {
             return value;
         }

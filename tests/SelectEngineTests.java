@@ -8,7 +8,6 @@ import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.sobject.SObject;
 import junit.framework.Assert;
-import org.hibernate.id.SequenceHiLoGenerator;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;

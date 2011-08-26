@@ -131,13 +131,28 @@ public class Insert {
         Table tableData = metaDataFactory.getTable(table);
 
         int i = 0;
+          List<String> fieldsToNull = new ArrayList<String>();
         for (String key : columns) {
             String val = values.get(i++);
             Integer dataType = ResultSetFactory.lookupJdbcType(tableData.getColumn(key).getType());
-            Object value = TypeHelper.dataTypeConvert(val, dataType);
+
+            Object value;
+            if (val.equalsIgnoreCase("null")) {
+                value = null;
+                  fieldsToNull.add(key);
+            } else {
+                value = TypeHelper.dataTypeConvert(val, dataType);
+            }
 
             sObject.setField(key, value);
         }
+
+        if (fieldsToNull.size() > 0) {
+            String[] nullFields = new String[fieldsToNull.size()];
+            fieldsToNull.toArray(nullFields);
+            sObject.setFieldsToNull(nullFields);
+        }
+
         return sObject;
     }
 

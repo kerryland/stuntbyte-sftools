@@ -230,11 +230,16 @@ public class Migrator {
         localDbStatement.execute("drop table keyMap if exists");
         localDbStatement.execute("create table keyMap(tableName varchar(50), oldId varchar(18), newId varchar(18))");
 
+        final PreparedStatement getCorrectedIds = localDb.prepareStatement(
+                "select newId from keyMap where oldId = ? and tableName = ?");
+
         final PreparedStatement insertKeymap = localDb.prepareStatement(
                 "insert into keyMap(tableName, oldId, newId) values (?,?,?)");
 
         // Create fresh master-detail records
         final ResultSetFactory salesforceMetadata = destination.getMetaDataFactory();
+
+        final List<Column> requiredColumns = new ArrayList<Column>();
 
         ResultSetCallback callback = new ResultSetCallback() {
             public void onRow(ResultSet rs) {
@@ -246,7 +251,7 @@ public class Migrator {
                 ResultSet keys = pinsert.getGeneratedKeys();
                 int row = 0;
                 while (keys.next()) {
-                    insertKeymap.setString(1, tableName);
+                    insertKeymap.setString(1, tableName.toLowerCase());
                     insertKeymap.setString(2, sourceIds.get(row++));
                     insertKeymap.setString(3, keys.getString("Id"));
 
@@ -255,22 +260,50 @@ public class Migrator {
             }
 
             public boolean shouldInsert(String tableName, ResultSet rs, int col) throws SQLException {
-                boolean result = true;
+                boolean insertColumn = true;
 
-                if (tableName.endsWith("__s")) {
-                    tableName = tableName.substring(0, tableName.length() - 3);
-                }
+//                if (tableName.endsWith("__s")) {
+//                    tableName = tableName.substring(0, tableName.length() - 3);
+//                }
                 Table table = salesforceMetadata.getTable(tableName);
                 String columnName = rs.getMetaData().getColumnName(col);
-                String dataType = table.getColumn(columnName).getType();
 
-                if (table.getColumn(columnName).isCalculated()) {
-                    result = false;
-//                } else if (dataType.equalsIgnoreCase("Reference") || (dataType.equalsIgnoreCase("masterrecord"))) {
-                } else if (dataType.equalsIgnoreCase("Reference")) {
-                    result = false;
+                Column column = table.getColumn(columnName);
+
+                if (columnName.equalsIgnoreCase("OwnerId")) {
+                    insertColumn = false;
                 }
-                return result;
+                if (column.isCalculated()) {
+                    insertColumn = false;
+                    //                } else if (dataType.equalsIgnoreCase("Reference") || (dataType.equalsIgnoreCase("masterrecord"))) {
+                } else if (column.getType().equalsIgnoreCase("Reference") && column.isNillable()) {
+                    insertColumn = false;
+                }
+
+                if (insertColumn && !column.isNillable()) {
+                    requiredColumns.add(column);
+                }
+                return insertColumn;
+            }
+
+            public Object alterValue(String tableName, String columnName, Object value) throws SQLException {
+                Table table = salesforceMetadata.getTable(tableName);
+                Column column = table.getColumn(columnName);
+
+                if (column.getRelationshipType() != null && !column.isNillable()) {
+                    System.out.println("KJS need to make a value for " + tableName.toLowerCase() + " " + column.getRelationshipType() + " " + columnName + " " + value.toString());
+                    getCorrectedIds.setObject(1, value);
+                    getCorrectedIds.setString(2, column.getRelationshipType().toLowerCase());
+                    ResultSet rs = getCorrectedIds.executeQuery();
+                    if (rs.next()) {
+                        value = rs.getString(1);
+                    } else {
+                        System.out.println("KJS shit -- need to make a value for " + columnName + " " + value);
+                    }
+                    rs.close();
+                }
+                return value;
+
             }
         };
 
@@ -282,7 +315,13 @@ public class Migrator {
         // Copy the base data to Salesforce, but not the relationships
         for (MigrationCriteria restoreRequest : restoreRequests) {
             if (!tableContainsMasterDetail(salesforceMetadata.getTable(restoreRequest.tableName))) {
-                String sql = "select * from " + restoreRequest.tableName + " " + restoreRequest.sql;
+
+                String fromTable = restoreRequest.tableName;
+//                if (!restoreRequest.tableName.toLowerCase().endsWith("__c")) {
+//                     fromTable = restoreRequest.tableName + "__s";
+//
+//                }
+                String sql = "select * from " + fromTable + " " + restoreRequest.sql;
 
                 PreparedStatement sourceStmt = localDb.prepareStatement(sql);
                 ResultSet rs = sourceStmt.executeQuery();
@@ -365,7 +404,7 @@ public class Migrator {
         selectJoins.append(" on new");
         selectJoins.append(table.getName());
         selectJoins.append(".tableName = '");
-        selectJoins.append(table.getName());
+        selectJoins.append(table.getName().toLowerCase());
         selectJoins.append("' and new");
         selectJoins.append(table.getName());
         selectJoins.append(".oldId =");
@@ -383,7 +422,7 @@ public class Migrator {
         }
         int colCount = 0;
         for (Column column : table.getColumns()) {
-            if (column.isCalculated()) {
+            if (column.isCalculated() || column.getName().equalsIgnoreCase("OwnerId")) {
                 continue;
             }
             String joinTable = column.getReferencedTable();
@@ -400,6 +439,7 @@ public class Migrator {
                 first = false;
 
                 if (joinTable != null) {
+                    joinTable = joinTable + colCount;
                     selectColumns.append(joinTable);
                     selectColumns.append(".newId as ");
                     selectColumns.append(column.getName());
@@ -410,7 +450,7 @@ public class Migrator {
                     selectJoins.append(" on ");
                     selectJoins.append(joinTable);
                     selectJoins.append(".tableName = '");
-                    selectJoins.append(joinTable);
+                    selectJoins.append(column.getReferencedTable().toLowerCase());
                     selectJoins.append("' and ");
                     selectJoins.append(joinTable);
                     selectJoins.append(".oldId =");
@@ -451,9 +491,13 @@ public class Migrator {
             colCount++;
 
             List<String> sourceIds = new ArrayList<String>();
+
+            System.out.println("KJS PULL FROM " + selectColumns.toString());
+
             ResultSet rs = stmt.executeQuery(selectColumns.toString());
             while (rs.next()) {
                 for (int i = 1; i <= colCount; i++) {
+//                    System.out.println("KJS GOT ID " + rs.getString(i) + " " + (rs.getString(i) == null));
                     if ((i == colCount) && hasMasterDetail) {
                         sourceIds.add(rs.getString(i));
                     } else {

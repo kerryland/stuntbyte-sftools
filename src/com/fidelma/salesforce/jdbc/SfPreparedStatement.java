@@ -146,7 +146,12 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
     }
 
     public void setString(int parameterIndex, String x) throws SQLException {
-        setParameter(parameterIndex, "'" + x + "'");
+        if (x != null) {
+            setParameter(parameterIndex, "'" + x.replace("'", "\\'") + "'");
+        } else {
+            setParameter(parameterIndex, null);
+        }
+
     }
 
     public void setTime(int parameterIndex, Time x) throws SQLException {
@@ -177,7 +182,7 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
     public void setObject(int parameterIndex, Object x) throws SQLException {
         // TODO: TEST ALL THESE!
         if (x == null) {
-           setParameter(parameterIndex, ""); // TODO: REALLY?
+           setParameter(parameterIndex, null);
 
         } else if (x instanceof BigDecimal) {
             setBigDecimal(parameterIndex, (BigDecimal) x);
@@ -267,6 +272,7 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
 
     public void addBatch() throws SQLException {
         // TODO: Handle batched SELECTs?
+        System.out.println("KJS --> " + assembleSoql());
         executeUpdate(assembleSoql(), true);
     }
 

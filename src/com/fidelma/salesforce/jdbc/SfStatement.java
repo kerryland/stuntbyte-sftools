@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -36,7 +37,7 @@ import java.util.List;
 public class SfStatement implements java.sql.Statement {
 
     private SfConnection sfConnection;
-//    private PartnerConnection pc;
+    //    private PartnerConnection pc;
     private Reconnector reconnector;
     private int updateCount = -1;
     private String generatedId;
@@ -172,7 +173,7 @@ public class SfStatement implements java.sql.Statement {
             } else if (token.getValue().equalsIgnoreCase("COMMIT")) {
             } else if (token.getValue().equalsIgnoreCase("ROLLBACK")) {
             } else if ((token.getValue().equalsIgnoreCase("DEPLOYMENT")) ||
-                       (token.getValue().equalsIgnoreCase("DEP"))) {
+                    (token.getValue().equalsIgnoreCase("DEP"))) {
                 new DeployCommand(al, sfConnection.getMetaDataFactory(), reconnector).execute();
 
             } else {
@@ -349,24 +350,41 @@ public class SfStatement implements java.sql.Statement {
     public int[] executeBatch() throws SQLException {
         generatedIds.clear();
         try {
-            SObject[] arr = new SObject[batchSObjects.size()];
-            batchSObjects.toArray(arr);
+//            SObject[] arr = new SObject[batchSObjects.size()];
+//            batchSObjects.toArray(arr);
+
+
 
             // TODO: Handle max sobjects per call of 200!
             if (batchDmlType == DmlType.INSERT) {
                 Insert insert = new Insert(null, sfConnection.getMetaDataFactory(), reconnector);
-                insert.saveSObjects(arr);
-                for (SObject sObject : arr) {
-                    generatedIds.add(sObject.getId());
+
+                SObjectChunker chunker = new SObjectChunker(200, batchSObjects);
+                while (chunker.next()) {
+                    SObject[] arr = chunker.nextChunk();
+
+                    insert.saveSObjects(arr);
+                    for (SObject sObject : arr) {
+                        generatedIds.add(sObject.getId());
+                    }
                 }
 
             } else if (batchDmlType == DmlType.UPDATE) {
                 Update update = new Update(null, sfConnection.getMetaDataFactory(), reconnector);
-                update.saveSObjects(arr);
+
+                SObjectChunker chunker = new SObjectChunker(200, batchSObjects);
+                while (chunker.next()) {
+                    SObject[] arr = chunker.nextChunk();
+                    update.saveSObjects(arr);
+                }
 
             } else if (batchDmlType == DmlType.DELETE) {
                 Delete delete = new Delete(null, reconnector);
-                delete.deleteSObjects(arr);
+                SObjectChunker chunker = new SObjectChunker(200, batchSObjects);
+                while (chunker.next()) {
+                    SObject[] arr = chunker.nextChunk();
+                    delete.deleteSObjects(arr);
+                }
 
             } else if (batchDmlType == DmlType.DROP_TABLE) {
                 DropTable dropTable = new DropTable(null, sfConnection.getMetaDataFactory(), reconnector);
@@ -429,5 +447,41 @@ public class SfStatement implements java.sql.Statement {
 
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return false;
+    }
+
+
+    private class SObjectChunker {
+        private int chunkSize;
+        private int ptr;
+        private SObject[] input;
+
+        public SObjectChunker(int chunkSize, List<SObject> sObjects) {
+            this.chunkSize = chunkSize;
+            input = new SObject[sObjects.size()];
+            sObjects.toArray(input);
+
+            ptr = 0;
+        }
+
+        public SObject[] nextChunk() {
+            SObject[] chunk;
+            if (input.length - ptr <= chunkSize) {
+                chunk = Arrays.copyOfRange(input, ptr, input.length);
+                ptr = Integer.MAX_VALUE;
+            } else {
+                int end = Math.min(input.length, ptr + chunkSize);
+                chunk = Arrays.copyOfRange(input, ptr, end);
+                ptr += chunkSize;
+            }
+            return chunk;
+        }
+
+        public boolean next() throws ConnectionException {
+            if (ptr <= input.length) {
+                return true;
+            }
+            return false;
+        }
+
     }
 }

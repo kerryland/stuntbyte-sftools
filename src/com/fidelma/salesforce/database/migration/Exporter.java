@@ -4,7 +4,6 @@ import com.fidelma.salesforce.jdbc.SfConnection;
 import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
-import com.fidelma.salesforce.misc.LoginHelper;
 import com.sforce.soap.metadata.MetadataConnection;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.dialect.H2Dialect;
@@ -38,13 +37,13 @@ public class Exporter {
         stmt.execute("drop all objects");
 
         for (Table table : tables) {
-            if (table.getType().equals("TABLE")) {
+            if (table.getType().equals("TABLE") && !table.getName().equalsIgnoreCase("group")) {
                 StringBuilder sb = new StringBuilder();
 
                 String tableName = table.getName();
-                if (!tableName.endsWith("__c")) {
-                    tableName += "__s";   // Make sure we don't fail on the GROUP table...
-                }
+//                if (!tableName.endsWith("__c")) {
+//                    tableName += "__s";   // Make sure we don't fail on the GROUP table...
+//                }
                 sb.append("create table " + tableName);
                 sb.append(" (");
 
@@ -80,9 +79,9 @@ public class Exporter {
 //            StringBuilder sb = new StringBuilder();
 
             String tableName = criteria.tableName;
-            if (!tableName.endsWith("__c")) {
-                tableName += "__s";   // Make sure we don't fail on the GROUP table...
-            }
+//            if (!tableName.endsWith("__c")) {
+//                tableName += "__s";   // Make sure we don't fail on the GROUP table...
+//            }
 
             PreparedStatement pstmt = sfConnection.prepareStatement(
                     "select * from " + criteria.tableName + " " + criteria.sql);
@@ -100,7 +99,7 @@ public class Exporter {
         StringBuilder values = new StringBuilder();
         columns.append("insert into ").append(tableName).append(" (");
         boolean first = true;
-        first = true;
+
         Map<Integer, Integer> sourceToDestColumnMap = new HashMap<Integer, Integer>();
 
         int destCol = 0;
@@ -130,7 +129,12 @@ public class Exporter {
             for (Integer sourceCol : sourceToDestColumnMap.keySet()) {
                 destCol = sourceToDestColumnMap.get(sourceCol);
 //                System.out.println("KJS set col " + destCol + " to " + rs.getObject(sourceCol));
-                pinsert.setObject(destCol, rs.getObject(sourceCol));
+
+                Object value = rs.getObject(sourceCol);
+                if (resultSetCallback != null) {
+                    value = resultSetCallback.alterValue(tableName, rs.getMetaData().getColumnName(sourceCol), value);
+                }
+                pinsert.setObject(destCol, value);
             }
 
             pinsert.addBatch();
