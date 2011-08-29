@@ -192,6 +192,8 @@ public class WscService {
                 }
             } else if (childParentReferenceName != null && cascadeDelete != null) {
                 column.setComments("Referenced: " + childParentReferenceName + (cascadeDelete ? " (cascade delete)" : ""));
+            } else if (column.getReferencedTable() != null) {
+                column.setComments("Referenced: " + column.getReferencedTable());
             }
         } else {
             column.setComments(getPicklistValues(field.getPicklistValues()));

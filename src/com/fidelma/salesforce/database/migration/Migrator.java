@@ -7,21 +7,35 @@ import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.misc.Deployer;
 import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
+import com.fidelma.salesforce.misc.DeploymentEventListenerImpl;
 import com.fidelma.salesforce.misc.Downloader;
+import com.fidelma.salesforce.misc.FolderZipper;
 import com.fidelma.salesforce.misc.LoginHelper;
 import com.fidelma.salesforce.misc.Reconnector;
 import com.sforce.soap.metadata.FileProperties;
 import com.sforce.soap.metadata.ListMetadataQuery;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -237,6 +251,20 @@ public class Migrator {
         final PreparedStatement insertKeymap = localDb.prepareStatement(
                 "insert into keyMap(tableName, oldId, newId) values (?,?,?)");
 
+        mapRecordTypes(insertKeymap, destination, localDb);
+
+        final String defaultUserId = getDefaultUser(destination);
+
+        mapSalesforceInternalObjects(insertKeymap, destination, localDb,
+                "select Id, Name from User where isActive = true",
+                "User",
+                new SimpleKeyBuilder("Name"));
+
+        mapSalesforceInternalObjects(insertKeymap, destination, localDb, "select Id, Name from UserRole",
+                "UserRole",
+                new SimpleKeyBuilder("Name"));
+
+
         // Create fresh master-detail records
         final ResultSetFactory salesforceMetadata = destination.getMetaDataFactory();
 
@@ -263,16 +291,13 @@ public class Migrator {
             public boolean shouldInsert(String tableName, ResultSet rs, int col) throws SQLException {
                 boolean insertColumn = true;
 
-//                if (tableName.endsWith("__s")) {
-//                    tableName = tableName.substring(0, tableName.length() - 3);
-//                }
                 Table table = salesforceMetadata.getTable(tableName);
                 String columnName = rs.getMetaData().getColumnName(col);
 
                 Column column = table.getColumn(columnName);
 
-                if (columnName.equalsIgnoreCase("OwnerId")) {
-                    insertColumn = false;
+                if (columnName.equalsIgnoreCase("OwnerId")) { // Maybe base on type = User?
+                    insertColumn = true;
                 }
                 if (column.isCalculated() || !column.isUpdateable()) {
                     insertColumn = false;
@@ -285,10 +310,6 @@ public class Migrator {
                     requiredColumns.add(column);
                 }
 
-                if (tableName.equalsIgnoreCase("Contact")) {
-                    System.out.println("KJS insert " + tableName + "." + columnName + "=" + insertColumn);
-
-                }
                 return insertColumn;
             }
 
@@ -297,14 +318,19 @@ public class Migrator {
                 Column column = table.getColumn(columnName);
 
                 if (column.getRelationshipType() != null && !column.isNillable()) {
-                    System.out.println("KJS need to make a value for " + tableName.toLowerCase() + " " + column.getRelationshipType() + " " + columnName + " " + value.toString());
                     getCorrectedIds.setObject(1, value);
                     getCorrectedIds.setString(2, column.getRelationshipType().toLowerCase());
                     ResultSet rs = getCorrectedIds.executeQuery();
                     if (rs.next()) {
                         value = rs.getString(1);
                     } else {
-                        System.out.println("KJS shit -- need to make a value for " + columnName + " " + value);
+                        // Handle inactive users -- a common problem
+                        if (column.getReferencedTable().equalsIgnoreCase("User")) {
+                            value = defaultUserId;
+                        } else {
+                            System.out.println("KJS WARNING -- failed to make a value for " + columnName + " " + value);
+                            value = null;
+                        }
                     }
                     rs.close();
                 }
@@ -313,9 +339,6 @@ public class Migrator {
             }
         };
 
-
-        // TODO: Disable triggers and workflow
-
         Set<String> processedTables = new HashSet<String>();
 
         // Copy the base data to Salesforce, but not the relationships
@@ -323,10 +346,6 @@ public class Migrator {
             if (!tableContainsMasterDetail(salesforceMetadata.getTable(restoreRequest.tableName))) {
 
                 String fromTable = restoreRequest.tableName;
-//                if (!restoreRequest.tableName.toLowerCase().endsWith("__c")) {
-//                     fromTable = restoreRequest.tableName + "__s";
-//
-//                }
                 String sql = "select * from " + fromTable; //  + " " + restoreRequest.sql;
 
                 PreparedStatement sourceStmt = localDb.prepareStatement(sql);
@@ -397,6 +416,77 @@ public class Migrator {
         }
     }
 
+    private String getDefaultUser(SfConnection destination) throws SQLException {
+        String defaultUserId = null;
+        PreparedStatement psStatement = destination.prepareStatement(
+                "select id from User where isActive = true and UserType = 'Standard' limit 1");
+        ResultSet rs = psStatement.executeQuery();
+        if (rs.next()) {
+            defaultUserId = rs.getString("id");
+        }
+        return defaultUserId;
+    }
+
+    private interface KeyBuilder {
+        String buildKey(ResultSet rs) throws SQLException;
+    }
+
+    private class SimpleKeyBuilder implements KeyBuilder {
+        private String keyName;
+
+        private SimpleKeyBuilder(String keyName) {
+            this.keyName = keyName;
+        }
+
+        public String buildKey(ResultSet rs) throws SQLException {
+            return rs.getString(keyName);
+        }
+    }
+
+
+
+    // Record type is a special case. Setup the mapping here
+    private void mapRecordTypes(PreparedStatement insertKeymap, SfConnection destination, Connection localDb) throws SQLException {
+        String sql = "select Id, SobjectType, DeveloperName from RecordType where isActive = true";
+
+        KeyBuilder kb = new KeyBuilder() {
+            public String buildKey(ResultSet rs) throws SQLException {
+                return rs.getString("SobjectType") + "." + rs.getString("DeveloperName");
+            }
+        };
+
+        mapSalesforceInternalObjects(insertKeymap, destination, localDb, sql, "RecordType", kb);
+
+    }
+
+    private void mapSalesforceInternalObjects(PreparedStatement insertKeymap, SfConnection destination,
+                                              Connection localDb, String sql, String tableName, KeyBuilder kb) throws SQLException {
+        Map<String, String> oldIds = new HashMap<String, String>();
+
+        PreparedStatement stmt = localDb.prepareStatement(sql);
+        ResultSet rs = stmt.executeQuery();
+        while (rs.next()) {
+            oldIds.put(kb.buildKey(rs), rs.getString("Id"));
+        }
+        rs.close();
+        stmt.close();
+
+        stmt = destination.prepareStatement(sql);
+        rs = stmt.executeQuery();
+        while (rs.next()) {
+            String key = kb.buildKey(rs);
+            String oldId = oldIds.get(key);
+            if (oldId != null) {
+                insertKeymap.setString(1, tableName.toLowerCase());
+                insertKeymap.setString(2, oldId);
+                insertKeymap.setString(3, rs.getString("Id"));
+                insertKeymap.execute();
+            }
+        }
+        rs.close();
+        stmt.close();
+    }
+
 
     private void correctReferences(Connection destination, Statement stmt, Table table, ResultSetCallback callback) throws SQLException {
         boolean hasMasterDetail = tableContainsMasterDetail(table);
@@ -433,7 +523,9 @@ public class Migrator {
         System.out.println("KJS correctReferences with " + updateRefs);
         int colCount = 0;
         for (Column column : table.getColumns()) {
-            if ((!column.isUpdateable() && !column.getType().equalsIgnoreCase("masterrecord")) || column.isCalculated() || column.getName().equalsIgnoreCase("OwnerId")) {
+            if ((!column.isUpdateable() && !column.getType().equalsIgnoreCase("masterrecord")) || column.isCalculated()
+                    || column.getName().equalsIgnoreCase("OwnerId") // Maybe base on type = User?
+                    ) {
                 continue;
             }
             String joinTable = column.getReferencedTable();
@@ -534,6 +626,229 @@ public class Migrator {
             }
         }
         return result;
+    }
+
+
+    /**
+     * Migrates all data specified in MigrationCriteria from
+     * the source salesforce instance to the destination saleforce instance.
+     *
+     * WARNING: All existing rows in the destination salesforce migration tables will be deleted,
+     * so this is expected to be used to provide a big-bang migration of data.
+     * (TODO: We could populate localdb from sourceSalesforce for those tables not in migration list,
+     * which should allow for incremental migrations that still respect new ids)
+     *
+     * h2Conn is a local database connection used to hold data during migration.
+     */
+    public void migrate(SfConnection sourceSalesforce, SfConnection destSalesforce, Connection h2Conn,
+                        List<MigrationCriteria> migrationCriteriaList) throws Exception {
+
+        Set<String> tableNames = correctTableNames(sourceSalesforce, migrationCriteriaList);
+
+        Reconnector destinationConnector = new Reconnector(
+                destSalesforce.getHelper());
+
+
+        DeploymentEventListenerImpl del = new DeploymentEventListenerImpl();
+
+        File sourceSchemaDir = new File(System.getProperty("java.io.tmpdir"),
+                "SF-TRIGGERS" + System.currentTimeMillis());
+        sourceSchemaDir.mkdir();
+
+
+        File originalFile = downloadBackup(destSalesforce, tableNames, destinationConnector, del, sourceSchemaDir);
+        File restoreZip = createFileToRestore(sourceSchemaDir);
+        File unenabledFile = createUnenabledFile(sourceSchemaDir);
+
+        Deployer deployer = new Deployer(destinationConnector);
+        String deploymentId = deployer.deployZip(unenabledFile, new HashSet<Deployer.DeploymentOptions>());
+        deployer.checkDeploymentComplete(deploymentId, del);
+
+        if (del.getErrors().length() != 0) {
+            throw new Exception("Disable of components failed " + del.getErrors().toString());
+        }
+
+        try {
+            for (String table : tableNames) {
+                destSalesforce.createStatement().execute("delete from " + table);
+            }
+
+            Exporter exporter = new Exporter();
+            exporter.createLocalSchema(sourceSalesforce, h2Conn);
+
+            // We always need these for mappings...
+            migrationCriteriaList.add(new MigrationCriteria("RecordType"));
+            migrationCriteriaList.add(new MigrationCriteria("User"));
+            migrationCriteriaList.add(new MigrationCriteria("UserRole"));
+//            migrationCriteriaList.add(new MigrationCriteria("Group"));  -- TODO: Handle horrible table name!
+            exporter.downloadData(sourceSalesforce, h2Conn, migrationCriteriaList);
+
+            // Create a simpler restore migration criteria, with no 'sql' criteria,
+            // and duplicated tables removed.
+            List<MigrationCriteria> restoreCriteria = new ArrayList<MigrationCriteria>();
+            for (String tableName : tableNames) {
+                MigrationCriteria criteria = new MigrationCriteria(tableName);
+                restoreCriteria.add(criteria);
+            }
+            Migrator migrator = new Migrator();
+            migrator.restoreRows(destSalesforce, h2Conn, restoreCriteria);
+
+
+        } finally {
+            System.out.println("Restoring schema " + restoreZip.getAbsolutePath());
+            String deployId = deployer.deployZip(restoreZip, new HashSet<Deployer.DeploymentOptions>());
+            deployer.checkDeploymentComplete(deployId, del);
+            if (del.getErrors().length() != 0) {
+                throw new Exception("Restore of schema in " + originalFile.getAbsolutePath() +
+                        " failed " + del.getErrors().toString());
+            }
+
+        }
+    }
+
+    private File createUnenabledFile(File sourceSchemaDir) throws Exception {
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+        unenableThings(dBuilder, "Workflow", new File(sourceSchemaDir, "workflows"), ".workflow", "active", "false");
+        unenableThings(dBuilder, "ApexTrigger", new File(sourceSchemaDir, "triggers"), ".xml", "status", "Inactive");
+        unenableThings(dBuilder, "CustomObject", new File(sourceSchemaDir, "objects"), ".object", "active", "false");
+
+
+        File up = File.createTempFile("SFDC-UP-UNENABLED", ".ZIP");
+        FolderZipper zipper = new FolderZipper();
+        zipper.zipFolder(sourceSchemaDir, up.getAbsolutePath());
+        return up;
+    }
+
+    private File createFileToRestore(File sourceSchemaDir) throws Exception {
+        removePackagedFields(new File(sourceSchemaDir, "objects"));
+        File restoreZip = File.createTempFile("SFDC-RESTORE", ".ZIP");
+        FolderZipper zipper = new FolderZipper();
+        zipper.zipFolder(sourceSchemaDir, restoreZip.getAbsolutePath());
+        return restoreZip;
+    }
+
+    private File downloadBackup(SfConnection destSalesforce, Set<String> tableNames, Reconnector destinationConnector, DeploymentEventListenerImpl del, File sourceSchemaDir) throws Exception {
+        Downloader destinationBackup = new Downloader(destinationConnector, sourceSchemaDir,
+                del, null);
+
+
+        List<String> triggersToEnable = new ArrayList<String>();
+        PreparedStatement findTrigger = destSalesforce.prepareStatement(
+                "select Name from ApexTrigger " +
+                        "where Status = 'Active' " +
+                        "and NamespacePrefix = '' " +
+                        "and TableEnumOrId=?");
+
+        for (String table : tableNames) {
+            destinationBackup.addPackage("Workflow", table);
+            destinationBackup.addPackage("CustomObject", table); // for validation rules
+
+            findTrigger.setString(1, table);
+
+            ResultSet rs = findTrigger.executeQuery();
+            while (rs.next()) {
+                destinationBackup.addPackage("ApexTrigger", rs.getString("Name"));
+                triggersToEnable.add(rs.getString("Name"));
+            }
+        }
+
+        return destinationBackup.download();
+    }
+
+    private Set<String> correctTableNames(SfConnection sourceSalesforce, List<MigrationCriteria> migrationCriteriaList) throws SQLException {
+        Set<String> tableNames = new HashSet<String>();
+
+        // Salesforce is fussy about getting the case right in package.xml
+        for (int i = 0; i < migrationCriteriaList.size(); i++) {
+            MigrationCriteria mc = migrationCriteriaList.get(i);
+            Table t = sourceSalesforce.getMetaDataFactory().getTable(mc.tableName);
+            mc.tableName = t.getName();
+            tableNames.add(t.getName());
+        }
+        return tableNames;
+    }
+
+    private static void removePackagedFields(File objectsDir) throws Exception {
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+
+        File[] objectFiles = objectsDir.listFiles();
+        for (File objectFile : objectFiles) {
+            System.out.println("Removing packaged fields from " + objectFile.getName());
+            Document doc = dBuilder.parse(objectFile);
+
+            List<Node> fieldsToDelete = new ArrayList<Node>();
+
+            NodeList fieldsNodes = doc.getElementsByTagName("fields");
+            for (int i = 0; i < fieldsNodes.getLength(); i++) {
+                Node field = fieldsNodes.item(i);
+                NodeList children = field.getChildNodes();
+
+                for (int j = 0; j < children.getLength(); j++) {
+                    Node child = children.item(j);
+                    if (child.getNodeName().equals("fullName")) {
+
+                        if (child.getTextContent().indexOf("__") != child.getTextContent().lastIndexOf("__")) {
+                            fieldsToDelete.add(field);
+                            break;
+                        }
+                    }
+
+                }
+            }
+
+            for (Node field : fieldsToDelete) {
+                field.getParentNode().removeChild(field);
+            }
+            doc.normalize();
+
+//            StringWriter sw = new StringWriter();
+            FileOutputStream sw = new FileOutputStream(objectFile);
+            DOMSource source = new DOMSource(doc);
+            StreamResult result = new StreamResult(sw);
+
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            transformer.transform(source, result);
+            sw.close();
+
+        }
+    }
+
+    private static void unenableThings(DocumentBuilder dBuilder, String typeName,
+                                       File child, String suffix,
+                                       String tagname, String inactiveValue) throws Exception {
+        File[] profileFiles = child.listFiles();
+        for (File profileFile : profileFiles) {
+            if (profileFile.getName().toLowerCase().endsWith(suffix.toLowerCase())) {
+                System.out.println("Unenabling things in " + profileFile.getName());
+                Document doc = dBuilder.parse(profileFile);
+
+                NodeList downOne = doc.getElementsByTagName(tagname);
+                for (int i = 0; i < downOne.getLength(); i++) {
+                    Node n = downOne.item(i);
+                    // Don't disable recordTypes
+                    if (!n.getParentNode().getNodeName().equalsIgnoreCase("recordTypes")) {
+                        n.setTextContent(inactiveValue);
+                    }
+                }
+
+                FileOutputStream sw = new FileOutputStream(profileFile);
+                DOMSource source = new DOMSource(doc);
+                StreamResult result = new StreamResult(sw);
+
+                TransformerFactory transformerFactory = TransformerFactory.newInstance();
+                Transformer transformer = transformerFactory.newTransformer();
+                transformer.transform(source, result);
+                sw.close();
+
+            } else {
+//                System.out.println("NOT Processing " + profileFile.getAbsolutePath());
+            }
+
+
+        }
     }
 
 

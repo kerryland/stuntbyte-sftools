@@ -76,13 +76,7 @@ public class Exporter {
     public void downloadData(SfConnection sfConnection, Connection localConnection, List<MigrationCriteria> migrationCriteriaList) throws SQLException {
 
         for (MigrationCriteria criteria : migrationCriteriaList) {
-//            StringBuilder sb = new StringBuilder();
-
             String tableName = criteria.tableName;
-//            if (!tableName.endsWith("__c")) {
-//                tableName += "__s";   // Make sure we don't fail on the GROUP table...
-//            }
-
             PreparedStatement pstmt = sfConnection.prepareStatement(
                     "select * from " + criteria.tableName + " " + criteria.sql);
             ResultSet rs = pstmt.executeQuery();
