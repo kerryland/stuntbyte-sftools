@@ -30,6 +30,7 @@ public class Column {
     private List<String> picklistValues = new ArrayList<String>();
     private String defaultPicklistValue;
     private boolean picklistIsSorted;
+    private boolean updateable;
 
 
     public Column(String name, String type, Boolean isCalculated) {
@@ -210,5 +211,13 @@ public class Column {
 
     public boolean isPicklistIsSorted() {
         return picklistIsSorted;
+    }
+
+    public void setUpdateable(boolean updateable) {
+        this.updateable = updateable;
+    }
+
+    public boolean isUpdateable() {
+        return updateable;
     }
 }

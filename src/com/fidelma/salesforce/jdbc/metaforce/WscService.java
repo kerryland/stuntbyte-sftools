@@ -101,36 +101,36 @@ public class WscService {
         for (String[] batch : batchedTypes) {
 //            DescribeSObjectResult[] sobs = partnerConnection.describeSObjects(batch);
 //            if (sobs != null) {
-            for (String tableName :batch) {
+            for (String tableName : batch) {
                 DescribeSObjectResult sob = describeCache.get(tableName);
 //                for (DescribeSObjectResult sob : sobs) {
 
-                    Field[] fields = sob.getFields();
+                Field[] fields = sob.getFields();
 
-                    String type = sob.getUpdateable() ? "TABLE" : "SYSTEM TABLE";
-                    Table table = new Table(sob.getName(), getRecordTypes(sob.getRecordTypeInfos()), type);
+                String type = sob.getUpdateable() ? "TABLE" : "SYSTEM TABLE";
+                Table table = new Table(sob.getName(), getRecordTypes(sob.getRecordTypeInfos()), type);
 
-                    for (Field field : fields) {
-                        if (keep(field)) {
-                            Column col = recordColumn(relationshipMap,
-                                    childParentReferenceNames,
-                                    childCascadeDeletes,
-                                    typesSet, sob, field);
-                            table.addColumn(col);
-                        }
+                for (Field field : fields) {
+                    if (keep(field)) {
+                        Column col = recordColumn(relationshipMap,
+                                childParentReferenceNames,
+                                childCascadeDeletes,
+                                typesSet, sob, field);
+                        table.addColumn(col);
                     }
-
-                    Collections.sort(table.getColumns(), new Comparator<Column>() {
-                        public int compare(Column o1, Column o2) {
-                            String t1 = o1.getName();
-                            String t2 = o2.getName();
-                            return t1.compareTo(t2);
-                        }
-                    });
-
-
-                    factory.addTable(table);
                 }
+
+                Collections.sort(table.getColumns(), new Comparator<Column>() {
+                    public int compare(Column o1, Column o2) {
+                        String t1 = o1.getName();
+                        String t2 = o2.getName();
+                        return t1.compareTo(t2);
+                    }
+                });
+
+
+                factory.addTable(table);
+            }
 //            }
         }
 
@@ -152,6 +152,14 @@ public class WscService {
         column.setScale(field.getScale());
         column.setDefault(field.getDefaultValueFormula());
         column.setNillable(field.isNillable());
+//        if (column.getName().equalsIgnoreCase("LastActivityDate") ||
+//                column.getName().equalsIgnoreCase("Unique_Code__c")
+//
+//                ) {
+//            System.out.println("KJS updatable " + column.getName() + " " + field.getUpdateable());
+//
+//        }
+        column.setUpdateable(field.getUpdateable());
 
         if ("reference".equals(field.getType().toString())) {
             // MasterDetail vs Reference apparently not
@@ -159,6 +167,9 @@ public class WscService {
             String qualified = sob.getName() + "." + field.getName();
             String childParentReferenceName = childParentReferenceNames.get(qualified);
             Boolean cascadeDelete = childCascadeDeletes.get(qualified);
+            if (cascadeDelete != null && cascadeDelete) {
+                column.setType("masterrecord");
+            }
 
             Map<String, List<String>> lookupColumns = relationshipMap.get(sob.getName());
             if (lookupColumns != null) {
@@ -194,12 +205,12 @@ public class WscService {
         // ResultSetFactory class
         Boolean calculated = field.isCalculated() || field.isAutoNumber();
         if (field.getName().equalsIgnoreCase("Id") ||
-            field.getName().equalsIgnoreCase("CreatedDate") ||
-            field.getName().equalsIgnoreCase("CreatedById") ||
-            field.getName().equalsIgnoreCase("LastModifiedDate") ||
-            field.getName().equalsIgnoreCase("LastModifiedById") ||
-            field.getName().equalsIgnoreCase("SystemModstamp") ||
-            field.getName().equalsIgnoreCase("IsDeleted")) {
+                field.getName().equalsIgnoreCase("CreatedDate") ||
+                field.getName().equalsIgnoreCase("CreatedById") ||
+                field.getName().equalsIgnoreCase("LastModifiedDate") ||
+                field.getName().equalsIgnoreCase("LastModifiedById") ||
+                field.getName().equalsIgnoreCase("SystemModstamp") ||
+                field.getName().equalsIgnoreCase("IsDeleted")) {
             calculated = true;
         }
 

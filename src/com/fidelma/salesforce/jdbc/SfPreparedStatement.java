@@ -272,7 +272,7 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
 
     public void addBatch() throws SQLException {
         // TODO: Handle batched SELECTs?
-        System.out.println("KJS --> " + assembleSoql());
+//        System.out.println("KJS --> " + assembleSoql());
         executeUpdate(assembleSoql(), true);
     }
 

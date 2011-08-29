@@ -126,17 +126,13 @@ public class ExporterTest {
 
         // Pull data down into local database
         List<MigrationCriteria> criteriaList = new ArrayList<MigrationCriteria>();
-        MigrationCriteria criteria = new MigrationCriteria();
-        criteria.tableName = "one__c";
+        MigrationCriteria criteria = new MigrationCriteria("one__c");
         criteriaList.add(criteria);
-        criteria = new MigrationCriteria();
-        criteria.tableName = "two__c";
+        criteria = new MigrationCriteria("two__c");
         criteriaList.add(criteria);
-        criteria = new MigrationCriteria();
-        criteria.tableName = "three__c";
+        criteria = new MigrationCriteria("three__c");
         criteriaList.add(criteria);
-        criteria = new MigrationCriteria();
-        criteria.tableName = "four__c";
+        criteria = new MigrationCriteria("four__c");
         criteriaList.add(criteria);
 
 
@@ -155,17 +151,13 @@ public class ExporterTest {
 
         Migrator migrator = new Migrator();
         criteriaList.clear();
-        criteria = new MigrationCriteria();
-        criteria.tableName = "one__c";
+        criteria = new MigrationCriteria("one__c");
         criteriaList.add(criteria);
-        criteria = new MigrationCriteria();
-        criteria.tableName = "two__c";
+        criteria = new MigrationCriteria("two__c");
         criteriaList.add(criteria);
-        criteria = new MigrationCriteria();
-        criteria.tableName = "three__c";
+        criteria = new MigrationCriteria("three__c");
         criteriaList.add(criteria);
-        criteria = new MigrationCriteria();
-        criteria.tableName = "four__c";
+        criteria = new MigrationCriteria("four__c");
         criteriaList.add(criteria);
 
 

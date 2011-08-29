@@ -95,6 +95,8 @@ public class Exporter {
                                      String tableName,
                                      ResultSet rs,
                                      ResultSetCallback resultSetCallback) throws SQLException {
+
+        System.out.println("Saving records to " + tableName);
         StringBuilder columns = new StringBuilder();
         StringBuilder values = new StringBuilder();
         columns.append("insert into ").append(tableName).append(" (");

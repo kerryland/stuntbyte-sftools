@@ -217,6 +217,7 @@ public class Migrator {
         }
     }
 
+    // TODO: restoreRequests does not honour the .sql property  -- thats ok? (need source and dest filtering?)
     public void restoreRows(SfConnection destination,
                             Connection localDb,
                             List<MigrationCriteria> restoreRequests) throws SQLException {
@@ -273,15 +274,20 @@ public class Migrator {
                 if (columnName.equalsIgnoreCase("OwnerId")) {
                     insertColumn = false;
                 }
-                if (column.isCalculated()) {
+                if (column.isCalculated() || !column.isUpdateable()) {
                     insertColumn = false;
-                    //                } else if (dataType.equalsIgnoreCase("Reference") || (dataType.equalsIgnoreCase("masterrecord"))) {
+
                 } else if (column.getType().equalsIgnoreCase("Reference") && column.isNillable()) {
                     insertColumn = false;
                 }
 
                 if (insertColumn && !column.isNillable()) {
                     requiredColumns.add(column);
+                }
+
+                if (tableName.equalsIgnoreCase("Contact")) {
+                    System.out.println("KJS insert " + tableName + "." + columnName + "=" + insertColumn);
+
                 }
                 return insertColumn;
             }
@@ -321,7 +327,7 @@ public class Migrator {
 //                     fromTable = restoreRequest.tableName + "__s";
 //
 //                }
-                String sql = "select * from " + fromTable + " " + restoreRequest.sql;
+                String sql = "select * from " + fromTable; //  + " " + restoreRequest.sql;
 
                 PreparedStatement sourceStmt = localDb.prepareStatement(sql);
                 ResultSet rs = sourceStmt.executeQuery();
@@ -350,6 +356,7 @@ public class Migrator {
 
         // Process master/detail references
         boolean processingOccurred = true;
+        System.out.println("KJS MASTER RECORD TABLE COUNT=" + masterRecordTables.size());
         while ((masterRecordTables.size() > 0) && (processingOccurred)) {
             Set<String> workSet = new HashSet<String>(masterRecordTables);
             processingOccurred = false;
@@ -394,6 +401,8 @@ public class Migrator {
     private void correctReferences(Connection destination, Statement stmt, Table table, ResultSetCallback callback) throws SQLException {
         boolean hasMasterDetail = tableContainsMasterDetail(table);
 
+        System.out.println("KJS " + table.getName() + " has master detail=" + hasMasterDetail);
+
         boolean first = true;
         StringBuilder selectColumns = new StringBuilder();
         StringBuilder selectJoins = new StringBuilder();
@@ -420,9 +429,11 @@ public class Migrator {
         } else {
             updateRefs = "update " + table.getName() + " set ";
         }
+
+        System.out.println("KJS correctReferences with " + updateRefs);
         int colCount = 0;
         for (Column column : table.getColumns()) {
-            if (column.isCalculated() || column.getName().equalsIgnoreCase("OwnerId")) {
+            if ((!column.isUpdateable() && !column.getType().equalsIgnoreCase("masterrecord")) || column.isCalculated() || column.getName().equalsIgnoreCase("OwnerId")) {
                 continue;
             }
             String joinTable = column.getReferencedTable();

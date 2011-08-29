@@ -4,39 +4,28 @@ import com.fidelma.salesforce.database.migration.Exporter;
 import com.fidelma.salesforce.database.migration.MigrationCriteria;
 import com.fidelma.salesforce.database.migration.Migrator;
 import com.fidelma.salesforce.jdbc.SfConnection;
+import com.fidelma.salesforce.jdbc.metaforce.Column;
+import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.misc.Deployer;
-import com.fidelma.salesforce.misc.Deployment;
-import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.misc.DeploymentEventListenerImpl;
 import com.fidelma.salesforce.misc.Downloader;
 import com.fidelma.salesforce.misc.FolderZipper;
-import com.fidelma.salesforce.misc.LoginHelper;
 import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.misc.StdOutDeploymentEventListener;
 import com.fidelma.salesforce.misc.TestHelper;
-import org.h2.util.ScriptReader;
 import org.junit.Assert;
-import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
-import java.io.StringWriter;
+import java.io.FileOutputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -46,7 +35,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
-import java.util.zip.ZipFile;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -54,7 +43,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class MigratorTest {
 
-    @Test
+    //    @Test
     public void testDeleteEverything() throws Exception {
 
         SfConnection conn = TestHelper.getHackConnection();
@@ -163,22 +152,76 @@ public class MigratorTest {
                 "jdbc:sfdc:https://test.salesforce.com"
                 , info);
 
-        List<MigrationCriteria> criteriaList = new ArrayList<MigrationCriteria>();
+//        Table t2 = destSalesforce.getMetaDataFactory().getTable("Presence_Category_Group_Member__c");
+//        for (Column column : t2.getColumns()) {
+//            System.out.println(column.getName() + " " + column.getType());
+//        }
+//
+//        System.exit(0);
 
-        // TODO: Handle record type and ownerid as special cases
+//        List<MigrationCriteria> criteriaList = new ArrayList<MigrationCriteria>();
 
-        String[] tables = new String[]{
-//                "Reference_Item__c",
-                "Location__c",
-                "Location_Relationship__c",
-                "Term_Or_Condition_Specification__c",
-                "localist_product_specification__c",
-                "Presence_Category_Group__c",
-                "Presence_Category__c",
-                "Presence_Category_Group_Member__c",
-                "Print_Book_Service__c",
-                "product2"
-        };
+        // TODO: Handle record type as special case
+        // TODO: Handle ownerid as special case
+        // TODO: Sort these into a dependency order
+        // TODO: Location_Relationship__c.duplicate_check_id__c is not populating
+        // probably because trigger is disabled. Tough luck? Can we "touch"
+        // every row once population is complete?
+        // Maybe NOT disable explicitly listed workflow or triggers?
+
+        List<MigrationCriteria> migrationCriteriaList = new ArrayList<MigrationCriteria>();
+        migrationCriteriaList.add(new MigrationCriteria("Location__c", "where name like 'S%'"));
+        migrationCriteriaList.add(new MigrationCriteria("Location_Relationship__c",
+                "where Associated_Location__r.Name like 'S%' and Location__r.Name like 'S%'"));
+
+        migrationCriteriaList.add(new MigrationCriteria("Term_Or_Condition_Specification__c"));
+        migrationCriteriaList.add(new MigrationCriteria("localist_product_specification__c"));
+
+        migrationCriteriaList.add(new MigrationCriteria("Presence_Category_Group__c",
+                "where id in (\n" +
+                        "select Presence_Category_Group__c\n" +
+                        "from Presence_Category_Group_Member__c\n" +
+                        "where Presence_Category__r.name like 'B%')"));
+
+        migrationCriteriaList.add(new MigrationCriteria("Presence_Category__c", "where name like 'B%'"));
+
+        migrationCriteriaList.add(new MigrationCriteria("Presence_Category_Group_Member__c",
+                "where Presence_Category__r.name like 'B%'"));
+
+        migrationCriteriaList.add(new MigrationCriteria("Print_Book_Service__c"));
+        migrationCriteriaList.add(new MigrationCriteria("product2"));
+        migrationCriteriaList.add(new MigrationCriteria("Localist_Product_Offering_Price__c",
+                "where Active__c = 'True'"));
+
+        migrationCriteriaList.add(new MigrationCriteria("Account",
+                "where Name = 'Duplicate DO NOT USE - TEST - SMOKE'"));
+
+        migrationCriteriaList.add(new MigrationCriteria("Party_Relationship__c",
+                "where Associated_Organisation__c in (select id from account where Name = 'Duplicate DO NOT USE - TEST - SMOKE')" +
+                        "and Organisation__c = null"));
+
+        migrationCriteriaList.add(new MigrationCriteria("Contact",
+                "where id in \n" +
+                        "(select person__c from Party_Relationship__c\n" +
+                        "  where Associated_Organisation__r.Name = 'Duplicate DO NOT USE - TEST - SMOKE'\n" +
+                        "   and Organisation__c = null)"));
+
+        migrationCriteriaList.add(new MigrationCriteria("Contact_Media__c",
+                "where person__c in \n" +
+                        "(select person__c from Party_Relationship__c\n" +
+                        "  where Associated_Organisation__r.Name = 'Duplicate DO NOT USE - TEST - SMOKE'\n" +
+                        "   and Organisation__c = null)"));
+
+
+        Set<String> tableNames = new HashSet<String>();
+
+        // Salesforce is fussy about getting the case right in package.xml
+        for (int i = 0; i < migrationCriteriaList.size(); i++) {
+            MigrationCriteria mc = migrationCriteriaList.get(i);
+            Table t = sourceSalesforce.getMetaDataFactory().getTable(mc.tableName);
+            mc.tableName = t.getName();
+            tableNames.add(t.getName());
+        }
 
         DeploymentEventListenerImpl del = new DeploymentEventListenerImpl();
 
@@ -189,7 +232,7 @@ public class MigratorTest {
         Reconnector destinationConnector = new Reconnector(
                 destSalesforce.getHelper());
 
-        Downloader dl = new Downloader(destinationConnector, sourceSchemaDir,
+        Downloader destinationBackup = new Downloader(destinationConnector, sourceSchemaDir,
                 del, null);
 
 
@@ -200,41 +243,42 @@ public class MigratorTest {
                         "and NamespacePrefix = '' " +
                         "and TableEnumOrId=?");
 
-        Deployment deployment = new Deployment();
-
-        for (int i = 0; i < tables.length; i++) {
-            String table = tables[i];
-            dl.addPackage("Workflow", table);
-            dl.addPackage("CustomObject", table); // for validation rules
-            deployment.addMember("Workflow", table, null, null);
-            deployment.addMember("CustomObject", table, null, null);
+        for (String table : tableNames) {
+            destinationBackup.addPackage("Workflow", table);
+            destinationBackup.addPackage("CustomObject", table); // for validation rules
 
             findTrigger.setString(1, table);
 
             ResultSet rs = findTrigger.executeQuery();
             while (rs.next()) {
-                dl.addPackage("ApexTrigger", rs.getString("Name"));
-                deployment.addMember("ApexTrigger", rs.getString("Name"), null, null);
+                destinationBackup.addPackage("ApexTrigger", rs.getString("Name"));
                 triggersToEnable.add(rs.getString("Name"));
             }
         }
 
-        File orginalFile = dl.download();
+        File originalFile = destinationBackup.download();
 
-        System.out.println("KJS backup file is " + orginalFile.getAbsolutePath());
+        System.out.println("KJS backup file is " + originalFile.getAbsolutePath());
 
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 
-        unenableThings(dBuilder, new File(sourceSchemaDir, "workflows"), ".workflow", "active", "false");
-        unenableThings(dBuilder, new File(sourceSchemaDir, "triggers"), ".xml", "status", "Inactive");
-        unenableThings(dBuilder, new File(sourceSchemaDir, "objects"), ".object", "active", "false");
+        removePackagedFields(dBuilder, new File(sourceSchemaDir, "objects"));
+
+        File restoreZip = File.createTempFile("SFDC-RESTORE", ".ZIP");
+        FolderZipper zipper = new FolderZipper();
+        zipper.zipFolder(sourceSchemaDir, restoreZip.getAbsolutePath());
+
+        unenableThings(dBuilder, "Workflow", new File(sourceSchemaDir, "workflows"), ".workflow", "active", "false");
+        unenableThings(dBuilder, "ApexTrigger", new File(sourceSchemaDir, "triggers"), ".xml", "status", "Inactive");
+        unenableThings(dBuilder, "CustomObject", new File(sourceSchemaDir, "objects"), ".object", "active", "false");
+
 
         File up = File.createTempFile("SFDC-UP-UNENABLED", ".ZIP");
-        FolderZipper zipper = new FolderZipper();
         zipper.zipFolder(sourceSchemaDir, up.getAbsolutePath());
 
         Deployer deployer = new Deployer(destinationConnector);
+
         String deploymentId = deployer.deployZip(up, new HashSet<Deployer.DeploymentOptions>());
         deployer.checkDeploymentComplete(deploymentId, del);
 
@@ -244,64 +288,117 @@ public class MigratorTest {
 
         try {
 
-            for (int i = 0; i < tables.length; i++) {
-                String table = tables[i];
-                destSalesforce.createStatement().execute("delete from " + table);
+            boolean restoreOnly = true;
+            if (restoreOnly) {
+                for (String table : tableNames) {
+                    destSalesforce.createStatement().execute("delete from " + table);
+                }
+
+                Exporter exporter = new Exporter();
+                exporter.createLocalSchema(sourceSalesforce, h2Conn);
+                exporter.downloadData(sourceSalesforce, h2Conn, migrationCriteriaList);
             }
 
-
-            for (int i = 0; i < tables.length; i++) {
-                String table = tables[i];
-                MigrationCriteria criteria = new MigrationCriteria();
-                criteria.tableName = table;
-                criteria.sql = "";
-                criteriaList.add(criteria);
+            // Create a simpler restore migration criteria, with no 'sql' criteria,
+            // and duplicated tables removed.
+            List<MigrationCriteria> restoreCriteria = new ArrayList<MigrationCriteria>();
+            System.out.println("KJS START RESTORE");
+            for (String tableName : tableNames) {
+                System.out.println("KJS ADDED RESTORE CRITERIA FOR " + tableName);
+                MigrationCriteria criteria = new MigrationCriteria(tableName);
+                restoreCriteria.add(criteria);
             }
-            Exporter exporter = new Exporter();
-            exporter.createLocalSchema(sourceSalesforce, h2Conn);
-            exporter.downloadData(sourceSalesforce, h2Conn, criteriaList);
-
             Migrator migrator = new Migrator();
-            migrator.restoreRows(destSalesforce, h2Conn, criteriaList);
+            migrator.restoreRows(destSalesforce, h2Conn, restoreCriteria);
 
 
         } finally {
-            String deployId = deployer.deployZip(orginalFile, new HashSet<Deployer.DeploymentOptions>());
+            System.out.println("Restoring schema " + restoreZip.getAbsolutePath());
+            String deployId = deployer.deployZip(restoreZip, new HashSet<Deployer.DeploymentOptions>());
             deployer.checkDeploymentComplete(deployId, del);
             if (del.getErrors().length() != 0) {
-                throw new Exception("Restore of components in " + orginalFile.getAbsolutePath() +
+                throw new Exception("Restore of schema in " + originalFile.getAbsolutePath() +
                         " failed " + del.getErrors().toString());
             }
 
         }
 
+
     }
 
-    private static void unenableThings(DocumentBuilder dBuilder, File child, String suffix, String tagname, String inactiveValue) throws SAXException, IOException, TransformerException {
+    private static void removePackagedFields(DocumentBuilder dBuilder, File objectsDir) throws Exception {
+        File[] objectFiles = objectsDir.listFiles();
+        for (File objectFile : objectFiles) {
+            System.out.println("Removing packaged fields from " + objectFile.getName());
+            Document doc = dBuilder.parse(objectFile);
+
+            List<Node> fieldsToDelete = new ArrayList<Node>();
+
+            NodeList fieldsNodes = doc.getElementsByTagName("fields");
+            for (int i = 0; i < fieldsNodes.getLength(); i++) {
+                Node field = fieldsNodes.item(i);
+                NodeList children = field.getChildNodes();
+
+                for (int j = 0; j < children.getLength(); j++) {
+                    Node child = children.item(j);
+                    if (child.getNodeName().equals("fullName")) {
+
+                        if (child.getTextContent().indexOf("__") != child.getTextContent().lastIndexOf("__")) {
+                            fieldsToDelete.add(field);
+                            break;
+                        }
+                    }
+
+                }
+            }
+
+            for (Node field : fieldsToDelete) {
+                field.getParentNode().removeChild(field);
+            }
+            doc.normalize();
+
+//            StringWriter sw = new StringWriter();
+            FileOutputStream sw = new FileOutputStream(objectFile);
+            DOMSource source = new DOMSource(doc);
+            StreamResult result = new StreamResult(sw);
+
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            transformer.transform(source, result);
+            sw.close();
+
+        }
+    }
+
+    private static void unenableThings(DocumentBuilder dBuilder, String typeName,
+                                       File child, String suffix,
+                                       String tagname, String inactiveValue) throws Exception {
         File[] profileFiles = child.listFiles();
         for (File profileFile : profileFiles) {
             if (profileFile.getName().toLowerCase().endsWith(suffix.toLowerCase())) {
-                System.out.println("Processing " + profileFile.getAbsolutePath());
+                System.out.println("Unenabling things in " + profileFile.getName());
                 Document doc = dBuilder.parse(profileFile);
 
                 NodeList downOne = doc.getElementsByTagName(tagname);
                 for (int i = 0; i < downOne.getLength(); i++) {
                     Node n = downOne.item(i);
-                    System.out.println(n.getNodeName() + " " + n.getTextContent());
-                    n.setTextContent(inactiveValue);
+                    // Don't disable recordTypes
+                    if (!n.getParentNode().getNodeName().equalsIgnoreCase("recordTypes")) {
+                        n.setTextContent(inactiveValue);
+                    }
                 }
 
-
-//                StringWriter sw = new StringWriter();
-                FileWriter sw = new FileWriter(profileFile);
+                FileOutputStream sw = new FileOutputStream(profileFile);
                 DOMSource source = new DOMSource(doc);
                 StreamResult result = new StreamResult(sw);
 
                 TransformerFactory transformerFactory = TransformerFactory.newInstance();
                 Transformer transformer = transformerFactory.newTransformer();
                 transformer.transform(source, result);
+                sw.close();
+
             } else {
-                System.out.println("NOT Processing " + profileFile.getAbsolutePath());
+//                System.out.println("NOT Processing " + profileFile.getAbsolutePath());
             }
 
 
