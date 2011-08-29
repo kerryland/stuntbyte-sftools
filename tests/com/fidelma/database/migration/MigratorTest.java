@@ -1,40 +1,19 @@
 package com.fidelma.database.migration;
 
-import com.fidelma.salesforce.database.migration.Exporter;
 import com.fidelma.salesforce.database.migration.MigrationCriteria;
 import com.fidelma.salesforce.database.migration.Migrator;
 import com.fidelma.salesforce.jdbc.SfConnection;
-import com.fidelma.salesforce.jdbc.metaforce.Table;
-import com.fidelma.salesforce.misc.Deployer;
-import com.fidelma.salesforce.misc.DeploymentEventListenerImpl;
-import com.fidelma.salesforce.misc.Downloader;
-import com.fidelma.salesforce.misc.FolderZipper;
-import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.misc.StdOutDeploymentEventListener;
 import com.fidelma.salesforce.misc.TestHelper;
 import org.junit.Assert;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -201,7 +180,7 @@ public class MigratorTest {
 
         Migrator migrator = new Migrator();
 
-        migrator.migrate(sourceSalesforce, destSalesforce, h2Conn, migrationCriteriaList);
+        migrator.migrateData(sourceSalesforce, destSalesforce, h2Conn, migrationCriteriaList);
 
 
     }

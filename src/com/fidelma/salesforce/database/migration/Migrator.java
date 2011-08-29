@@ -640,25 +640,24 @@ public class Migrator {
      *
      * h2Conn is a local database connection used to hold data during migration.
      */
-    public void migrate(SfConnection sourceSalesforce, SfConnection destSalesforce, Connection h2Conn,
-                        List<MigrationCriteria> migrationCriteriaList) throws Exception {
+    public void migrateData(SfConnection sourceSalesforce, SfConnection destSalesforce, Connection h2Conn,
+                            List<MigrationCriteria> migrationCriteriaList) throws Exception {
 
         Set<String> tableNames = correctTableNames(sourceSalesforce, migrationCriteriaList);
 
-        Reconnector destinationConnector = new Reconnector(
-                destSalesforce.getHelper());
+        Reconnector destinationConnector = new Reconnector(destSalesforce.getHelper());
 
 
         DeploymentEventListenerImpl del = new DeploymentEventListenerImpl();
 
-        File sourceSchemaDir = new File(System.getProperty("java.io.tmpdir"),
+        File srcSchemaDir = new File(System.getProperty("java.io.tmpdir"),
                 "SF-TRIGGERS" + System.currentTimeMillis());
-        sourceSchemaDir.mkdir();
+        srcSchemaDir.mkdir();
 
 
-        File originalFile = downloadBackup(destSalesforce, tableNames, destinationConnector, del, sourceSchemaDir);
-        File restoreZip = createFileToRestore(sourceSchemaDir);
-        File unenabledFile = createUnenabledFile(sourceSchemaDir);
+        File originalFile = downloadBackup(destSalesforce, tableNames, destinationConnector, del, srcSchemaDir);
+        File restoreZip = createFileToRestore(srcSchemaDir);
+        File unenabledFile = createUnenabledFile(srcSchemaDir);
 
         Deployer deployer = new Deployer(destinationConnector);
         String deploymentId = deployer.deployZip(unenabledFile, new HashSet<Deployer.DeploymentOptions>());
