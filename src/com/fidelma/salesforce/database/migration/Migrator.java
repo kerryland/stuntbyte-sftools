@@ -192,26 +192,6 @@ public class Migrator {
         Deployer targetDeployer = new Deployer(reconnector);
         targetDeployer.undeploy(undeploy, del);
 
-        /*
-        CustomField cf = new CustomField();
-        cf.setFullName("Account.SLA__c");
-        AsyncResult[] result = metadataConnection.delete(new Metadata[]{cf});
-        AsyncResult asyncResult = result[0];
-        long waitTimeMilliSecs = 1000;
-        while (!asyncResult.isDone()) {
-            Thread.sleep(waitTimeMilliSecs);
-// double the wait time for the next iteration
-            waitTimeMilliSecs *= 2;
-            asyncResult = metadataConnection.checkStatus(
-                    new String[]{asyncResult.getId()})[0];
-            System.out.println("Status is: " + asyncResult.getState());
-        }
-        if (asyncResult.getState() != AsyncRequestState.Completed) {
-            System.out.println(asyncResult.getStatusCode() + " msg: " +
-                    asyncResult.getMessage());
-        }
-        System.out.println("Done!");
-          */
         return targetDeployer;
     }
 
@@ -351,6 +331,7 @@ public class Migrator {
                 PreparedStatement sourceStmt = localDb.prepareStatement(sql);
                 ResultSet rs = sourceStmt.executeQuery();
 
+                System.out.println("Pulling data from localdb " + fromTable );
                 exporter.copyResultSetToTable(
                         destination,
                         restoreRequest.tableName,
@@ -375,7 +356,6 @@ public class Migrator {
 
         // Process master/detail references
         boolean processingOccurred = true;
-        System.out.println("KJS MASTER RECORD TABLE COUNT=" + masterRecordTables.size());
         while ((masterRecordTables.size() > 0) && (processingOccurred)) {
             Set<String> workSet = new HashSet<String>(masterRecordTables);
             processingOccurred = false;
@@ -391,13 +371,10 @@ public class Migrator {
                 }
 
                 if (ok) {
-//                    System.out.println("Processing " + table.getName());
                     correctReferences(destination, localDbStatement, table, callback);
                     masterRecordTables.remove(tableName.toUpperCase());
                     processedTables.add(tableName.toUpperCase());
                     processingOccurred = true;
-                } else {
-//                    System.out.println("Skipping " + table.getName());
                 }
             }
         }
@@ -442,7 +419,6 @@ public class Migrator {
             return rs.getString(keyName);
         }
     }
-
 
 
     // Record type is a special case. Setup the mapping here
@@ -632,12 +608,12 @@ public class Migrator {
     /**
      * Migrates all data specified in MigrationCriteria from
      * the source salesforce instance to the destination saleforce instance.
-     *
+     * <p/>
      * WARNING: All existing rows in the destination salesforce migration tables will be deleted,
      * so this is expected to be used to provide a big-bang migration of data.
      * (TODO: We could populate localdb from sourceSalesforce for those tables not in migration list,
      * which should allow for incremental migrations that still respect new ids)
-     *
+     * <p/>
      * h2Conn is a local database connection used to hold data during migration.
      */
     public void migrateData(SfConnection sourceSalesforce, SfConnection destSalesforce, Connection h2Conn,
@@ -660,7 +636,10 @@ public class Migrator {
         File unenabledFile = createUnenabledFile(srcSchemaDir);
 
         Deployer deployer = new Deployer(destinationConnector);
-        String deploymentId = deployer.deployZip(unenabledFile, new HashSet<Deployer.DeploymentOptions>());
+        HashSet<Deployer.DeploymentOptions> options = new HashSet<Deployer.DeploymentOptions>();
+        options.add(Deployer.DeploymentOptions.IGNORE_ERRORS);
+        options.add(Deployer.DeploymentOptions.ALLOW_MISSING_FILES);
+        String deploymentId = deployer.deployZip(unenabledFile, options);
         deployer.checkDeploymentComplete(deploymentId, del);
 
         if (del.getErrors().length() != 0) {
@@ -669,7 +648,12 @@ public class Migrator {
 
         try {
             for (String table : tableNames) {
-                destSalesforce.createStatement().execute("delete from " + table);
+                try {
+                    System.out.println("Deleting records from " + table);
+                    destSalesforce.createStatement().execute("delete from " + table);
+                } catch (SQLException e) {
+                    System.out.println("KJS unable to delete from " + table + ": " + e.getMessage());
+                }
             }
 
             Exporter exporter = new Exporter();
@@ -686,6 +670,7 @@ public class Migrator {
             // and duplicated tables removed.
             List<MigrationCriteria> restoreCriteria = new ArrayList<MigrationCriteria>();
             for (String tableName : tableNames) {
+                System.out.println("Restoring rows from " + tableName);
                 MigrationCriteria criteria = new MigrationCriteria(tableName);
                 restoreCriteria.add(criteria);
             }
@@ -695,7 +680,7 @@ public class Migrator {
 
         } finally {
             System.out.println("Restoring schema " + restoreZip.getAbsolutePath());
-            String deployId = deployer.deployZip(restoreZip, new HashSet<Deployer.DeploymentOptions>());
+            String deployId = deployer.deployZip(restoreZip, options);
             deployer.checkDeploymentComplete(deployId, del);
             if (del.getErrors().length() != 0) {
                 throw new Exception("Restore of schema in " + originalFile.getAbsolutePath() +
@@ -708,9 +693,9 @@ public class Migrator {
     private File createUnenabledFile(File sourceSchemaDir) throws Exception {
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-        unenableThings(dBuilder, "Workflow", new File(sourceSchemaDir, "workflows"), ".workflow", "active", "false");
-        unenableThings(dBuilder, "ApexTrigger", new File(sourceSchemaDir, "triggers"), ".xml", "status", "Inactive");
-        unenableThings(dBuilder, "CustomObject", new File(sourceSchemaDir, "objects"), ".object", "active", "false");
+        unenableThings(dBuilder, new File(sourceSchemaDir, "workflows"), ".workflow", "active", "false");
+        unenableThings(dBuilder, new File(sourceSchemaDir, "triggers"), ".xml", "status", "Inactive");
+        unenableThings(dBuilder, new File(sourceSchemaDir, "objects"), ".object", "active", "false");
 
 
         File up = File.createTempFile("SFDC-UP-UNENABLED", ".ZIP");
@@ -815,38 +800,41 @@ public class Migrator {
         }
     }
 
-    private static void unenableThings(DocumentBuilder dBuilder, String typeName,
+    private static void unenableThings(DocumentBuilder dBuilder,
                                        File child, String suffix,
                                        String tagname, String inactiveValue) throws Exception {
         File[] profileFiles = child.listFiles();
-        for (File profileFile : profileFiles) {
-            if (profileFile.getName().toLowerCase().endsWith(suffix.toLowerCase())) {
-                System.out.println("Unenabling things in " + profileFile.getName());
-                Document doc = dBuilder.parse(profileFile);
+        if (profileFiles == null) {
+            System.out.println("KJS no children found for " + child.getName());
+        } else {
+            for (File profileFile : profileFiles) {
+                if (profileFile.getName().toLowerCase().endsWith(suffix.toLowerCase())) {
+                    System.out.println("Unenabling things in " + profileFile.getName());
+                    Document doc = dBuilder.parse(profileFile);
 
-                NodeList downOne = doc.getElementsByTagName(tagname);
-                for (int i = 0; i < downOne.getLength(); i++) {
-                    Node n = downOne.item(i);
-                    // Don't disable recordTypes
-                    if (!n.getParentNode().getNodeName().equalsIgnoreCase("recordTypes")) {
-                        n.setTextContent(inactiveValue);
+                    NodeList downOne = doc.getElementsByTagName(tagname);
+                    for (int i = 0; i < downOne.getLength(); i++) {
+                        Node n = downOne.item(i);
+                        // Don't disable recordTypes
+                        if (!n.getParentNode().getNodeName().equalsIgnoreCase("recordTypes")) {
+                            n.setTextContent(inactiveValue);
+                        }
                     }
+
+                    FileOutputStream sw = new FileOutputStream(profileFile);
+                    DOMSource source = new DOMSource(doc);
+                    StreamResult result = new StreamResult(sw);
+
+                    TransformerFactory transformerFactory = TransformerFactory.newInstance();
+                    Transformer transformer = transformerFactory.newTransformer();
+                    transformer.transform(source, result);
+                    sw.close();
+
+                } else {
+//                System.out.println("NOT Processing " + profileFile.getAbsolutePath());
                 }
 
-                FileOutputStream sw = new FileOutputStream(profileFile);
-                DOMSource source = new DOMSource(doc);
-                StreamResult result = new StreamResult(sw);
-
-                TransformerFactory transformerFactory = TransformerFactory.newInstance();
-                Transformer transformer = transformerFactory.newTransformer();
-                transformer.transform(source, result);
-                sw.close();
-
-            } else {
-//                System.out.println("NOT Processing " + profileFile.getAbsolutePath());
             }
-
-
         }
     }
 

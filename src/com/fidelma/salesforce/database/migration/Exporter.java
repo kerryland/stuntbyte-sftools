@@ -21,7 +21,7 @@ import java.util.Map;
 
 /**
  * Export data from Salesforce and push it into a local JDBC database
- *
+ * <p/>
  * http://www.salesforce.com/us/developer/docs/api_asynch/index_Left.htm#StartTopic=Content/asynch_api_quickstart.htm
  */
 public class Exporter {
@@ -37,7 +37,11 @@ public class Exporter {
         stmt.execute("drop all objects");
 
         for (Table table : tables) {
-            if (table.getType().equals("TABLE") && !table.getName().equalsIgnoreCase("group")) {
+            if (table.getType().equals("TABLE")
+                    || table.getName().equalsIgnoreCase("RecordType")
+                    || table.getName().equalsIgnoreCase("User")
+                    || table.getName().equalsIgnoreCase("UserRole")
+                    ) {
                 StringBuilder sb = new StringBuilder();
 
                 String tableName = table.getName();
@@ -77,11 +81,13 @@ public class Exporter {
 
         for (MigrationCriteria criteria : migrationCriteriaList) {
             String tableName = criteria.tableName;
-            PreparedStatement pstmt = sfConnection.prepareStatement(
-                    "select * from " + criteria.tableName + " " + criteria.sql);
-            ResultSet rs = pstmt.executeQuery();
+            if (!tableName.equalsIgnoreCase("Attachment")) {
+                PreparedStatement pstmt = sfConnection.prepareStatement(
+                        "select * from " + criteria.tableName + " " + criteria.sql);
+                ResultSet rs = pstmt.executeQuery();
 
-            copyResultSetToTable(localConnection, tableName, rs, null);
+                copyResultSetToTable(localConnection, tableName, rs, null);
+            }
         }
     }
 
@@ -141,7 +147,12 @@ public class Exporter {
             }
 
         }
-        pinsert.executeBatch();
+        try {
+            pinsert.executeBatch();
+        } catch (SQLException e) {
+            System.out.println("Failed to copy data from " + tableName + " " + e.getMessage());
+        }
+
         if (resultSetCallback != null) {
             resultSetCallback.afterBatchInsert(tableName, sourceIds, pinsert);
         }

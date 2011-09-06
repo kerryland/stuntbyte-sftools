@@ -74,12 +74,6 @@ public class WscService {
                                 relationshipMap.put(cr.getChildSObject(), lookupColumns);
                             }
 
-//                            System.out.println(
-//                                    "Got " +
-//                                            sob.getName() + " and " +
-//                                            cr.getRelationshipName() + " " +
-//                                            cr.getField() + " " +
-//                                            cr.getChildSObject());
                             if (typesSet.contains(cr.getChildSObject())) {
                                 List<String> references = lookupColumns.get(cr.getField());
                                 if (references == null) {
@@ -99,37 +93,37 @@ public class WscService {
 
         // Run through the batches again now the child references are available
         for (String[] batch : batchedTypes) {
-//            DescribeSObjectResult[] sobs = partnerConnection.describeSObjects(batch);
-//            if (sobs != null) {
             for (String tableName : batch) {
                 DescribeSObjectResult sob = describeCache.get(tableName);
-//                for (DescribeSObjectResult sob : sobs) {
-
                 Field[] fields = sob.getFields();
 
-                String type = sob.getUpdateable() ? "TABLE" : "SYSTEM TABLE";
-                Table table = new Table(sob.getName(), getRecordTypes(sob.getRecordTypeInfos()), type);
+                String type = sob.isCreateable() && sob.getUpdateable() &&
+                        sob.getReplicateable() && sob.getTriggerable() ? "TABLE" : "SYSTEM TABLE";
 
-                for (Field field : fields) {
-                    if (keep(field)) {
-                        Column col = recordColumn(relationshipMap,
-                                childParentReferenceNames,
-                                childCascadeDeletes,
-                                typesSet, sob, field);
-                        table.addColumn(col);
+                if (sob.isQueryable()) {
+                    Table table = new Table(sob.getName(), getRecordTypes(sob.getRecordTypeInfos()), type);
+
+                    for (Field field : fields) {
+                        if (keep(field)) {
+                            Column col = recordColumn(relationshipMap,
+                                    childParentReferenceNames,
+                                    childCascadeDeletes,
+                                    typesSet, sob, field);
+                            table.addColumn(col);
+                        }
                     }
+
+                    Collections.sort(table.getColumns(), new Comparator<Column>() {
+                        public int compare(Column o1, Column o2) {
+                            String t1 = o1.getName();
+                            String t2 = o2.getName();
+                            return t1.compareTo(t2);
+                        }
+                    });
+
+
+                    factory.addTable(table);
                 }
-
-                Collections.sort(table.getColumns(), new Comparator<Column>() {
-                    public int compare(Column o1, Column o2) {
-                        String t1 = o1.getName();
-                        String t2 = o2.getName();
-                        return t1.compareTo(t2);
-                    }
-                });
-
-
-                factory.addTable(table);
             }
 //            }
         }
@@ -152,13 +146,6 @@ public class WscService {
         column.setScale(field.getScale());
         column.setDefault(field.getDefaultValueFormula());
         column.setNillable(field.isNillable());
-//        if (column.getName().equalsIgnoreCase("LastActivityDate") ||
-//                column.getName().equalsIgnoreCase("Unique_Code__c")
-//
-//                ) {
-//            System.out.println("KJS updatable " + column.getName() + " " + field.getUpdateable());
-//
-//        }
         column.setUpdateable(field.getUpdateable());
 
         if ("reference".equals(field.getType().toString())) {

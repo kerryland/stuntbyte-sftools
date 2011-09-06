@@ -116,14 +116,6 @@ public class Deployer {
     }
 
 
-//    private String determineDirectory(String filename) {
-//        File parent = new File(filename).getParentFile();
-//        File child = new File(parent.getName(), new File(filename).getName());
-//
-//        return child.getPath();
-//    }
-
-
     private static final long ONE_SECOND = 1000;
     // maximum number of attempts to deploy the zip file
 
@@ -132,7 +124,9 @@ public class Deployer {
     public enum DeploymentOptions {
         UNPACKAGED_TESTS,
         ALL_TESTS, // TODO
-        IGNORE_ERRORS
+        IGNORE_ERRORS,
+        ALLOW_MISSING_FILES
+
 
     }
 
@@ -141,8 +135,10 @@ public class Deployer {
         byte zipBytes[] = readZipFile(zipFile);
         DeployOptions deployOptions = new DeployOptions();
 
+        // http://www.salesforce.com/us/developer/docs/api_meta/Content/meta_deploy.htm
         deployOptions.setPerformRetrieve(false);
         deployOptions.setRollbackOnError(!deploymentOptions.contains(Deployer.DeploymentOptions.IGNORE_ERRORS));
+        deployOptions.setAllowMissingFiles(deploymentOptions.contains(Deployer.DeploymentOptions.ALLOW_MISSING_FILES));
         deployOptions.setSinglePackage(true);
 
         if (deploymentOptions.contains(DeploymentOptions.UNPACKAGED_TESTS)) {
