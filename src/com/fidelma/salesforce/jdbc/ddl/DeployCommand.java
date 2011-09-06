@@ -118,12 +118,14 @@ public class DeployCommand {
             if (next.equalsIgnoreCase("STATUS")) {
                 deploymentId = al.getValue("Deployment id missing");
 
+            } else if (next.equalsIgnoreCase("ALLTESTS")) {
+                options.add(Deployer.DeploymentOptions.ALL_TESTS);
             } else if (next.equalsIgnoreCase("RUNTESTS")) {
                 options.add(Deployer.DeploymentOptions.UNPACKAGED_TESTS);
             } else if (next.equalsIgnoreCase("IGNORE_ERRORS")) {
                 options.add(Deployer.DeploymentOptions.IGNORE_ERRORS);
             } else {
-                throw new Exception("Expected RUNTESTS or IGNORE_ERRORS, not " + next);
+                throw new Exception("Expected ALLTESTS, RUNTESTS or IGNORE_ERRORS, not " + next);
             }
         }
 

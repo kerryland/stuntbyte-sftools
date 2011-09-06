@@ -2,6 +2,8 @@ package com.fidelma.salesforce.misc;
 
 import com.sforce.soap.metadata.AsyncRequestState;
 import com.sforce.soap.metadata.AsyncResult;
+import com.sforce.soap.metadata.CodeCoverageResult;
+import com.sforce.soap.metadata.CodeCoverageWarning;
 import com.sforce.soap.metadata.DeployMessage;
 import com.sforce.soap.metadata.DeployOptions;
 import com.sforce.soap.metadata.DeployResult;
@@ -58,15 +60,20 @@ public class Deployer {
     }
 
     public void deploy(Deployment deployment, DeploymentEventListener listener) throws Exception {
-        deploy(deployment, listener, "package.xml");
+        deploy(deployment, listener, "package.xml", new HashSet<DeploymentOptions>());
+    }
+
+    public void deploy(Deployment deployment, DeploymentEventListener listener, Set<DeploymentOptions> deploymentOptions) throws Exception {
+        deploy(deployment, listener, "package.xml", deploymentOptions);
     }
 
     public void undeploy(Deployment deployment, DeploymentEventListener listener) throws Exception {
-        deploy(deployment, listener, "destructiveChanges.xml");
+        deploy(deployment, listener, "destructiveChanges.xml", new HashSet<DeploymentOptions>());
     }
 
 
-    private void deploy(Deployment deployment, DeploymentEventListener listener, String packageXmlName) throws Exception {
+    private void deploy(Deployment deployment, DeploymentEventListener listener,
+                        String packageXmlName, Set<DeploymentOptions> deploymentOptions) throws Exception {
 //        deployment.assemble();
         File deploymentFile = File.createTempFile("SFDC", "zip");
         System.out.println("Deployment file " + deploymentFile.getName());
@@ -111,7 +118,7 @@ public class Deployer {
 
         out.close();
 
-        String deploymentId = deployZip(deploymentFile, new HashSet<DeploymentOptions>());
+        String deploymentId = deployZip(deploymentFile, deploymentOptions);
         checkDeploymentComplete(deploymentId, listener);
     }
 
@@ -138,7 +145,7 @@ public class Deployer {
         // http://www.salesforce.com/us/developer/docs/api_meta/Content/meta_deploy.htm
         deployOptions.setPerformRetrieve(false);
         deployOptions.setRollbackOnError(!deploymentOptions.contains(Deployer.DeploymentOptions.IGNORE_ERRORS));
-        deployOptions.setAllowMissingFiles(deploymentOptions.contains(Deployer.DeploymentOptions.ALLOW_MISSING_FILES));
+        deployOptions.setRunAllTests(deploymentOptions.contains(Deployer.DeploymentOptions.ALL_TESTS));
         deployOptions.setSinglePackage(true);
 
         if (deploymentOptions.contains(DeploymentOptions.UNPACKAGED_TESTS)) {
@@ -235,16 +242,7 @@ public class Deployer {
                     asyncResult.getMessage());
         }
 
-        DeployResult result = reconnector.checkDeployStatus(deploymentId);
-        if (!result.isSuccess()) {
-            DeployMessage[] errors = result.getMessages();
-
-            for (DeployMessage error : errors) {
-                if (!error.getSuccess()) {
-                    listener.error(error.getProblemType().name() + ": " + error.getFullName() + " " + error.getProblem());
-                }
-            }
-        }
+        DeployResult result = dumpErrors(deploymentId, listener);
 
 //        if (deploymentOptions.contains(DeploymentOptions.UNPACKAGED_TESTS)) {
         com.sforce.soap.metadata.RunTestsResult res = result.getRunTestResult();
@@ -259,8 +257,33 @@ public class Deployer {
                             + rtf.getMessage() + "\n" + rtf.getStackTrace() + "\n");
                 }
             }
+            CodeCoverageWarning[] coverageWarnings = res.getCodeCoverageWarnings();
+            for (CodeCoverageWarning coverageWarning : coverageWarnings) {
+                listener.finished("Coverage warning " + coverageWarning.getName() + " " + coverageWarning.getMessage());
+            }
+
+//            CodeCoverageResult[] coverage = res.getCodeCoverage();
+//            for (CodeCoverageResult codeCoverageResult : coverage) {
+//                codeCoverageResult.get
+//            }
         }
         return asyncResult;
+    }
+
+    private DeployResult dumpErrors(String deploymentId, DeploymentEventListener listener) throws Exception {
+        DeployResult result = reconnector.checkDeployStatus(deploymentId);
+        if (!result.isSuccess()) {
+            DeployMessage[] errors = result.getMessages();
+
+            for (DeployMessage error : errors) {
+                if (!error.getSuccess()) {
+                    listener.error(
+                            error.getProblemType().name() + ": " + error.getFullName() + " " + error.getProblem() +
+                                    " on line " + error.getLineNumber() + " col " + error.getColumnNumber());
+                }
+            }
+        }
+        return result;
     }
 
 
