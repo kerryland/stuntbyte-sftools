@@ -117,11 +117,11 @@ public class MigratorTest {
                 "jdbc:h2:/tmp/sfdc-prod"
                 , info);
 
-//        String destUser = "fronde.admin@localist.co.nz.dev1";
-//        String destPwd = "jrP2U0TnW09DesQIaxOmAb3yWiN9lRLu";
+        String destUser = "fronde.admin@localist.co.nz.dev1";
+        String destPwd = "jrP2U0TnW09DesQIaxOmAb3yWiN9lRLu";
 
-        String destUser = "fronde.admin@localist.co.nz.devkerry";
-        String destPwd = "jrP2U0TnCWok3CTtOfnhPC6UjYrOgQzI";
+//        String destUser = "fronde.admin@localist.co.nz.devkerry";
+//        String destPwd = "jrP2U0TnCWok3CTtOfnhPC6UjYrOgQzI";
         info = new Properties();
         info.put("user", destUser);
         info.put("password", destPwd);
@@ -148,10 +148,13 @@ public class MigratorTest {
                         "from Presence_Category_Group_Member__c\n" +
                         "where Presence_Category__r.name like 'B%')"));
 
+        migrationCriteriaList.add(new MigrationCriteria("Presence_Category_Group__c",
+                "where parent__c = null"));
+
         migrationCriteriaList.add(new MigrationCriteria("Presence_Category__c", "where name like 'B%'"));
 
         migrationCriteriaList.add(new MigrationCriteria("Presence_Category_Group_Member__c",
-                "where Presence_Category__r.name like 'B%'"));
+                "where Presence_Category__r.name like 'B%' or Presence_Category_Group__r.parent__c = null"));
 
         migrationCriteriaList.add(new MigrationCriteria("Print_Book_Service__c"));
         migrationCriteriaList.add(new MigrationCriteria("product2"));

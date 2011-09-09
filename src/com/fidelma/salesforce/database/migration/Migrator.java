@@ -297,6 +297,18 @@ public class Migrator {
                 Table table = salesforceMetadata.getTable(tableName);
                 Column column = table.getColumn(columnName);
 
+//                System.out.print("KJS processing " + columnName + " " + column.getType() + "=" + value);
+                // TODO: This should be configurable!
+                if (column.getType().equalsIgnoreCase("Email") && value != null) {
+                    value = value.toString() + ".example.com";
+
+                } else if ((columnName.equalsIgnoreCase("Phone_Number__c") || column.getType().equalsIgnoreCase("Phone")) && value != null) {
+                    Double randomPhone = Math.random() * 1000;
+                    value = Long.toString(randomPhone.longValue());
+                }
+//                System.out.println(" now " + value);
+
+
                 if (column.getRelationshipType() != null && !column.isNillable()) {
                     getCorrectedIds.setObject(1, value);
                     getCorrectedIds.setString(2, column.getRelationshipType().toLowerCase());
@@ -674,9 +686,8 @@ public class Migrator {
                 MigrationCriteria criteria = new MigrationCriteria(tableName);
                 restoreCriteria.add(criteria);
             }
-            Migrator migrator = new Migrator();
-            migrator.restoreRows(destSalesforce, h2Conn, restoreCriteria);
 
+            restoreRows(destSalesforce, h2Conn, restoreCriteria);
 
         } finally {
             System.out.println("Restoring schema " + restoreZip.getAbsolutePath());
