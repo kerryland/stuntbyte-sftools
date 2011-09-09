@@ -26,11 +26,9 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
@@ -132,9 +130,8 @@ public class Deployer {
         UNPACKAGED_TESTS,
         ALL_TESTS, // TODO
         IGNORE_ERRORS,
-        ALLOW_MISSING_FILES
-
-
+        ALLOW_MISSING_FILES,
+        DEPLOYED_TESTS
     }
 
 
@@ -148,22 +145,40 @@ public class Deployer {
         deployOptions.setRunAllTests(deploymentOptions.contains(Deployer.DeploymentOptions.ALL_TESTS));
         deployOptions.setSinglePackage(true);
 
+        List<String> testFiles = new ArrayList<String>();
+
+        if (deploymentOptions.contains(DeploymentOptions.DEPLOYED_TESTS)) {
+            ZipFile zf = new ZipFile(zipFile);
+
+            for (Enumeration entries = zf.entries(); entries.hasMoreElements();) {
+                String zipEntryName = ((ZipEntry) entries.nextElement()).getName();
+                if (zipEntryName.startsWith("classes/") && (zipEntryName.endsWith(".cls"))) {
+                    testFiles.add(zipEntryName.substring(
+                            zipEntryName.indexOf("/") + 1,
+                            zipEntryName.lastIndexOf(".")));
+                }
+            }
+        }
+
         if (deploymentOptions.contains(DeploymentOptions.UNPACKAGED_TESTS)) {
             ListMetadataQuery mdq = new ListMetadataQuery();
             mdq.setType("ApexClass");
 
             FileProperties[] codeFiles = reconnector.listMetadata(new ListMetadataQuery[]{mdq}, LoginHelper.SFDC_VERSION);
-            List<String> testFiles = new ArrayList<String>();
             for (FileProperties fileProperties : codeFiles) {
-                if ((fileProperties.getFullName().endsWith("Test")) ||
-                        (fileProperties.getFullName().endsWith("Tests"))) {
-                    testFiles.add(fileProperties.getFullName());
-                }
+//                if ((fileProperties.getFullName().endsWith("Test")) ||
+//                        (fileProperties.getFullName().endsWith("Tests"))) {
+                testFiles.add(fileProperties.getFullName());
+//                }
             }
+        }
+
+        if (testFiles.size() > 0) {
             String[] testFileArray = new String[testFiles.size()];
             testFiles.toArray(testFileArray);
             deployOptions.setRunTests(testFileArray);
         }
+
 
 //           deployOptions.setAllowMissingFiles(true);
 
