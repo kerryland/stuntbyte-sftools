@@ -39,7 +39,7 @@ public class TestHelper {
         return connect(loginUrl, hackUsername, hackPassword);
     }
 
-    private static SfConnection connect(String lloginurl, String lusername, String lpassword) throws SQLException {
+    public static SfConnection connect(String lloginurl, String lusername, String lpassword) throws SQLException {
         try {
             Class.forName("com.fidelma.salesforce.jdbc.SfDriver");
         } catch (ClassNotFoundException e) {

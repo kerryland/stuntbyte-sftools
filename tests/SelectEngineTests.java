@@ -475,6 +475,57 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
     }
   */
 
+       /*
+    @Test
+    public void testRegression() throws Exception {
+
+
+        SfConnection sfConnection = TestHelper.connect("https://test.salesforce.com", "kerry.sainsbury@nzpost.co.nz.sandbox",
+                "xJiKif3IeCLiZKNervuO3W3ozLxyQ6cm");
+
+
+        Statement stmt = sfConnection.createStatement();
+        ResultSet rs = stmt.executeQuery(
+                "select id, OutstandingValue__c, Start_Date__c, Dunning_Level__r.id, Dunning_Level__r.name, " +
+                        "dunning_level__c, Dunning_Level__r.lastModifiedby.name \n" +
+                        "from\n" +
+                        " Dunning_Level_Member__c " +
+                        ""
+//                        "where Dunning_Level__c != null"
+        );
+
+        ResultSetMetaData md = rs.getMetaData();
+        System.out.println("COLUMN COUNT " + md.getColumnCount());
+
+        for (int i=1; i <= md.getColumnCount(); i++) {
+            System.out.println(md.getColumnName(i));
+
+        }
+        while (rs.next()) {
+            System.out.println(rs.getString("Dunning_Level__r.name") + " " + rs.getString("Dunning_Level__r.lastModifiedby.name"));
+        }
+
+        System.out.println("--------------- not null -------------------");
+        rs = stmt.executeQuery(
+                "select id, OutstandingValue__c, Start_Date__c, Dunning_Level__r.id, Dunning_Level__r.name, dunning_level__c \n" +
+                        "from\n" +
+                        "Dunning_Level_Member__c" +
+//                        ""
+                        " where Dunning_Level__c != null"
+        );
+
+        md = rs.getMetaData();
+        System.out.println("COLUMN COUNT " + md.getColumnCount());
+
+        for (int i=1; i <= md.getColumnCount(); i++) {
+            System.out.println(md.getColumnName(i));
+
+        }
+
+    }
+
+    */
+
     // Given aaa.bbb__r.ccc__r.ddd__r.name
 
     @Test
@@ -749,14 +800,14 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         // Set the lead to a known value
         stmt.executeUpdate(
                 "update Lead\n" +
-                        " set FirstName = 'Mike', lastName='Jones', phone='0800xxxx'," +
+                        " set FirstName = 'x', phone='0800xxxx'," +
                         " AnnualRevenue=3, " +
                         " NumberOfEmployees=6 where Id='" + leadId + "'");
 
 
         int count = stmt.executeUpdate(
                 "update Lead\n" +
-                        " set lastName = firstname + ' ' + lastname, " +
+                        " set firstName = firstname + ' ' + lastname, " +
                         "NumberOfEmployees=NumberOfEmployees*2*annualRevenue" +
                         " where Id='" + leadId + "'");
         assertEquals(1, count);
@@ -768,8 +819,8 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         int foundCount = 0;
         while (rs.next()) {
             foundCount++;
-            assertEquals("Mike", rs.getString("FirstName"));
-            assertEquals("Mike Jones", rs.getString("LastName"));  // Changed!
+            assertEquals("x " + surname, rs.getString("FirstName"));
+            assertEquals(surname, rs.getString("LastName"));  // Changed!
             assertEquals("0800xxxx", rs.getString("Phone"));       // Unchanged
             assertEquals(3f, rs.getDouble("AnnualRevenue"), 0.5f); // Unchanged
             assertEquals(36, rs.getInt("NumberOfEmployees"));      // Changed!
@@ -804,31 +855,32 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
     @Test
     public void testUpdateMultipleRows() throws Exception {
         Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("select count(*) from Lead where firstName = 'Mike'");
+
+        ResultSet rs = stmt.executeQuery("select count(*) from Lead where lastName = '" + surname + "'");
         rs.next();
         int rowsNamedMike = rs.getInt(1);
-        Assert.assertTrue(rowsNamedMike > 1);
+        Assert.assertTrue(rowsNamedMike > 0);
 
-        int count = stmt.executeUpdate("update Lead set LastName = firstName + ' Wibble' where firstName = 'Mike'");
+        int count = stmt.executeUpdate("update Lead set FirstName = 'W' + 'ibble' where lastName = '" + surname + "'");
 
         assertEquals(rowsNamedMike, count);
         assertEquals(rowsNamedMike, stmt.getUpdateCount());
 
-        rs = stmt.executeQuery("select Lastname from Lead where firstName = 'Mike'");
+        rs = stmt.executeQuery("select FirstName from Lead where lastName = '" + surname + "'");
 
         int foundCount = 0;
         while (rs.next()) {
             foundCount++;
-            assertEquals("Mike Wibble", rs.getString("LastName"));
+            assertEquals("Wibble", rs.getString("FirstName"));
         }
         assertEquals(rowsNamedMike, foundCount);
-        Assert.assertTrue(rowsNamedMike > 1);
     }
 
 
     @Test
     public void testUpdateMultipleRowsBatch() throws Exception {
         Statement stmt = conn.createStatement();
+        stmt.execute("update Lead set FirstName = 'Mike' where lastName = '" + surname + "'");
         ResultSet rs = stmt.executeQuery("select count(*) from Lead where firstName = 'Mike' and lastName = '" + surname + "'");
         rs.next();
         int rowsNamedMike = rs.getInt(1);

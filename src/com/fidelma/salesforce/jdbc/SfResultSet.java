@@ -211,6 +211,7 @@ public class SfResultSet implements java.sql.ResultSet {
         for (int i = 0; i < columnsInSql.size(); i++) {
             newColumnsInResult.add(null);
             done.add(i);
+//            System.out.println("COLUMNS IN SQL INCLUDES " + columnsInSql.get(i).getTable() + "/" + columnsInSql.get(i).getName());
         }
 
 
@@ -253,8 +254,7 @@ public class SfResultSet implements java.sql.ResultSet {
                     for (int j = 0; j < columnsInResult.size(); j++) {
                         if ((columnsInResult.get(j) != null) &&
                                 (columnsInSql.get(i).getName().toUpperCase().endsWith(
-                                        "." + columnsInResult.get(j).toUpperCase())))
-                        {
+                                        "." + columnsInResult.get(j).toUpperCase()))) {
 
                             if (columnsInSql.get(i).getAliasName() != null) {
                                 columnNameCaseMap.put(columnsInSql.get(i).getAliasName().toUpperCase(), columnsInResult.get(j));
@@ -298,8 +298,23 @@ public class SfResultSet implements java.sql.ResultSet {
 
     }
 
+    private class FullName {
+        private StringBuilder name = new StringBuilder();
 
-    private Object drillToChild(XmlObject parent, String columnLabel) throws SQLException {
+        void append(String chunk) {
+            name = name.append(chunk);
+        }
+
+        @Override
+        public String toString() {
+            return name.toString();
+        }
+    }
+
+    private Object drillToChild(XmlObject parent, String columnLabel,
+                                Map<String, String> columnNameCaseMap,
+                                String fullColumnName,
+                                FullName correctedFullColumnName) throws SQLException {
         Object result;
 
         int dotPos = columnLabel.indexOf(".");
@@ -311,14 +326,61 @@ public class SfResultSet implements java.sql.ResultSet {
 
             XmlObject child = (XmlObject) parent.getField(parentName);
             if (child == null) {
-                return null;
+                Iterator it = parent.getChildren();
+                while (it.hasNext()) {
+                    XmlObject next = (XmlObject) it.next();
+
+                    if (next.getName().getLocalPart().equalsIgnoreCase(parentName)) {
+                        correctedFullColumnName.append(next.getName().getLocalPart());
+
+//                        if (correctedFullColumnName.toString().equalsIgnoreCase(fullColumnName)) {
+//                            System.out.println("2DING DING DING " + next.getName().getLocalPart() + " vs " +
+//                                    parentName + " x " + correctedFullColumnName);
+//                            columnNameCaseMap.put(fullColumnName.toUpperCase(), correctedFullColumnName.toString());
+//                        }
+
+                        child = (XmlObject) parent.getField(next.getName().getLocalPart());
+                    }
+                }
+                if (child == null) {
+                    return null;
+                }
+            } else {
+                correctedFullColumnName.append(parentName);
             }
 
+            correctedFullColumnName.append(".");
+
             String childLabel = columnLabel.substring(dotPos + 1);
-            result = drillToChild(child, childLabel);
+            result = drillToChild(child, childLabel, columnNameCaseMap, fullColumnName, correctedFullColumnName);
 
         } else {
             result = parent.getField(columnLabel);
+            if (result != null) {
+                correctedFullColumnName.append(columnLabel);
+//                System.out.println("Looked for child " + fullColumnName + "/" + correctedFullColumnName.toString() + ": " + columnLabel +
+//                        " of " + parent.getName().getLocalPart() + " got " +
+//                        result.toString());
+            } else {
+//                System.out.println("Looked for child " + columnLabel + " of " +
+//                        parent.getName().getLocalPart() + " got null. ");
+
+                Iterator it = parent.getChildren();
+                while (it.hasNext()) {
+                    XmlObject next = (XmlObject) it.next();
+
+                    if (next.getName().getLocalPart().equalsIgnoreCase(columnLabel)) {
+                        correctedFullColumnName.append(next.getName().getLocalPart());
+
+                        if (correctedFullColumnName.toString().equalsIgnoreCase(fullColumnName)) {
+//                            System.out.println("1DING DING DING " + next.getName().getLocalPart() +
+//                                    " vs " + columnLabel + " x " + correctedFullColumnName);
+                            columnNameCaseMap.put(fullColumnName.toUpperCase(), correctedFullColumnName.toString());
+                        }
+                        result = parent.getField(next.getName().getLocalPart());
+                    }
+                }
+            }
         }
         return result;
     }
@@ -368,6 +430,7 @@ public class SfResultSet implements java.sql.ResultSet {
         }
 
         String realColumnName = columnNameCaseMap.get(columnLabel.toUpperCase());
+//        System.out.println("Mapped " + columnLabel + " to " + realColumnName);
 
         if (realColumnName == null) {
             wasNull = true;
@@ -376,7 +439,8 @@ public class SfResultSet implements java.sql.ResultSet {
 //            throw new SQLException("Don't know about column " + columnLabel);
         } else {
             SObject obj = records[ptr];
-            result = drillToChild(obj, realColumnName);
+//            System.out.println("DRILLING for " + columnLabel + " with REALCOLUMNANME " + realColumnName);
+            result = drillToChild(obj, realColumnName, columnNameCaseMap, realColumnName, new FullName());
         }
         wasNull = (result == null);
         return result;
@@ -739,7 +803,6 @@ public class SfResultSet implements java.sql.ResultSet {
     public String getCursorName() throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
-
 
 
     public boolean isBeforeFirst() throws SQLException {
