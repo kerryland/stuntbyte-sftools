@@ -211,7 +211,6 @@ public class SfResultSet implements java.sql.ResultSet {
         for (int i = 0; i < columnsInSql.size(); i++) {
             newColumnsInResult.add(null);
             done.add(i);
-//            System.out.println("COLUMNS IN SQL INCLUDES " + columnsInSql.get(i).getTable() + "/" + columnsInSql.get(i).getName());
         }
 
 
@@ -326,19 +325,14 @@ public class SfResultSet implements java.sql.ResultSet {
 
             XmlObject child = (XmlObject) parent.getField(parentName);
             if (child == null) {
+                // Maybe we couldn't find the column because we've got the
+                // case wrong -- try to find it the slow way...
                 Iterator it = parent.getChildren();
                 while (it.hasNext()) {
                     XmlObject next = (XmlObject) it.next();
 
                     if (next.getName().getLocalPart().equalsIgnoreCase(parentName)) {
                         correctedFullColumnName.append(next.getName().getLocalPart());
-
-//                        if (correctedFullColumnName.toString().equalsIgnoreCase(fullColumnName)) {
-//                            System.out.println("2DING DING DING " + next.getName().getLocalPart() + " vs " +
-//                                    parentName + " x " + correctedFullColumnName);
-//                            columnNameCaseMap.put(fullColumnName.toUpperCase(), correctedFullColumnName.toString());
-//                        }
-
                         child = (XmlObject) parent.getField(next.getName().getLocalPart());
                     }
                 }
@@ -358,13 +352,9 @@ public class SfResultSet implements java.sql.ResultSet {
             result = parent.getField(columnLabel);
             if (result != null) {
                 correctedFullColumnName.append(columnLabel);
-//                System.out.println("Looked for child " + fullColumnName + "/" + correctedFullColumnName.toString() + ": " + columnLabel +
-//                        " of " + parent.getName().getLocalPart() + " got " +
-//                        result.toString());
             } else {
-//                System.out.println("Looked for child " + columnLabel + " of " +
-//                        parent.getName().getLocalPart() + " got null. ");
-
+                // We couldn't find the column directly, but maybe it's
+                // just a problem with the case of the column name.
                 Iterator it = parent.getChildren();
                 while (it.hasNext()) {
                     XmlObject next = (XmlObject) it.next();
@@ -373,8 +363,8 @@ public class SfResultSet implements java.sql.ResultSet {
                         correctedFullColumnName.append(next.getName().getLocalPart());
 
                         if (correctedFullColumnName.toString().equalsIgnoreCase(fullColumnName)) {
-//                            System.out.println("1DING DING DING " + next.getName().getLocalPart() +
-//                                    " vs " + columnLabel + " x " + correctedFullColumnName);
+                            // Store the corrected column name so we don't have to do this
+                            // iteration again.
                             columnNameCaseMap.put(fullColumnName.toUpperCase(), correctedFullColumnName.toString());
                         }
                         result = parent.getField(next.getName().getLocalPart());

@@ -69,44 +69,36 @@ public class SfResultSetMetaData implements ResultSetMetaData {
             if (col.toLowerCase().endsWith("__r")) {
                 lookup = col.substring(0, col.length()-1) + "c";
             }
-//            try {
-                Table t = rsf.getTable(type);
-                try {
-                    column = null;
+            Table t = rsf.getTable(type);
+            try {
+                column = null;
 
-                    if (lookup.equalsIgnoreCase("CreatedBy") || (lookup.equalsIgnoreCase("LastModifiedBy"))) {
-                        column = new Column(lookup, "reference"); // TODO: Lookup?
-                        column.setRelationshipType("User");
-                    } else {
-                        column = t.getColumn(lookup);
-                    }
-
-                    if (column.getRelationshipType() != null) {
-                        type = column.getRelationshipType();
-                        return keepDrilling(tok, type, column, aggregate);
-                    }
-
-                } catch (SQLException e) {
-
-//                    if (!aggregate) {
-                    if (!aggregate && (column != null && !column.hasMultipleRelationships())) {
-                        throw new SQLException("Attempted to invent column data for " + lookup + " : " + e.getMessage());
-                    }
-
-                    // make something up
-                    // TODO: Maybe we could figure out the data type for an aggregate result, but it would be hard!
-                    column = new Column(lookup, "string");
-                    column.setLabel(lookup);
-                    column.setLength(10);
-                    column.setCalculated(true);
-
-                    return column;
+                if (lookup.equalsIgnoreCase("CreatedBy") || (lookup.equalsIgnoreCase("LastModifiedBy"))) {
+                    column = new Column(lookup, "reference"); // TODO: Lookup?
+                    column.setRelationshipType("User");
+                } else {
+                    column = t.getColumn(lookup);
                 }
 
-//            } catch (SQLException e) {
-//                System.out.println("Borked table?");
-//                e.printStackTrace();
-//            }
+                if (column.getRelationshipType() != null) {
+                    type = column.getRelationshipType();
+                    return keepDrilling(tok, type, column, aggregate);
+                }
+
+            } catch (SQLException e) {
+                if (!aggregate && (column != null && !column.hasMultipleRelationships())) {
+                    throw new SQLException("Attempted to invent column data for " + lookup + " : " + e.getMessage());
+                }
+
+                // make something up
+                // TODO: Maybe we could figure out the data type for an aggregate result, but it would be hard!
+                column = new Column(lookup, "string");
+                column.setLabel(lookup);
+                column.setLength(10);
+                column.setCalculated(true);
+
+                return column;
+            }
         }
         return column;
     }
@@ -165,7 +157,6 @@ public class SfResultSetMetaData implements ResultSetMetaData {
 
     public String getColumnLabel(int column) throws SQLException {
         Column col = getColumn(column);
-//        System.out.println("Use labels=" + useLabels);
         if ((col != null) && useLabels) {
             return col.getLabel();
         }

@@ -130,6 +130,7 @@ public class Deployer {
         UNPACKAGED_TESTS,
         ALL_TESTS, // TODO
         IGNORE_ERRORS,
+        IGNORE_WARNINGS,
         ALLOW_MISSING_FILES,
         DEPLOYED_TESTS
     }
@@ -141,9 +142,12 @@ public class Deployer {
 
         // http://www.salesforce.com/us/developer/docs/api_meta/Content/meta_deploy.htm
         deployOptions.setPerformRetrieve(false);
+        deployOptions.setIgnoreWarnings(deploymentOptions.contains(Deployer.DeploymentOptions.IGNORE_WARNINGS));
         deployOptions.setRollbackOnError(!deploymentOptions.contains(Deployer.DeploymentOptions.IGNORE_ERRORS));
         deployOptions.setRunAllTests(deploymentOptions.contains(Deployer.DeploymentOptions.ALL_TESTS));
         deployOptions.setSinglePackage(true);
+
+        System.out.println("RUNNING TESTS WITH IGNORE WARNINGS=" + deployOptions.isIgnoreWarnings() + " rollback=" + deployOptions.isRollbackOnError());
 
         List<String> testFiles = new ArrayList<String>();
 
