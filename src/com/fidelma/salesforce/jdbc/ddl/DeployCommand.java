@@ -1,8 +1,6 @@
 package com.fidelma.salesforce.jdbc.ddl;
 
-import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
-import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.misc.Deployer;
 import com.fidelma.salesforce.misc.Deployment;
 import com.fidelma.salesforce.misc.DeploymentEventListener;
@@ -14,15 +12,12 @@ import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
 import com.sforce.soap.metadata.FileProperties;
 import com.sforce.soap.metadata.ListMetadataQuery;
-import com.sforce.soap.metadata.MetadataConnection;
 
-import javax.swing.text.AbstractDocument;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -137,7 +132,7 @@ public class DeployCommand {
                 deploymentId = deployer.deployZip(new File(fileName), options);
             }
             deployer.checkDeploymentComplete(deploymentId, deploymentEventListener);
-            deploymentEventListener.finished("Done");
+            deploymentEventListener.message("Done");
 
         } finally {
             deploymentEventListener.close();
@@ -172,7 +167,7 @@ public class DeployCommand {
             System.out.println(message);
         }
 
-        public void finished(String message) throws IOException {
+        public void message(String message) throws IOException {
             write(message);
         }
 
@@ -274,117 +269,8 @@ public class DeployCommand {
     private void doStart() throws Exception {
         deployment = new Deployment();
         dropDeployment = new Deployment();
-
-        if (1 != 3) {
-            return;
-        }
-
-        final StringBuilder errors = new StringBuilder();
-
-        DeploymentEventListener deploymentEventListener = new DeploymentEventListener() {
-            public void error(String message) {
-                errors.append(message).append(". ");
-            }
-
-            public void finished(String message) {
-            }
-
-            public void progress(String message) {
-
-            }
-        };
-
-        sourceSchemaDir = new File(System.getProperty("java.io.tmpdir"),
-                "SF-SRC" + System.currentTimeMillis());  // TODO: This must be unique
-        sourceSchemaDir.mkdir();
-
-
-        Downloader downloader = new Downloader(reconnector, sourceSchemaDir, deploymentEventListener, null);
-
-//        Deployment deployment = new Deployment();
-
-
-        List<String> metaDataToDownload = new ArrayList<String>();
-
-        metaDataToDownload.add("ApexClass");
-        metaDataToDownload.add("ApexComponent");
-        metaDataToDownload.add("ApexPage");
-        metaDataToDownload.add("ApexTrigger");
-
-        metaDataToDownload.add("FieldSet");
-        metaDataToDownload.add("RecordType");
-        metaDataToDownload.add("StaticResource");
-        metaDataToDownload.add("Layout");
-        metaDataToDownload.add("Workflow");
-        metaDataToDownload.add("CustomLabels");
-
-        metaDataToDownload.add("ArticleType");
-
-        // TODO: More of these are useful...
-
-//        metaDataToDownload.add("CustomApplication");
-
-//        metaDataToDelete.add("CustomObject"); (handled below)
-
-        /*
-        metaDataToDownload.add("CustomObjectTranslation");
-        metaDataToDownload.add("CustomPageWebLink");
-        metaDataToDownload.add("CustomSite");
-        metaDataToDownload.add("CustomTab");
-        metaDataToDownload.add("DataCategoryGroup");
-        metaDataToDownload.add("EntitlementTemplate");
-        metaDataToDownload.add("HomePageComponent");
-        metaDataToDownload.add("HomePageLayout");
-        metaDataToDownload.add("Portal");                        // Can I even do this?
-        metaDataToDownload.add("Profile");
-        metaDataToDownload.add("RemoteSiteSetting");
-        metaDataToDownload.add("ReportType");
-        metaDataToDownload.add("Scontrol");
-        metaDataToDownload.add("Translations");
-        */
-
-        Map<String, List<String>> objectsByMetaDataType = new HashMap<String, List<String>>();
-
-        List<ListMetadataQuery> queryList = new ArrayList<ListMetadataQuery>();
-        for (String m : metaDataToDownload) {
-            ListMetadataQuery mq = new ListMetadataQuery();
-            mq.setType(m);
-            queryList.add(mq);
-            // Salesforce only lets us call with 3 at a time. Thanks Salesforce!
-            if (queryList.size() == 3) {
-                addToDownloadList(reconnector, objectsByMetaDataType, queryList);
-            }
-        }
-
-
-        List<Table> tables = metaDataFactory.getTables();
-        for (Table table : tables) {
-            if (table.getType().equals("TABLE")) {
-                if (table.isCustom()) {
-                    addToDownloadList(objectsByMetaDataType, "CustomObject", table.getName());
-                } else {
-                    for (Column column : table.getColumns()) {
-                        if (column.isCustom()) {
-                            addToDownloadList(objectsByMetaDataType, "CustomField", table.getName() + "." + column.getName());
-                        }
-                    }
-                }
-            }
-        }
-
-        for (String metaData : objectsByMetaDataType.keySet()) {
-            for (String value : objectsByMetaDataType.get(metaData)) {
-                downloader.addPackage(metaData, value);
-            }
-        }
-
-        downloader.download();
-
-        if (errors.length() != 0) {
-            throw new SQLException(errors.toString());
-        }
-
     }
+
 
     private void addToDownloadList(Map<String, List<String>> objectsByMetaDataType,
                                    String metaDataType, String name) throws Exception {

@@ -80,8 +80,8 @@ public class Migrator {
                 System.out.println("ERROR: " + message);
             }
 
-            public void finished(String message) {
-                System.out.println("FINISHED: " + message);
+            public void message(String message) {
+                System.out.println(message);
 
             }
 
@@ -298,10 +298,11 @@ public class Migrator {
                 Column column = table.getColumn(columnName);
 
 //                System.out.print("KJS processing " + columnName + " " + column.getType() + "=" + value);
-                // TODO: This should be configurable!
+                // TODO: This should be configurable! (example of mangling email addresses)
                 if (column.getType().equalsIgnoreCase("Email") && value != null) {
                     value = value.toString() + ".example.com";
 
+                // TODO: This should be configurable! (example of mangling phone numbers)
                 } else if ((columnName.equalsIgnoreCase("Phone_Number__c") || column.getType().equalsIgnoreCase("Phone")) && value != null) {
                     Double randomPhone = Math.random() * 1000;
                     value = Long.toString(randomPhone.longValue());
@@ -649,6 +650,7 @@ public class Migrator {
 
         Deployer deployer = new Deployer(destinationConnector);
         HashSet<Deployer.DeploymentOptions> options = new HashSet<Deployer.DeploymentOptions>();
+        options.add(Deployer.DeploymentOptions.IGNORE_WARNINGS);
         options.add(Deployer.DeploymentOptions.IGNORE_ERRORS);
         options.add(Deployer.DeploymentOptions.ALLOW_MISSING_FILES);
         String deploymentId = deployer.deployZip(unenabledFile, options);
@@ -690,9 +692,10 @@ public class Migrator {
             restoreRows(destSalesforce, h2Conn, restoreCriteria);
 
         } finally {
-            System.out.println("Restoring schema " + restoreZip.getAbsolutePath());
+ //           System.out.println("Restoring schema " + restoreZip.getAbsolutePath());
             String deployId = deployer.deployZip(restoreZip, options);
             deployer.checkDeploymentComplete(deployId, del);
+//            System.out.println("Restoring schema... done");
             if (del.getErrors().length() != 0) {
                 throw new Exception("Restore of schema in " + originalFile.getAbsolutePath() +
                         " failed " + del.getErrors().toString());
@@ -728,6 +731,7 @@ public class Migrator {
                 del, null);
 
 
+        // TODO: Why don't we do anyting with triggersToEnable???
         List<String> triggersToEnable = new ArrayList<String>();
         PreparedStatement findTrigger = destSalesforce.prepareStatement(
                 "select Name from ApexTrigger " +

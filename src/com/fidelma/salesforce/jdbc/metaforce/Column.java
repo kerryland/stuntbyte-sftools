@@ -30,7 +30,7 @@ public class Column {
     private List<String> picklistValues = new ArrayList<String>();
     private String defaultPicklistValue;
     private boolean picklistIsSorted;
-    private boolean updateable;
+    private boolean updateable = true;
 
 
     public Column(String name, String type, Boolean isCalculated) {

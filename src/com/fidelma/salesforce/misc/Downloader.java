@@ -170,7 +170,7 @@ public class Downloader {
             }
         }
         if (buf.length() > 0) {
-            listener.finished("Retrieve warnings:\n" + buf);
+            listener.message("Retrieve warnings:\n" + buf);
         }
 
         // Write the zip to the file system
@@ -183,7 +183,7 @@ public class Downloader {
             FileChannel dest = os.getChannel();
             copy(src, dest);
 
-            listener.finished("Results written to " + resultsFile.getAbsolutePath());
+            listener.message("Results written to " + resultsFile.getAbsolutePath());
         } finally {
             os.close();
         }

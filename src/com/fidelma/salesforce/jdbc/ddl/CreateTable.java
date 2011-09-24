@@ -74,7 +74,7 @@ public class CreateTable {
                     deployError.append("\n");
                 }
 
-                public void finished(String message) {
+                public void message(String message) {
                 }
 
                 public void progress(String message) {
@@ -88,7 +88,7 @@ public class CreateTable {
 
             for (Table table : tables) {
                 // Add some system generated columns to the metaDataFactory, so
-                // we can query them.
+                // we can query them. But really we should reload completely from WscService
                 table.addColumn(new Column("Id", "Id", true));
                 table.addColumn(new Column("CreatedById", "string", true));
                 table.addColumn(new Column("CreatedDate", "dateTime", true));
@@ -100,6 +100,7 @@ public class CreateTable {
 
 //                patchDataTypes(table.getColumns());
 
+                // TODO: Load table properly from WscService
                 metaDataFactory.addTable(table);
             }
 

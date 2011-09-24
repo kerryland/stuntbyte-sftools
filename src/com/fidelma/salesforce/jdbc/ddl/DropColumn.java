@@ -44,7 +44,7 @@ public class DropColumn {
                         deployError.append(message).append("\n");
                     }
 
-                    public void finished(String message) {
+                    public void message(String message) {
 
                     }
 

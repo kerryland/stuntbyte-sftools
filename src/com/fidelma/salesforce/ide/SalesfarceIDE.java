@@ -173,7 +173,7 @@ public class SalesfarceIDE {
             if ((crcResults.serverCrc != null) && (crcResults.localCrc != null) &&
                     (!crcResults.serverCrc.equals(crcResults.localCrc))) {
                 if (arg.equals("-force")) {
-                    message("Saving even though checksums mismatch");
+                    output("Saving even though checksums mismatch");
                     runTests = false;
 
                 } else {
@@ -466,7 +466,7 @@ public class SalesfarceIDE {
             RunTestFailure[] fails = testResult.getFailures();
 
             if (fails.length == 0) {
-                message("TESTS PASS!");
+                output("TESTS PASS!");
             }
 
             Pattern trigPat = Pattern.compile("Trigger.(\\w.*)..*");
@@ -625,7 +625,7 @@ public class SalesfarceIDE {
 
     private void err(String filename, int line, int col, String ew, String msg) {
         String err = filename + ">" + line + ":" + col + ":" + ew + ":0:" + msg;
-        message(err);
+        output(err);
     }
 
     private String findFile(String src, final String searchname, String compileFile) {
@@ -794,7 +794,7 @@ public class SalesfarceIDE {
         }
     }
 
-    private void message(String val) {
+    private void output(String val) {
         System.out.println(val);
 //        messageLog.println(val);
     }
@@ -802,15 +802,15 @@ public class SalesfarceIDE {
     private class SimpleListener implements DeploymentEventListener {
 
         public void error(String message) {
-            message(message);
+            output(message);
         }
 
-        public void finished(String message) {
-            message(message);
+        public void message(String message) {
+            output(message);
         }
 
         public void progress(String message) {
-            message(message);
+            output(message);
         }
     }
 }

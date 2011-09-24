@@ -350,12 +350,6 @@ public class SfStatement implements java.sql.Statement {
     public int[] executeBatch() throws SQLException {
         generatedIds.clear();
         try {
-//            SObject[] arr = new SObject[batchSObjects.size()];
-//            batchSObjects.toArray(arr);
-
-
-
-            // TODO: Handle max sobjects per call of 200!
             if (batchDmlType == DmlType.INSERT) {
                 Insert insert = new Insert(null, sfConnection.getMetaDataFactory(), reconnector);
 

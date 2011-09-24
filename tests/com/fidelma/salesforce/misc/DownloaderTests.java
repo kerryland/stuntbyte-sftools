@@ -1,6 +1,5 @@
 package com.fidelma.salesforce.misc;
 
-import com.sforce.soap.metadata.MetadataConnection;
 import org.junit.Test;
 
 import java.io.File;
@@ -41,10 +40,9 @@ public class DownloaderTests {
 
         public void error(String message) {
             System.out.println("BANG " + message);
-
         }
 
-        public void finished(String message) {
+        public void message(String message) {
             System.out.println("DONE " + message);
         }
 

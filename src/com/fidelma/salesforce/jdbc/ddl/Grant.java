@@ -207,7 +207,7 @@ public class Grant {
                 errors.append(message).append(". ");
             }
 
-            public void finished(String message) {
+            public void message(String message) {
             }
 
             public void progress(String message) {
@@ -418,7 +418,7 @@ public class Grant {
                     errors.append(message);
                 }
 
-                public void finished(String message) {
+                public void message(String message) {
                 }
 
                 public void progress(String message) {

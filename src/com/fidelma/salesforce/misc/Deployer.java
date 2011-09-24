@@ -2,7 +2,6 @@ package com.fidelma.salesforce.misc;
 
 import com.sforce.soap.metadata.AsyncRequestState;
 import com.sforce.soap.metadata.AsyncResult;
-import com.sforce.soap.metadata.CodeCoverageResult;
 import com.sforce.soap.metadata.CodeCoverageWarning;
 import com.sforce.soap.metadata.DeployMessage;
 import com.sforce.soap.metadata.DeployOptions;
@@ -142,12 +141,20 @@ public class Deployer {
 
         // http://www.salesforce.com/us/developer/docs/api_meta/Content/meta_deploy.htm
         deployOptions.setPerformRetrieve(false);
-        deployOptions.setIgnoreWarnings(deploymentOptions.contains(Deployer.DeploymentOptions.IGNORE_WARNINGS));
-        deployOptions.setRollbackOnError(!deploymentOptions.contains(Deployer.DeploymentOptions.IGNORE_ERRORS));
+
+        boolean ignoreWarnings = deploymentOptions.contains(Deployer.DeploymentOptions.IGNORE_WARNINGS);
+        boolean setRollbackOnError = !deploymentOptions.contains(Deployer.DeploymentOptions.IGNORE_ERRORS);
+
+        // TODO: WARNING WARNING -- DUE TO A BIZARRO SALESFORCE BUG THESE PROPERTIES ARE INVERTED
+        // TODO: So we are deliberately setting "ignoreWarnings" to "rollbackOnError" and vice-versa
+        deployOptions.setIgnoreWarnings(setRollbackOnError);
+        deployOptions.setRollbackOnError(ignoreWarnings);
+
         deployOptions.setRunAllTests(deploymentOptions.contains(Deployer.DeploymentOptions.ALL_TESTS));
         deployOptions.setSinglePackage(true);
 
-        System.out.println("RUNNING TESTS WITH IGNORE WARNINGS=" + deployOptions.isIgnoreWarnings() + " rollback=" + deployOptions.isRollbackOnError());
+//        System.out.println("DEPLOYING WITH IGNORE WARNINGS=" + ignoreWarnings + " rollback=" + setRollbackOnError);
+//        System.out.println("actually......................." + deployOptions.isIgnoreWarnings() + " rollback=" + deployOptions.isRollbackOnError());
 
         List<String> testFiles = new ArrayList<String>();
 
@@ -266,19 +273,23 @@ public class Deployer {
 //        if (deploymentOptions.contains(DeploymentOptions.UNPACKAGED_TESTS)) {
         com.sforce.soap.metadata.RunTestsResult res = result.getRunTestResult();
         if (res != null) {
-            listener.finished("Number of tests: " + res.getNumTestsRun() + "\n");
-            listener.finished("Number of failures: " + res.getNumFailures() + "\n");
+            listener.message("Number of tests: " + res.getNumTestsRun() + "\n");
+            listener.message("Number of failures: " + res.getNumFailures() + "\n");
             if (res.getNumFailures() > 0) {
                 for (com.sforce.soap.metadata.RunTestFailure rtf : res.getFailures()) {
-                    listener.finished("Failure: " + (rtf.getNamespace() ==
+                    String failMessage = "Failure: " + (rtf.getNamespace() ==
                             null ? "" : rtf.getNamespace() + ".")
                             + rtf.getName() + "." + rtf.getMethodName() + ": "
-                            + rtf.getMessage() + "\n" + rtf.getStackTrace() + "\n");
+                            + rtf.getMessage();
+                    if (rtf.getStackTrace() != null) {
+                        failMessage += "\n" + rtf.getStackTrace() + "\n";
+                    }
+                    listener.message(failMessage);
                 }
             }
             CodeCoverageWarning[] coverageWarnings = res.getCodeCoverageWarnings();
             for (CodeCoverageWarning coverageWarning : coverageWarnings) {
-                listener.finished("Coverage warning " + coverageWarning.getName() + " " + coverageWarning.getMessage());
+                listener.message("Coverage warning " + coverageWarning.getName() + " " + coverageWarning.getMessage());
             }
 
 //            CodeCoverageResult[] coverage = res.getCodeCoverage();
@@ -291,7 +302,7 @@ public class Deployer {
 
     private DeployResult dumpErrors(String deploymentId, DeploymentEventListener listener) throws Exception {
         DeployResult result = reconnector.checkDeployStatus(deploymentId);
-        if (!result.isSuccess()) {
+//        if (!result.isSuccess()) {
             DeployMessage[] errors = result.getMessages();
 
             for (DeployMessage error : errors) {
@@ -301,7 +312,7 @@ public class Deployer {
                                     " on line " + error.getLineNumber() + " col " + error.getColumnNumber());
                 }
             }
-        }
+//        }
         return result;
     }
 
@@ -372,7 +383,7 @@ public class Deployer {
             }
         }
         if (buf.length() > 0) {
-            listener.finished("Retrieve warnings:\n" + buf);
+            listener.message("Retrieve warnings:\n" + buf);
         }
 
         // Write the zip to the file system
@@ -385,7 +396,7 @@ public class Deployer {
             FileChannel dest = os.getChannel();
             copy(src, dest);
 
-            listener.finished("Results written to " + resultsFile.getAbsolutePath());
+            listener.message("Results written to " + resultsFile.getAbsolutePath());
         } finally {
             os.close();
         }
