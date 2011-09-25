@@ -1,5 +1,7 @@
-package com.fidelma.salesforce.misc;
+package com.fidelma.salesforce.deployment;
 
+import com.fidelma.salesforce.deployment.Deployment;
+import com.fidelma.salesforce.deployment.DeploymentResource;
 import junit.framework.Assert;
 import org.junit.Test;
 
@@ -8,11 +10,7 @@ import java.io.StringReader;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
- * User: kerry
- * Date: 1/05/11
- * Time: 7:25 AM
- * To change this template use File | Settings | File Templates.
+ * Test we can package up code for deployment.
  */
 public class DeploymentTests {
 
@@ -22,8 +20,7 @@ public class DeploymentTests {
         Deployment deployment = new Deployment();
         deployment.addMember("ApexClass", "Wibble", "class Wibble {}", null);
         deployment.addMember("ApexClass", "Wobble", "class Wobble {}", null);
-//        deployment.assemble();
-
+        deployment.dropMember("ApexClass", "DeadMeat");
 
         String xml = deployment.getPackageXml();
         LineNumberReader lnr = new LineNumberReader(new StringReader(xml));
@@ -60,6 +57,24 @@ public class DeploymentTests {
 //                    resource.getMetaData());
         }
 
-    }
+        xml = deployment.getDestructiveChangesXml();
+        lnr = new LineNumberReader(new StringReader(xml));
+        line = lnr.readLine();
+        trimmedXml = "";
+        while (line != null) {
+            trimmedXml += line;
+            line = lnr.readLine();
+        }
 
+        Assert.assertEquals(
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+                "<Package xmlns=\"http://soap.sforce.com/2006/04/metadata\">" +
+                        "<types>" +
+                        "<members>DeadMeat</members>" +
+                        "<name>ApexClass</name>" +
+                        "</types>" +
+                        "<version>22.0</version></Package>",
+
+                trimmedXml);
+    }
 }

@@ -1,5 +1,7 @@
-package com.fidelma.salesforce.misc;
+package com.fidelma.salesforce.deployment;
 
+import com.fidelma.salesforce.misc.LoginHelper;
+import com.fidelma.salesforce.misc.Reconnector;
 import com.sforce.soap.metadata.AsyncRequestState;
 import com.sforce.soap.metadata.AsyncResult;
 import com.sforce.soap.metadata.CodeCoverageWarning;
@@ -44,7 +46,7 @@ public class Deployer {
 
 
     public void uploadNonCode(String nonCodeType, String filename,
-                              String srcDirectory, String code,
+                              String code,
                               String metaData, DeploymentEventListener listener) throws Exception {
 
         filename = new File(filename).getName();
@@ -57,39 +59,24 @@ public class Deployer {
     }
 
     public void deploy(Deployment deployment, DeploymentEventListener listener) throws Exception {
-        deploy(deployment, listener, "package.xml", new HashSet<DeploymentOptions>());
+        deploy(deployment, listener, new HashSet<DeploymentOptions>());
     }
 
     public void deploy(Deployment deployment, DeploymentEventListener listener, Set<DeploymentOptions> deploymentOptions) throws Exception {
-        deploy(deployment, listener, "package.xml", deploymentOptions);
-    }
-
-    public void undeploy(Deployment deployment, DeploymentEventListener listener) throws Exception {
-        deploy(deployment, listener, "destructiveChanges.xml", new HashSet<DeploymentOptions>());
-    }
-
-
-    private void deploy(Deployment deployment, DeploymentEventListener listener,
-                        String packageXmlName, Set<DeploymentOptions> deploymentOptions) throws Exception {
-//        deployment.assemble();
         File deploymentFile = File.createTempFile("SFDC", "zip");
         System.out.println("Deployment file " + deploymentFile.getName());
 
         ZipOutputStream out = new ZipOutputStream(new FileOutputStream(deploymentFile));
 
-        out.putNextEntry(new ZipEntry(packageXmlName));
+        out.putNextEntry(new ZipEntry("package.xml"));
         out.write(deployment.getPackageXml().getBytes());
         out.closeEntry();
 
-        // Destructive changes need an empty package.xml
-        if (packageXmlName.equals("destructiveChanges.xml")) {
-            Deployment dummy = new Deployment();
-//            dummy.assemble();
-            out.putNextEntry(new ZipEntry("package.xml"));
-            out.write(dummy.getPackageXml().getBytes());
+        if (deployment.hasDestructiveChanges()) {
+            out.putNextEntry(new ZipEntry("destructiveChanges.xml"));
+            out.write(deployment.getDestructiveChangesXml().getBytes());
             out.closeEntry();
         }
-
 
         List<DeploymentResource> resources = deployment.getDeploymentResources();
         for (DeploymentResource resource : resources) {

@@ -1,4 +1,4 @@
-package com.fidelma.salesforce.misc;
+package com.fidelma.salesforce.deployment;
 
 /**
  * Created by IntelliJ IDEA.

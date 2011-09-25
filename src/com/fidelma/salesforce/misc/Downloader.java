@@ -1,5 +1,6 @@
 package com.fidelma.salesforce.misc;
 
+import com.fidelma.salesforce.deployment.DeploymentEventListener;
 import com.sforce.soap.metadata.*;
 import com.sforce.soap.metadata.Package;
 

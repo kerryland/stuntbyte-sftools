@@ -1,13 +1,13 @@
 package com.fidelma.salesforce.database.migration;
 
+import com.fidelma.salesforce.deployment.Deployer;
+import com.fidelma.salesforce.deployment.Deployment;
+import com.fidelma.salesforce.deployment.DeploymentEventListener;
+import com.fidelma.salesforce.deployment.DeploymentEventListenerImpl;
 import com.fidelma.salesforce.jdbc.SfConnection;
 import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
-import com.fidelma.salesforce.misc.Deployer;
-import com.fidelma.salesforce.misc.Deployment;
-import com.fidelma.salesforce.misc.DeploymentEventListener;
-import com.fidelma.salesforce.misc.DeploymentEventListenerImpl;
 import com.fidelma.salesforce.misc.Downloader;
 import com.fidelma.salesforce.misc.FolderZipper;
 import com.fidelma.salesforce.misc.LoginHelper;
@@ -178,11 +178,11 @@ public class Migrator {
         for (Table table : tables) {
             if (table.getType().equals("TABLE")) {
                 if (table.isCustom()) {
-                    undeploy.addMember("CustomObject", table.getName(), null, null);
+                    undeploy.dropMember("CustomObject", table.getName());
                 } else {
                     for (Column column : table.getColumns()) {
                         if (column.isCustom()) {
-                            undeploy.addMember("CustomField", table.getName() + "." + column.getName(), null, null);
+                            undeploy.dropMember("CustomField", table.getName() + "." + column.getName());
                         }
                     }
                 }
@@ -190,7 +190,7 @@ public class Migrator {
         }
 
         Deployer targetDeployer = new Deployer(reconnector);
-        targetDeployer.undeploy(undeploy, del);
+        targetDeployer.deploy(undeploy, del);
 
         return targetDeployer;
     }

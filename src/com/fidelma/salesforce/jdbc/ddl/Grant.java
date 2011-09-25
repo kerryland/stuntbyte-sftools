@@ -1,11 +1,11 @@
 package com.fidelma.salesforce.jdbc.ddl;
 
+import com.fidelma.salesforce.deployment.Deployer;
 import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
-import com.fidelma.salesforce.misc.Deployer;
-import com.fidelma.salesforce.misc.Deployment;
-import com.fidelma.salesforce.misc.DeploymentEventListener;
+import com.fidelma.salesforce.deployment.Deployment;
+import com.fidelma.salesforce.deployment.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Downloader;
 import com.fidelma.salesforce.misc.LoginHelper;
 import com.fidelma.salesforce.misc.Reconnector;
@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * GRANT OBJECT CREATE, READ, UPDATE, DELETE, MODIFYALL, VIEWALL
@@ -203,6 +204,7 @@ public class Grant {
         Deployer deployer = new Deployer(reconnector);
 
         deployer.deploy(dep, new DeploymentEventListener() {
+
             public void error(String message) {
                 errors.append(message).append(". ");
             }
@@ -215,7 +217,7 @@ public class Grant {
             }
         });
         if (errors.length() != 0) {
-            throw new SQLException(errors.toString());
+            throw new SQLException("SHIT SHIT " + errors.toString());
         }
     }
 

@@ -1,15 +1,14 @@
 package com.fidelma.salesforce.misc;
 
+import com.fidelma.salesforce.deployment.DeploymentEventListener;
+import junit.framework.Assert;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.FileReader;
+import java.util.Properties;
 
 /**
- * Created by IntelliJ IDEA.
- * User: kerry
- * Date: 22/05/11
- * Time: 7:38 AM
- * To change this template use File | Settings | File Templates.
  */
 public class DownloaderTests {
 
@@ -22,32 +21,29 @@ public class DownloaderTests {
         String dir = System.getProperty("java.io.tmpdir");
         File crcFile = File.createTempFile("CRC", "x");
 
-        System.out.println(dir);
-//        crcFile.deleteOnExit();
+        crcFile.deleteOnExit();
 
         Reconnector rc = new Reconnector(lh);
-//        MetadataConnection metaConnection = lh.getMetadataConnection();
         Downloader dl = new Downloader(rc, new File(dir), new Notice(), crcFile);
         dl.addPackage("CustomObject", "Lead");
-        dl.addPackage("CustomObject", "aaa__c");
         dl.download();
 
-        // TODO: Check content of CRC and disk file
-
+        Properties properties = new Properties();
+        properties.load(new FileReader(crcFile));
+        Assert.assertTrue(properties.getProperty("Lead.object") != null);
+        Assert.assertTrue(new File(dir + "/objects/Lead.object").exists());
     }
 
     private class Notice implements DeploymentEventListener {
 
         public void error(String message) {
-            System.out.println("BANG " + message);
+            throw new RuntimeException("No error should be generated");
         }
 
         public void message(String message) {
-            System.out.println("DONE " + message);
         }
 
         public void progress(String message) {
-
         }
     }
 }

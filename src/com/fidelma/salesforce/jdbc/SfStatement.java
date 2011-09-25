@@ -16,7 +16,6 @@ import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
 import com.fidelma.salesforce.misc.LoginHelper;
 import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
-import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 
@@ -174,7 +173,7 @@ public class SfStatement implements java.sql.Statement {
             } else if (token.getValue().equalsIgnoreCase("ROLLBACK")) {
             } else if ((token.getValue().equalsIgnoreCase("DEPLOYMENT")) ||
                     (token.getValue().equalsIgnoreCase("DEP"))) {
-                new DeployCommand(al, sfConnection.getMetaDataFactory(), reconnector).execute();
+                new DeployCommand(al, reconnector).execute();
 
             } else {
                 throw new SQLException("Unsupported command " + token.getValue());

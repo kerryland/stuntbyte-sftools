@@ -1,17 +1,13 @@
 package com.fidelma.salesforce.jdbc.ddl;
 
-import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
-import com.fidelma.salesforce.misc.Deployer;
-import com.fidelma.salesforce.misc.Deployment;
-import com.fidelma.salesforce.misc.DeploymentEventListener;
-import com.fidelma.salesforce.misc.DeploymentEventListenerImpl;
+import com.fidelma.salesforce.deployment.Deployer;
+import com.fidelma.salesforce.deployment.Deployment;
+import com.fidelma.salesforce.deployment.DeploymentEventListener;
+import com.fidelma.salesforce.deployment.DeploymentEventListenerImpl;
 import com.fidelma.salesforce.misc.Downloader;
 import com.fidelma.salesforce.misc.FolderZipper;
-import com.fidelma.salesforce.misc.LoginHelper;
 import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
-import com.sforce.soap.metadata.FileProperties;
-import com.sforce.soap.metadata.ListMetadataQuery;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -49,19 +45,15 @@ public class DeployCommand {
 
 
     private SimpleParser al;
-    private ResultSetFactory metaDataFactory;
     private Reconnector reconnector;
 //    private MetadataConnection metadataConnection;
 
     // There is only one active at a time...
     private static Deployment deployment;
-    private static Deployment dropDeployment;
-    private static File sourceSchemaDir;
     private static File snapshot;
 
-    public DeployCommand(SimpleParser al, ResultSetFactory metaDataFactory, Reconnector reconnector) throws Exception, SQLException {
+    public DeployCommand(SimpleParser al, Reconnector reconnector) throws Exception {
         this.al = al;
-        this.metaDataFactory = metaDataFactory;
         this.reconnector = reconnector;
     }
 
@@ -119,8 +111,10 @@ public class DeployCommand {
                 options.add(Deployer.DeploymentOptions.UNPACKAGED_TESTS);
             } else if (next.equalsIgnoreCase("IGNORE_ERRORS")) {
                 options.add(Deployer.DeploymentOptions.IGNORE_ERRORS);
+            } else if (next.equalsIgnoreCase("IGNORE_WARNINGS")) {
+                options.add(Deployer.DeploymentOptions.IGNORE_WARNINGS);
             } else {
-                throw new Exception("Expected ALLTESTS, RUNTESTS or IGNORE_ERRORS, not " + next);
+                throw new Exception("Expected ALLTESTS, RUNTESTS, IGNORE_WARNINGS or IGNORE_ERRORS, not " + next);
             }
         }
 
@@ -198,12 +192,12 @@ public class DeployCommand {
         snapshot.mkdir();
 
         DeploymentEventListenerImpl deploymentEventListener = new DeploymentEventListenerImpl();
-        Map<String, List<String>> types = deployment.getTypes();
+        Map<String, Set<String>> types = deployment.getTypesToDeploy();
 
         Downloader dl = new Downloader(reconnector, snapshot, deploymentEventListener, null);
 
         for (String type : types.keySet()) {
-            List<String> members = types.get(type);
+            Set<String> members = types.get(type);
             for (String member : members) {
                 dl.addPackage(type, member);
             }
@@ -224,17 +218,11 @@ public class DeployCommand {
         fw.write(deployment.getPackageXml());
         fw.close();
 
-        if (dropDeployment.hasContent()) {
+        if (deployment.hasDestructiveChanges()) {
             fw = new FileWriter(new File(snapshot, "destructiveChanges.xml"));
-            fw.write(dropDeployment.getPackageXml());
+            fw.write(deployment.getDestructiveChangesXml());
             fw.close();
         }
-
-
-//        Deployer deployer = new Deployer(metadataConnection);
-//        deployer.packageZip(sourceSchemaDir);
-//        deployer.deployZip();
-
     }
 
 
@@ -259,7 +247,7 @@ public class DeployCommand {
         }
 
         if (drop) {
-            dropDeployment.addMember(type, name, null, null);
+            deployment.dropMember(type, name);
         } else {
             deployment.addMember(type, name, null, null);
         }
@@ -268,40 +256,5 @@ public class DeployCommand {
 
     private void doStart() throws Exception {
         deployment = new Deployment();
-        dropDeployment = new Deployment();
     }
-
-
-    private void addToDownloadList(Map<String, List<String>> objectsByMetaDataType,
-                                   String metaDataType, String name) throws Exception {
-
-//        System.out.println("ADDING " + metaDataType + " " + name);
-
-        List<String> objects = objectsByMetaDataType.get(metaDataType);
-        if (objects == null) {
-            objects = new ArrayList<String>();
-            objectsByMetaDataType.put(metaDataType, objects);
-        }
-        objects.add(name);
-
-    }
-
-    private void addToDownloadList(Reconnector metadataConnection,
-                                   Map<String, List<String>> objectsByMetaDataType,
-                                   List<ListMetadataQuery> queryList) throws Exception {
-
-        ListMetadataQuery[] queries = new ListMetadataQuery[queryList.size()];
-        queryList.toArray(queries);
-
-        FileProperties[] props = metadataConnection.listMetadata(
-                queries,
-                LoginHelper.SFDC_VERSION);
-
-        for (FileProperties prop : props) {
-            addToDownloadList(objectsByMetaDataType, prop.getType(), prop.getFullName());
-        }
-        queryList.clear();
-    }
-
-
 }

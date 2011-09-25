@@ -1,11 +1,11 @@
 package com.fidelma.salesforce.jdbc.ddl;
 
+import com.fidelma.salesforce.deployment.Deployer;
+import com.fidelma.salesforce.deployment.Deployment;
+import com.fidelma.salesforce.deployment.DeploymentEventListener;
 import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
-import com.fidelma.salesforce.misc.Deployer;
-import com.fidelma.salesforce.misc.Deployment;
-import com.fidelma.salesforce.misc.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
 import org.w3c.dom.Document;

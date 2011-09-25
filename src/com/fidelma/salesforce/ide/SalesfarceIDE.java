@@ -1,7 +1,7 @@
 package com.fidelma.salesforce.ide;
 
-import com.fidelma.salesforce.misc.Deployer;
-import com.fidelma.salesforce.misc.DeploymentEventListener;
+import com.fidelma.salesforce.deployment.Deployer;
+import com.fidelma.salesforce.deployment.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Downloader;
 import com.fidelma.salesforce.misc.LoginHelper;
 import com.fidelma.salesforce.misc.Reconnector;
@@ -235,7 +235,7 @@ public class SalesfarceIDE {
             String partFilename = new File(filename).getName();
             String aTypeName = determineTypeName(partFilename);
 
-            deployer.uploadNonCode(aTypeName, filename, srcDirectory, sourceCode.toString(), metaData.toString(), listener);
+            deployer.uploadNonCode(aTypeName, filename, sourceCode.toString(), metaData.toString(), listener);
         }
 
         // Get latest CRCs

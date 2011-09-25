@@ -1,9 +1,9 @@
 package com.fidelma.salesforce.jdbc.ddl;
 
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
-import com.fidelma.salesforce.misc.Deployer;
-import com.fidelma.salesforce.misc.Deployment;
-import com.fidelma.salesforce.misc.DeploymentEventListener;
+import com.fidelma.salesforce.deployment.Deployer;
+import com.fidelma.salesforce.deployment.Deployment;
+import com.fidelma.salesforce.deployment.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
 
@@ -33,12 +33,11 @@ public class DropColumn {
 
     public void createMetadataXml(String tableName, String columnName) throws Exception {
         Deployment deployment = new Deployment();
-        deployment.addMember("CustomField", tableName + "." + columnName, null, null);
-//        deployment.assemble();
+        deployment.dropMember("CustomField", tableName + "." + columnName);
 
         Deployer deployer = new Deployer(reconnector);
         final StringBuilder deployError = new StringBuilder();
-        deployer.undeploy(deployment,
+        deployer.deploy(deployment,
                 new DeploymentEventListener() {
                     public void error(String message) {
                         deployError.append(message).append("\n");

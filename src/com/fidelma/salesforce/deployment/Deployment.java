@@ -1,5 +1,6 @@
-package com.fidelma.salesforce.misc;
+package com.fidelma.salesforce.deployment;
 
+import com.fidelma.salesforce.misc.LoginHelper;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -10,38 +11,34 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.File;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  */
 public class Deployment {
 
-    private Document doc;
-    private Map<String, List<String>> types = new HashMap<String, List<String>>();
+
+    private Map<String, Set<String>> typesToDeploy = new HashMap<String, Set<String>>();
+    private Map<String, Set<String>> typesToDrop = new HashMap<String, Set<String>>();
     private List<DeploymentResource> deploymentResources = new ArrayList<DeploymentResource>();
-    private boolean assembled;
+//    private boolean assembled;
 
 
     public void addMember(String typeName, String member, String code, String metaData) throws Exception {
-        if (member.contains(".") && member.endsWith(determineFileSuffix(typeName))) {
-            member = member.substring(0, member.lastIndexOf(determineFileSuffix(typeName))-1);
-        }
-        List<String> members = types.get(typeName);
-        if (members == null) {
-            members = new ArrayList<String>();
-            types.put(typeName, members);
-        }
-        members.add(member);
-
+        member = rememberMember(typeName, member, typesToDeploy);
         if (code != null) {
             DeploymentResource resource = new DeploymentResource();
             resource.setCode(code);
@@ -49,6 +46,30 @@ public class Deployment {
             resource.setFilepath(determineDirectoryName(typeName) + "/" + member + "." + determineFileSuffix(typeName));
             deploymentResources.add(resource);
         }
+    }
+
+    public void dropMember(String typeName, String member) throws Exception {
+        rememberMember(typeName, member, typesToDrop);
+    }
+
+
+    private String rememberMember(String typeName, String member, Map<String, Set<String>> types) throws Exception {
+        if (member.contains(".") && member.endsWith(determineFileSuffix(typeName))) {
+            member = member.substring(0, member.lastIndexOf(determineFileSuffix(typeName)) - 1);
+        }
+
+        Set<String> members = types.get(typeName);
+        if (members == null) {
+            // These have to be sorted or Salesforce gets confused. -- not really
+            members = new TreeSet<String>(new Comparator<String>() {
+                public int compare(String o1, String o2) {
+                    return o1.compareTo(o2);
+                }
+            });
+            types.put(typeName, members);
+        }
+        members.add(member);
+        return member;
     }
 
 
@@ -102,7 +123,7 @@ public class Deployment {
         return "objects";
     }
 
-     private String determineFileSuffix(String typeName) throws Exception {
+    private String determineFileSuffix(String typeName) throws Exception {
         String directoryName = determineDirectoryName(typeName);
         String suffix;
         if (directoryName.equals("classes")) {
@@ -111,13 +132,19 @@ public class Deployment {
         } else if (directoryName.equalsIgnoreCase("StaticResource")) {
             suffix = "resource";
         } else {
-            suffix = directoryName.substring(0, directoryName.length()-1);
+            suffix = directoryName.substring(0, directoryName.length() - 1);
         }
         return suffix;
     }
 
 
-    private void assemble() throws ParserConfigurationException {
+    private String assemble(Map<String, Set<String>> types) throws ParserConfigurationException, TransformerException {
+        TransformerFactory transfac = TransformerFactory.newInstance();
+        Transformer trans = transfac.newTransformer();
+        trans.setOutputProperty(OutputKeys.INDENT, "yes");
+
+        Document doc;
+
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder parser = factory.newDocumentBuilder();
         doc = parser.newDocument();
@@ -127,19 +154,23 @@ public class Deployment {
         for (String typeName : types.keySet()) {
             Node typesNode = packge.appendChild(doc.createElement("types"));
 
-            List<String> members = types.get(typeName);
+            Set<String> members = types.get(typeName);
             for (String member : members) {
-                addTextElement(typesNode, "members", member);
+                addTextElement(doc, typesNode, "members", member);
             }
 
-            addTextElement(typesNode, "name", typeName);
+            addTextElement(doc, typesNode, "name", typeName);
         }
-        addTextElement(packge, "version", ""  + LoginHelper.WSDL_VERSION);
+        addTextElement(doc, packge, "version", "" + LoginHelper.WSDL_VERSION);
 
-        assembled = true;
+        StringWriter sw = new StringWriter();
+        StreamResult result = new StreamResult(sw);
+        DOMSource source = new DOMSource(doc);
+        trans.transform(source, result);
+        return sw.toString();
     }
 
-    private Element addTextElement(Node parent, String elementName, String value) {
+    private Element addTextElement(Document doc, Node parent, String elementName, String value) {
         Element memberElement = doc.createElement(elementName);
         Text memberValue = doc.createTextNode(value);
         memberElement.appendChild(memberValue);
@@ -148,19 +179,12 @@ public class Deployment {
     }
 
     public String getPackageXml() throws Exception {
-        if (!assembled) {
-            assemble();
-        }
-        TransformerFactory transfac = TransformerFactory.newInstance();
-        Transformer trans = transfac.newTransformer();
-        trans.setOutputProperty(OutputKeys.INDENT, "yes");
+        return assemble(typesToDeploy);
+    }
 
-        //create string from xml tree
-        StringWriter sw = new StringWriter();
-        StreamResult result = new StreamResult(sw);
-        DOMSource source = new DOMSource(doc);
-        trans.transform(source, result);
-        return sw.toString();
+
+    public String getDestructiveChangesXml() throws Exception {
+        return assemble(typesToDrop);
     }
 
     public List<DeploymentResource> getDeploymentResources() {
@@ -168,10 +192,19 @@ public class Deployment {
     }
 
     public boolean hasContent() {
-        return types.keySet().size() > 0;
+        return typesToDeploy.keySet().size() > 0;
     }
 
-    public Map<String, List<String>> getTypes() {
-        return types;
+    public boolean hasDestructiveChanges() {
+        return typesToDrop.keySet().size() > 0;
+    }
+
+
+    public Map<String, Set<String>> getTypesToDeploy() {
+        return typesToDeploy;
+    }
+
+    public Map<String, Set<String>> getTypesToDrop() {
+        return typesToDrop;
     }
 }
