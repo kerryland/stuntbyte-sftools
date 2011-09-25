@@ -41,6 +41,14 @@ public class Downloader {
     private Map<String, Set<String>> metaDataFiles = new HashMap<String, Set<String>>();
 
 
+    /**
+     *
+     * @param reconnector
+     * @param srcDir    -- optional
+     * @param listener
+     * @param crcFile   -- optional
+     * @throws IOException
+     */
     public Downloader(Reconnector reconnector,
                       File srcDir,
                       DeploymentEventListener listener,
@@ -67,6 +75,14 @@ public class Downloader {
         files.add(name);
     }
 
+    /**
+     * Downloads a zip file containing the requested content.
+     * Also unzips content to srcDir, if provided.
+     * Also updates crc files to crcFile, if provided.
+     *
+     * @return zipfile with content
+     * @throws Exception
+     */
     public File download() throws Exception {
         com.sforce.soap.metadata.Package p = new com.sforce.soap.metadata.Package();
 
@@ -151,6 +167,8 @@ public class Downloader {
             }
             asyncResult = reconnector.checkStatus(
                     new String[]{asyncResult.getId()})[0];
+
+            listener.setAsyncResult(asyncResult);
 //            System.out.println("Status is: " + asyncResult.getState());
             listener.progress("Status is: " + asyncResult.getState());
         }

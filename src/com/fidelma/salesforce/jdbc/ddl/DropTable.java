@@ -67,20 +67,7 @@ public class DropTable {
             for (String tableName : tablesToDrop) {
                 deployment.dropMember("CustomObject", tableName);
             }
-            deployer.deploy(deployment,
-                    new DeploymentEventListener() {
-                        public void error(String message) {
-                            deployError.append(message).append("\n");
-                        }
-
-                        public void message(String message) {
-
-                        }
-
-                        public void progress(String message) {
-
-                        }
-                    });
+            deployer.deploy(deployment, new DdlDeploymentListener(deployError, null));
 
         } catch (Exception e) {
             throw new SQLException(e);

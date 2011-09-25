@@ -10,6 +10,7 @@ import com.fidelma.salesforce.misc.Downloader;
 import com.fidelma.salesforce.misc.LoginHelper;
 import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
+import com.sforce.soap.metadata.AsyncResult;
 import com.sforce.soap.metadata.FileProperties;
 import com.sforce.soap.metadata.ListMetadataQuery;
 import com.sforce.ws.ConnectionException;
@@ -203,21 +204,10 @@ public class Grant {
     private void deployProfiles(final StringBuilder errors, Deployment dep) throws Exception {
         Deployer deployer = new Deployer(reconnector);
 
-        deployer.deploy(dep, new DeploymentEventListener() {
+        deployer.deploy(dep, new DdlDeploymentListener(errors, null));
 
-            public void error(String message) {
-                errors.append(message).append(". ");
-            }
-
-            public void message(String message) {
-            }
-
-            public void progress(String message) {
-
-            }
-        });
         if (errors.length() != 0) {
-            throw new SQLException("SHIT SHIT " + errors.toString());
+            throw new SQLException(errors.toString());
         }
     }
 
@@ -415,18 +405,9 @@ public class Grant {
             sourceSchemaDir.deleteOnExit();
 
             errors = new StringBuilder();
-            dl = new Downloader(reconnector, sourceSchemaDir, new DeploymentEventListener() {
-                public void error(String message) {
-                    errors.append(message);
-                }
-
-                public void message(String message) {
-                }
-
-                public void progress(String message) {
-
-                }
-            }, null);
+            dl = new Downloader(reconnector, sourceSchemaDir,
+                    new DdlDeploymentListener(errors, null),
+                    null);
             if (errors.length() != 0) {
                 throw new SQLException(errors.toString());
             }

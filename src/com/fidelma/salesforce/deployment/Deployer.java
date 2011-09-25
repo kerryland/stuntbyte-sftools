@@ -130,18 +130,17 @@ public class Deployer {
         deployOptions.setPerformRetrieve(false);
 
         boolean ignoreWarnings = deploymentOptions.contains(Deployer.DeploymentOptions.IGNORE_WARNINGS);
-        boolean setRollbackOnError = !deploymentOptions.contains(Deployer.DeploymentOptions.IGNORE_ERRORS);
+        boolean ignoreErrors = deploymentOptions.contains(Deployer.DeploymentOptions.IGNORE_ERRORS);
 
-        // TODO: WARNING WARNING -- DUE TO A BIZARRO SALESFORCE BUG THESE PROPERTIES ARE INVERTED
-        // TODO: So we are deliberately setting "ignoreWarnings" to "rollbackOnError" and vice-versa
-        deployOptions.setIgnoreWarnings(setRollbackOnError);
-        deployOptions.setRollbackOnError(ignoreWarnings);
+        Boolean rollbackOnError = !ignoreErrors;
+
+        deployOptions.setIgnoreWarnings(ignoreWarnings);
+        deployOptions.setRollbackOnError(rollbackOnError);
 
         deployOptions.setRunAllTests(deploymentOptions.contains(Deployer.DeploymentOptions.ALL_TESTS));
         deployOptions.setSinglePackage(true);
 
-//        System.out.println("DEPLOYING WITH IGNORE WARNINGS=" + ignoreWarnings + " rollback=" + setRollbackOnError);
-//        System.out.println("actually......................." + deployOptions.isIgnoreWarnings() + " rollback=" + deployOptions.isRollbackOnError());
+//        System.out.println("actually....................ignore=" + deployOptions.isIgnoreWarnings() + " rollback=" + deployOptions.isRollbackOnError());
 
         List<String> testFiles = new ArrayList<String>();
 
@@ -164,10 +163,7 @@ public class Deployer {
 
             FileProperties[] codeFiles = reconnector.listMetadata(new ListMetadataQuery[]{mdq}, LoginHelper.SFDC_VERSION);
             for (FileProperties fileProperties : codeFiles) {
-//                if ((fileProperties.getFullName().endsWith("Test")) ||
-//                        (fileProperties.getFullName().endsWith("Tests"))) {
                 testFiles.add(fileProperties.getFullName());
-//                }
             }
         }
 
@@ -185,9 +181,6 @@ public class Deployer {
         String deploymentId = asyncResult.getId();
 
         return deploymentId;
-
-
-        //checkDeploymentComplete(deploymentId, listener);
     }
 
 
@@ -232,6 +225,8 @@ public class Deployer {
             if (asyncResult.getMessage() != null) {
                 msg += asyncResult.getMessage();
             }
+
+            listener.setAsyncResult(asyncResult);
 
             listener.progress(msg);
 

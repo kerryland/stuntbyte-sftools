@@ -18,10 +18,6 @@ public class SimpleParserTests {
         ParsedSelect ps = pses.get(0);
         assertEquals("Lead", ps.getDrivingTable());
 
-        for (ParsedColumn col : ps.getColumns()) {
-            System.out.println(col.getName() + " a:" + col.isAlias() + " f:" + col.isFunction());
-        }
-
         assertEquals(2, ps.getColumns().size());
 
         assertEquals("Company", ps.getColumns().get(0).getName());

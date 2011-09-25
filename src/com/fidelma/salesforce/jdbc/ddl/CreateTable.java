@@ -68,19 +68,7 @@ public class CreateTable {
                 deployment.addMember("CustomObject", table.getName(), xml, null);
             }
 
-            deployer.deploy(deployment, new DeploymentEventListener() {
-                public void error(String message) {
-                    deployError.append(message);
-                    deployError.append("\n");
-                }
-
-                public void message(String message) {
-                }
-
-                public void progress(String message) {
-
-                }
-            });
+            deployer.deploy(deployment, new DdlDeploymentListener(deployError, null));
 
             if (deployError.length() != 0) {
                 throw new SQLException(deployError.toString());

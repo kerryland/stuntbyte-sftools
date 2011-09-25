@@ -5,13 +5,16 @@ import com.fidelma.salesforce.deployment.Deployment;
 import com.fidelma.salesforce.deployment.DeploymentEventListener;
 import com.fidelma.salesforce.deployment.DeploymentEventListenerImpl;
 import com.fidelma.salesforce.jdbc.SfConnection;
+import com.fidelma.salesforce.jdbc.ddl.DdlDeploymentListener;
 import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.misc.Downloader;
+import com.fidelma.salesforce.misc.FileUtil;
 import com.fidelma.salesforce.misc.FolderZipper;
 import com.fidelma.salesforce.misc.LoginHelper;
 import com.fidelma.salesforce.misc.Reconnector;
+import com.sforce.soap.metadata.AsyncResult;
 import com.sforce.soap.metadata.FileProperties;
 import com.sforce.soap.metadata.ListMetadataQuery;
 import org.w3c.dom.Document;
@@ -71,9 +74,7 @@ public class Migrator {
         exporter.downloadData(sourceInstance, localdb, criteriaList);
          */
         // Copy metadata from source instance to target instance
-        File sourceSchemaDir = new File(System.getProperty("java.io.tmpdir"),
-                "SF-SRC" + System.currentTimeMillis());  // TODO: This must be unique
-        sourceSchemaDir.mkdir();
+        File sourceSchemaDir = FileUtil.createTempDirectory("SourceInstance");
 
         DeploymentEventListener del = new DeploymentEventListener() {
             public void error(String message) {
@@ -82,6 +83,9 @@ public class Migrator {
 
             public void message(String message) {
                 System.out.println(message);
+            }
+
+            public void setAsyncResult(AsyncResult asyncResult) {
 
             }
 
@@ -637,11 +641,15 @@ public class Migrator {
         Reconnector destinationConnector = new Reconnector(destSalesforce.getHelper());
 
 
-        DeploymentEventListenerImpl del = new DeploymentEventListenerImpl();
 
-        File srcSchemaDir = new File(System.getProperty("java.io.tmpdir"),
-                "SF-TRIGGERS" + System.currentTimeMillis());
-        srcSchemaDir.mkdir();
+        StringBuilder errors = new StringBuilder();
+        DdlDeploymentListener del = new DdlDeploymentListener(errors, null);
+
+        File srcSchemaDir = FileUtil.createTempDirectory("Triggers");
+
+//                new File(System.getProperty("java.io.tmpdir"),
+//                "SF-TRIGGERS" + System.currentTimeMillis());
+//        srcSchemaDir.mkdir();
 
 
         File originalFile = downloadBackup(destSalesforce, tableNames, destinationConnector, del, srcSchemaDir);
@@ -656,8 +664,8 @@ public class Migrator {
         String deploymentId = deployer.deployZip(unenabledFile, options);
         deployer.checkDeploymentComplete(deploymentId, del);
 
-        if (del.getErrors().length() != 0) {
-            throw new Exception("Disable of components failed " + del.getErrors().toString());
+        if (errors.length() != 0) {
+            throw new Exception("Disable of components failed " + errors.toString());
         }
 
         try {
@@ -696,9 +704,9 @@ public class Migrator {
             String deployId = deployer.deployZip(restoreZip, options);
             deployer.checkDeploymentComplete(deployId, del);
 //            System.out.println("Restoring schema... done");
-            if (del.getErrors().length() != 0) {
+            if (errors.length() != 0) {
                 throw new Exception("Restore of schema in " + originalFile.getAbsolutePath() +
-                        " failed " + del.getErrors().toString());
+                        " failed " + errors.toString());
             }
 
         }
@@ -726,7 +734,8 @@ public class Migrator {
         return restoreZip;
     }
 
-    private File downloadBackup(SfConnection destSalesforce, Set<String> tableNames, Reconnector destinationConnector, DeploymentEventListenerImpl del, File sourceSchemaDir) throws Exception {
+    private File downloadBackup(SfConnection destSalesforce, Set<String> tableNames, Reconnector destinationConnector,
+                                DeploymentEventListener del, File sourceSchemaDir) throws Exception {
         Downloader destinationBackup = new Downloader(destinationConnector, sourceSchemaDir,
                 del, null);
 

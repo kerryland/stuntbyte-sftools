@@ -34,16 +34,9 @@ public class DownloaderTests {
         Assert.assertTrue(new File(dir + "/objects/Lead.object").exists());
     }
 
-    private class Notice implements DeploymentEventListener {
-
+    private class Notice extends BaseDeploymentEventListener {
         public void error(String message) {
             throw new RuntimeException("No error should be generated");
-        }
-
-        public void message(String message) {
-        }
-
-        public void progress(String message) {
         }
     }
 }

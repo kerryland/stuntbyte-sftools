@@ -6,6 +6,7 @@ import com.fidelma.salesforce.deployment.Deployment;
 import com.fidelma.salesforce.deployment.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
+import com.sforce.soap.metadata.AsyncResult;
 
 import java.sql.SQLException;
 
@@ -37,20 +38,8 @@ public class DropColumn {
 
         Deployer deployer = new Deployer(reconnector);
         final StringBuilder deployError = new StringBuilder();
-        deployer.deploy(deployment,
-                new DeploymentEventListener() {
-                    public void error(String message) {
-                        deployError.append(message).append("\n");
-                    }
+        deployer.deploy(deployment, new DdlDeploymentListener(deployError, null));
 
-                    public void message(String message) {
-
-                    }
-
-                    public void progress(String message) {
-
-                    }
-                });
         if (deployError.length() != 0) {
             throw new SQLException(deployError.toString());
         }

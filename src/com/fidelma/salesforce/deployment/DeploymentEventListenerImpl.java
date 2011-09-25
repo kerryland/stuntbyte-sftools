@@ -2,7 +2,7 @@ package com.fidelma.salesforce.deployment;
 
 /**
  */
-public class DeploymentEventListenerImpl implements DeploymentEventListener {
+public class DeploymentEventListenerImpl { // implements DeploymentEventListener {
     final StringBuilder errors = new StringBuilder();
     final StringBuilder messages = new StringBuilder();
 
@@ -24,8 +24,8 @@ public class DeploymentEventListenerImpl implements DeploymentEventListener {
     public StringBuilder getErrors() {
         return errors;
     }
-
-    public StringBuilder getMessages() {
-        return messages;
-    }
+//
+//    public StringBuilder getMessages() {
+//        return messages;
+//    }
 }

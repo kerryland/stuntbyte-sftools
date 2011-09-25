@@ -3,6 +3,7 @@ package com.fidelma.salesforce.ide;
 import com.fidelma.salesforce.deployment.Deployer;
 import com.fidelma.salesforce.deployment.DeploymentEventListener;
 import com.fidelma.salesforce.misc.Downloader;
+import com.fidelma.salesforce.misc.FileUtil;
 import com.fidelma.salesforce.misc.LoginHelper;
 import com.fidelma.salesforce.misc.Reconnector;
 import com.sforce.soap.apex.CodeCoverageResult;
@@ -18,6 +19,7 @@ import com.sforce.soap.apex.RunTestFailure;
 import com.sforce.soap.apex.RunTestsRequest;
 import com.sforce.soap.apex.RunTestsResult;
 import com.sforce.soap.apex.SoapConnection;
+import com.sforce.soap.metadata.AsyncResult;
 import com.sforce.soap.metadata.Package;
 import com.sforce.soap.metadata.PackageTypeMembers;
 import com.sforce.soap.metadata.RetrieveRequest;
@@ -199,16 +201,7 @@ public class SalesfarceIDE {
         File result;
         ZipFile zip;
         CrcResults crcResults;
-        StringBuilder sourceCode = new StringBuilder();
-        {
-            LineNumberReader read = new LineNumberReader(new FileReader(filename));
-            String line = read.readLine();
-            while (line != null) {
-                sourceCode.append(line).append('\n');
-                line = read.readLine();
-            }
-            read.close();
-        }
+        String sourceCode = FileUtil.loadTextFile(new File(filename));
 
         File metaFile = new File(filename + "-meta.xml");
         if (!metaFile.exists()) {
@@ -216,17 +209,7 @@ public class SalesfarceIDE {
             return;
         }
 
-        StringBuilder metaData = new StringBuilder();
-        {
-            LineNumberReader read = new LineNumberReader(new FileReader(metaFile));
-            String line = read.readLine();
-            while (line != null) {
-                metaData.append(line).append('\n');
-                line = read.readLine();
-            }
-            read.close();
-        }
-
+        String metaData = FileUtil.loadTextFile(metaFile);
 
         if (filename.endsWith(".trigger") || filename.endsWith(".cls")) {
             compileAndUploadCode(filename, prop, srcDirectory, debugFile, sourceCode, runTests);
@@ -235,7 +218,7 @@ public class SalesfarceIDE {
             String partFilename = new File(filename).getName();
             String aTypeName = determineTypeName(partFilename);
 
-            deployer.uploadNonCode(aTypeName, filename, sourceCode.toString(), metaData.toString(), listener);
+            deployer.uploadNonCode(aTypeName, filename, sourceCode.toString(), metaData, listener);
         }
 
         // Get latest CRCs
@@ -362,17 +345,18 @@ public class SalesfarceIDE {
 //    }
 
 
-    private void compileAndUploadCode(String filename, Properties prop, String src, String debugFile, StringBuilder sourceCode, boolean runTests) throws ConnectionException, IOException {
+    private void compileAndUploadCode(String filename, Properties prop, String src, String debugFile,
+                                      String sourceCode, boolean runTests) throws ConnectionException, IOException {
         String[] triggers = new String[0];
         String[] classes = new String[0];
 
         if (filename.endsWith(".trigger")) {
             triggers = new String[1];
-            triggers[0] = sourceCode.toString();
+            triggers[0] = sourceCode;
 
         } else if (filename.endsWith(".cls")) {
             classes = new String[1];
-            classes[0] = sourceCode.toString();
+            classes[0] = sourceCode;
         }
 
         CompileAndTestRequest request;
@@ -807,6 +791,10 @@ public class SalesfarceIDE {
 
         public void message(String message) {
             output(message);
+        }
+
+        public void setAsyncResult(AsyncResult asyncResult) {
+
         }
 
         public void progress(String message) {

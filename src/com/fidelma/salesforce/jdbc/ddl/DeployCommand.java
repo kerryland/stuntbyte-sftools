@@ -5,9 +5,11 @@ import com.fidelma.salesforce.deployment.Deployment;
 import com.fidelma.salesforce.deployment.DeploymentEventListener;
 import com.fidelma.salesforce.deployment.DeploymentEventListenerImpl;
 import com.fidelma.salesforce.misc.Downloader;
+import com.fidelma.salesforce.misc.FileUtil;
 import com.fidelma.salesforce.misc.FolderZipper;
 import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
+import com.sforce.soap.metadata.AsyncResult;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -165,6 +167,10 @@ public class DeployCommand {
             write(message);
         }
 
+        public void setAsyncResult(AsyncResult asyncResult) {
+
+        }
+
         public void progress(String message) throws IOException {
             write(message);
         }
@@ -186,12 +192,11 @@ public class DeployCommand {
 
 
     private void doCommit() throws Exception {
-        snapshot = new File(System.getProperty("java.io.tmpdir"),
-                "SF-SNAPSHOT" + System.currentTimeMillis());
+        snapshot = FileUtil.createTempDirectory("Snapshot");
 
-        snapshot.mkdir();
+        StringBuilder errors = new StringBuilder();
+        DdlDeploymentListener deploymentEventListener = new DdlDeploymentListener(errors, null);
 
-        DeploymentEventListenerImpl deploymentEventListener = new DeploymentEventListenerImpl();
         Map<String, Set<String>> types = deployment.getTypesToDeploy();
 
         Downloader dl = new Downloader(reconnector, snapshot, deploymentEventListener, null);
@@ -204,8 +209,8 @@ public class DeployCommand {
         }
         dl.download();
 
-        if (deploymentEventListener.getErrors().length() > 0) {
-            throw new SQLException(deploymentEventListener.getErrors().toString());
+        if (deploymentEventListener.errors.length() > 0) {
+            throw new SQLException(deploymentEventListener.errors.toString());
         }
 
         // TODO: Copy xml files from sourceSchemaDir to snapshot?
