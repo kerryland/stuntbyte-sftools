@@ -2,6 +2,7 @@ package com.fidelma.database.migration;
 
 import com.fidelma.salesforce.database.migration.MigrationCriteria;
 import com.fidelma.salesforce.database.migration.Migrator;
+import com.fidelma.salesforce.database.migration.SimpleKeyBuilder;
 import com.fidelma.salesforce.jdbc.SfConnection;
 import com.fidelma.salesforce.misc.StdOutDeploymentEventListener;
 import com.fidelma.salesforce.misc.TestHelper;
@@ -136,14 +137,23 @@ public class MigratorTest {
                 , info);
 
         // TODO: Sort these into a dependency order
-        // TODO: Maybe NOT disable explicitly listed workflow or triggers?
-
+        // TODO: Maybe NOT disable some explicitly listed workflow or triggers?
 
 
         // Don't migrate these -- just use the data that's already there
         List<MigrationCriteria> existingDataCriteriaList = new ArrayList<MigrationCriteria>();
-        existingDataCriteriaList.add(new MigrationCriteria("c2g__codaCompany__c", ""));
+        existingDataCriteriaList.add(new MigrationCriteria(
+                "c2g__codaCompany__c",
+                "",
+                "Name",
+                new SimpleKeyBuilder("Name")));
 
+
+        existingDataCriteriaList.add(new MigrationCriteria("c2g__codaAccountingCurrency__c", "",
+                "Name",
+                new SimpleKeyBuilder("Name")));
+
+//        existingDataCriteriaList.add(new MigrationCriteria("c2g__codaGeneralLedgerAccount__c", ""));
 
 
         List<MigrationCriteria> migrationCriteriaList = new ArrayList<MigrationCriteria>();

@@ -77,6 +77,9 @@ public class Exporter {
     }
 
 
+    /**
+     * Copy data from the sfConnection to the localConnection for the tables listed in migrationCriteriaList
+     */
     public void downloadData(SfConnection sfConnection, Connection localConnection, List<MigrationCriteria> migrationCriteriaList) throws SQLException {
 
         for (MigrationCriteria criteria : migrationCriteriaList) {

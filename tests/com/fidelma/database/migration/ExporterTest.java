@@ -162,7 +162,8 @@ public class ExporterTest {
 
 
         // Push rows back to Salesforce
-        migrator.restoreRows(sfconn, h2Conn, criteriaList);
+        migrator.restoreRows(sfconn, h2Conn, criteriaList,
+                new ArrayList<MigrationCriteria>());  // TODO: Test this!
 
         // Check salesforce has the same data, but with different ids
         ResultSet rs = sfdc.executeQuery("select * from two__c order by Name__c");

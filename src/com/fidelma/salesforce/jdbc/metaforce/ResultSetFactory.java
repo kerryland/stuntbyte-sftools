@@ -288,14 +288,12 @@ public class ResultSetFactory {
                         map.put("SQL_DATETIME_SUB", null);
                         map.put("CHAR_OCTET_LENGTH", 0);
                         map.put("ORDINAL_POSITION", ordinal++);
-//                        map.put("IS_NULLABLE", "");
                         map.put("IS_NULLABLE", column.isNillable() ? "YES" : "NO");
                         map.put("SCOPE_CATLOG", null);
                         map.put("SCOPE_SCHEMA", null);
                         map.put("SCOPE_TABLE", null);
                         map.put("SOURCE_DATA_TYPE", column.getType());
-                        // TODO: IS_AUTOINCREMENT
-
+                        map.put("IS_AUTOINCREMENT", column.isAutoIncrement() ? "YES" : "NO");
 
                         // The Auto column is obtained by SchemaSpy via ResultSetMetaData so awkward to support
 

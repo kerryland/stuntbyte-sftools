@@ -3,7 +3,6 @@ package com.fidelma.salesforce.database.migration;
 import com.fidelma.salesforce.deployment.Deployer;
 import com.fidelma.salesforce.deployment.Deployment;
 import com.fidelma.salesforce.deployment.DeploymentEventListener;
-import com.fidelma.salesforce.deployment.DeploymentEventListenerImpl;
 import com.fidelma.salesforce.jdbc.SfConnection;
 import com.fidelma.salesforce.jdbc.ddl.DdlDeploymentListener;
 import com.fidelma.salesforce.jdbc.metaforce.Column;
@@ -214,7 +213,8 @@ public class Migrator {
     // TODO: restoreRequests does not honour the .sql property  -- thats ok? (need source and dest filtering?)
     public void restoreRows(SfConnection destination,
                             Connection localDb,
-                            List<MigrationCriteria> restoreRequests) throws SQLException {
+                            List<MigrationCriteria> restoreRequests,
+                            List<MigrationCriteria> existingDataCriteriaList) throws SQLException {
 
         Exporter exporter = new Exporter();
 
@@ -235,14 +235,23 @@ public class Migrator {
 
         final String defaultUserId = getDefaultUser(destination);
 
-        mapSalesforceInternalObjects(insertKeymap, destination, localDb,
+        mapDataInDestination(insertKeymap, destination, localDb,
                 "select Id, Name from User where isActive = true",
                 "User",
                 new SimpleKeyBuilder("Name"));
 
-        mapSalesforceInternalObjects(insertKeymap, destination, localDb, "select Id, Name from UserRole",
+        mapDataInDestination(insertKeymap, destination, localDb, "select Id, Name from UserRole",
                 "UserRole",
                 new SimpleKeyBuilder("Name"));
+
+
+        for (MigrationCriteria migrationCriteria : existingDataCriteriaList) {
+            mapDataInDestination(insertKeymap, destination, localDb,
+                    "select Id, " + migrationCriteria.keyBuilderColumns + " from " + migrationCriteria.tableName + "  " + migrationCriteria.sql,
+                    migrationCriteria.tableName,
+                    migrationCriteria.keyBuilder);
+//                    new SimpleKeyBuilder("Name"));
+        }
 
 
         // Create fresh master-detail records
@@ -424,21 +433,6 @@ public class Migrator {
         return defaultUserId;
     }
 
-    private interface KeyBuilder {
-        String buildKey(ResultSet rs) throws SQLException;
-    }
-
-    private class SimpleKeyBuilder implements KeyBuilder {
-        private String keyName;
-
-        private SimpleKeyBuilder(String keyName) {
-            this.keyName = keyName;
-        }
-
-        public String buildKey(ResultSet rs) throws SQLException {
-            return rs.getString(keyName);
-        }
-    }
 
 
     // Record type is a special case. Setup the mapping here
@@ -451,12 +445,20 @@ public class Migrator {
             }
         };
 
-        mapSalesforceInternalObjects(insertKeymap, destination, localDb, sql, "RecordType", kb);
+        mapDataInDestination(insertKeymap, destination, localDb, sql, "RecordType", kb);
 
     }
 
-    private void mapSalesforceInternalObjects(PreparedStatement insertKeymap, SfConnection destination,
-                                              Connection localDb, String sql, String tableName, KeyBuilder kb) throws SQLException {
+    /**
+     * Some data is already in the destination, and we have to reuse it. Define such data with this method
+     *
+     * @param destination - the salesforce instance where the existing data lives
+     * @param tableName - the name of the table that we can't change
+     * @param kb - something that tells us how to identify the key common to the source and destination environments
+     *             (often the 'Name' column)
+     */
+    private void mapDataInDestination(PreparedStatement insertKeymap, SfConnection destination,
+                                      Connection localDb, String sql, String tableName, KeyBuilder kb) throws SQLException {
         Map<String, String> oldIds = new HashMap<String, String>();
 
         PreparedStatement stmt = localDb.prepareStatement(sql);
@@ -688,7 +690,7 @@ public class Migrator {
             Exporter exporter = new Exporter();
             exporter.createLocalSchema(sourceSalesforce, h2Conn);
 
-            exporter.downloadData(destSalesforce, h2Conn, existingDataCriteriaList);
+
 
 
 
@@ -700,6 +702,9 @@ public class Migrator {
 //            migrationCriteriaList.add(new MigrationCriteria("Group"));  -- TODO: Handle horrible table name!
             exporter.downloadData(sourceSalesforce, h2Conn, migrationCriteriaList);
 
+            exporter.downloadData(sourceSalesforce, h2Conn, existingDataCriteriaList);
+
+
             // Create a simpler restore migration criteria, with no 'sql' criteria,
             // and duplicated tables removed.
             List<MigrationCriteria> restoreCriteria = new ArrayList<MigrationCriteria>();
@@ -709,7 +714,7 @@ public class Migrator {
                 restoreCriteria.add(criteria);
             }
 
-            restoreRows(destSalesforce, h2Conn, restoreCriteria);
+            restoreRows(destSalesforce, h2Conn, restoreCriteria, existingDataCriteriaList);
 
         } finally {
  //           System.out.println("Restoring schema " + restoreZip.getAbsolutePath());

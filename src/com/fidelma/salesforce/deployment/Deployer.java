@@ -118,7 +118,8 @@ public class Deployer {
         IGNORE_ERRORS,
         IGNORE_WARNINGS,
         ALLOW_MISSING_FILES,
-        DEPLOYED_TESTS
+        DEPLOYED_TESTS,
+        CHECK_ONLY
     }
 
 
@@ -139,6 +140,7 @@ public class Deployer {
 
         deployOptions.setRunAllTests(deploymentOptions.contains(Deployer.DeploymentOptions.ALL_TESTS));
         deployOptions.setSinglePackage(true);
+        deployOptions.setCheckOnly(deploymentOptions.contains(Deployer.DeploymentOptions.CHECK_ONLY));
 
 //        System.out.println("actually....................ignore=" + deployOptions.isIgnoreWarnings() + " rollback=" + deployOptions.isRollbackOnError());
 
