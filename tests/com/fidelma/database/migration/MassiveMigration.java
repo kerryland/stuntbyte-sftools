@@ -64,6 +64,6 @@ public class MassiveMigration {
         }
 
         Migrator migrator = new Migrator();
-        migrator.migrateData(sourceSalesforce, destSalesforce, h2Conn, migrationCriteriaList);
+        migrator.migrateData(sourceSalesforce, destSalesforce, h2Conn, migrationCriteriaList, new ArrayList<MigrationCriteria>());
     }
 }

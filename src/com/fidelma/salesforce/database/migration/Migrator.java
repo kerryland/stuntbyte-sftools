@@ -29,11 +29,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -300,6 +296,7 @@ public class Migrator {
             public Object alterValue(String tableName, String columnName, Object value) throws SQLException {
                 Table table = salesforceMetadata.getTable(tableName);
                 Column column = table.getColumn(columnName);
+                Object originalValue = value;
 
 //                System.out.print("KJS processing " + columnName + " " + column.getType() + "=" + value);
                 // TODO: This should be configurable! (example of mangling email addresses)
@@ -324,6 +321,11 @@ public class Migrator {
                         // Handle inactive users -- a common problem
                         if (column.getReferencedTable().equalsIgnoreCase("User")) {
                             value = defaultUserId;
+
+//                            TODO: Softcode somehow!
+//                        } else if (!columnName.equalsIgnoreCase("Id") && (originalValue != null) && (originalValue instanceof String) && (originalValue.equals("a0z30000000onDeAAI"))) {
+//                            value = "a0zS0000000EIGtIAO";
+
                         } else {
                             System.out.println("KJS WARNING -- failed to make a value for " + columnName + " " + value);
                             value = null;
@@ -413,7 +415,8 @@ public class Migrator {
     private String getDefaultUser(SfConnection destination) throws SQLException {
         String defaultUserId = null;
         PreparedStatement psStatement = destination.prepareStatement(
-                "select id from User where isActive = true and UserType = 'Standard' limit 1");
+                "select id from User where Name = 'Fronde Admin' limit 1");
+//                "select id from User where isActive = true and UserType = 'Standard' limit 1");
         ResultSet rs = psStatement.executeQuery();
         if (rs.next()) {
             defaultUserId = rs.getString("id");
@@ -591,12 +594,15 @@ public class Migrator {
             System.out.println("KJS PULL FROM " + selectColumns.toString());
 
             ResultSet rs = stmt.executeQuery(selectColumns.toString());
+//            ResultSetMetaData metaData = rs.getMetaData();
+
             while (rs.next()) {
                 for (int i = 1; i <= colCount; i++) {
 //                    System.out.println("KJS GOT ID " + rs.getString(i) + " " + (rs.getString(i) == null));
                     if ((i == colCount) && hasMasterDetail) {
                         sourceIds.add(rs.getString(i));
                     } else {
+//                        Object value = callback.alterValue(table.getName(), metaData.getColumnName(i), rs.getString(i));
                         updateStmt.setString(i, rs.getString(i));
                     }
                 }
@@ -634,7 +640,8 @@ public class Migrator {
      * h2Conn is a local database connection used to hold data during migration.
      */
     public void migrateData(SfConnection sourceSalesforce, SfConnection destSalesforce, Connection h2Conn,
-                            List<MigrationCriteria> migrationCriteriaList) throws Exception {
+                            List<MigrationCriteria> migrationCriteriaList,
+                            List<MigrationCriteria> existingDataCriteriaList) throws Exception {
 
         Set<String> tableNames = correctTableNames(sourceSalesforce, migrationCriteriaList);
 
@@ -680,6 +687,11 @@ public class Migrator {
 
             Exporter exporter = new Exporter();
             exporter.createLocalSchema(sourceSalesforce, h2Conn);
+
+            exporter.downloadData(destSalesforce, h2Conn, existingDataCriteriaList);
+
+
+
 
             // We always need these for mappings...
             migrationCriteriaList.add(new MigrationCriteria("RecordType"));

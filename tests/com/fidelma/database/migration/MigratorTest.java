@@ -103,6 +103,10 @@ public class MigratorTest {
         Class.forName("com.fidelma.salesforce.jdbc.SfDriver");
 
         Properties info = new Properties();
+//        info.put("user", "kerry.sainsbury@nzpost.co.nz.sandbox");
+//        info.put("password", "xJiKif3IeCLiZKNervuO3W3ozLxyQ6cm");
+
+
         info.put("user", "fronde.admin@localist.co.nz");
         info.put("password", "jrP2U0TnW09DesQIaxOmAb3yWiN9lRLu");
         SfConnection sourceSalesforce = (SfConnection) DriverManager.getConnection(
@@ -117,7 +121,7 @@ public class MigratorTest {
                 "jdbc:h2:/tmp/sfdc-prod"
                 , info);
 
-        String destUser = "fronde.admin@localist.co.nz.dev1";
+        String destUser = "fronde.admin@localist.co.nz.preprod";
         String destPwd = "jrP2U0TnW09DesQIaxOmAb3yWiN9lRLu";
 
 //        String destUser = "fronde.admin@localist.co.nz.devkerry";
@@ -134,7 +138,29 @@ public class MigratorTest {
         // TODO: Sort these into a dependency order
         // TODO: Maybe NOT disable explicitly listed workflow or triggers?
 
+
+
+        // Don't migrate these -- just use the data that's already there
+        List<MigrationCriteria> existingDataCriteriaList = new ArrayList<MigrationCriteria>();
+        existingDataCriteriaList.add(new MigrationCriteria("c2g__codaCompany__c", ""));
+
+
+
         List<MigrationCriteria> migrationCriteriaList = new ArrayList<MigrationCriteria>();
+
+//          a11Q0000000M5LQIA0 --> a0zS0000000EIGtIAO
+
+        migrationCriteriaList.add(new MigrationCriteria("c2g__codaDimension1__c", ""));
+        migrationCriteriaList.add(new MigrationCriteria("c2g__codaDimension2__c", ""));
+        migrationCriteriaList.add(new MigrationCriteria("c2g__codaDimension3__c", ""));
+        migrationCriteriaList.add(new MigrationCriteria("c2g__codaDimension4__c", ""));
+        migrationCriteriaList.add(new MigrationCriteria("c2g__codaGeneralLedgerAccount__c", ""));
+        migrationCriteriaList.add(new MigrationCriteria("c2g__codaTaxCode__c", ""));
+//        migrationCriteriaList.add(new MigrationCriteria("c2g__codaTaxRate__c", ""));
+        migrationCriteriaList.add(new MigrationCriteria("c2g__codaBankAccount__c", ""));
+        migrationCriteriaList.add(new MigrationCriteria("c2g__codaIncomeScheduleDefinition__c", ""));
+
+
         migrationCriteriaList.add(new MigrationCriteria("Location__c", "where name like 'S%'"));
         migrationCriteriaList.add(new MigrationCriteria("Location_Relationship__c",
                 "where Associated_Location__r.Name like 'S%' and Location__r.Name like 'S%'"));
@@ -180,10 +206,8 @@ public class MigratorTest {
                         "  where Associated_Organisation__r.Name = 'Duplicate DO NOT USE - TEST - SMOKE'\n" +
                         "   and Organisation__c = null)"));
 
-
         Migrator migrator = new Migrator();
-
-        migrator.migrateData(sourceSalesforce, destSalesforce, h2Conn, migrationCriteriaList);
+        migrator.migrateData(sourceSalesforce, destSalesforce, h2Conn, migrationCriteriaList, existingDataCriteriaList);
 
 
     }
