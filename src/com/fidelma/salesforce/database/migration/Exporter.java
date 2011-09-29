@@ -15,8 +15,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -80,7 +82,9 @@ public class Exporter {
     /**
      * Copy data from the sfConnection to the localConnection for the tables listed in migrationCriteriaList
      */
-    public void downloadData(SfConnection sfConnection, Connection localConnection, List<MigrationCriteria> migrationCriteriaList) throws SQLException {
+    public void downloadData(SfConnection sfConnection, Connection localConnection,
+                             List<MigrationCriteria> migrationCriteriaList,
+                             Set<String> processedTables) throws SQLException {
 
         for (MigrationCriteria criteria : migrationCriteriaList) {
             String tableName = criteria.tableName;
@@ -89,7 +93,7 @@ public class Exporter {
                         "select * from " + criteria.tableName + " " + criteria.sql);
                 ResultSet rs = pstmt.executeQuery();
 
-                copyResultSetToTable(localConnection, tableName, rs, null);
+                copyResultSetToTable(localConnection, tableName, rs, processedTables, null);
             }
         }
     }
@@ -97,6 +101,7 @@ public class Exporter {
     public void copyResultSetToTable(Connection destination,
                                      String tableName,
                                      ResultSet rs,
+                                     Set<String> processedTables,
                                      ResultSetCallback resultSetCallback) throws SQLException {
 
         System.out.println("Saving records to " + tableName);
@@ -109,7 +114,7 @@ public class Exporter {
 
         int destCol = 0;
         for (int col = 1; col <= rs.getMetaData().getColumnCount(); col++) {
-            if (resultSetCallback == null || resultSetCallback.shouldInsert(tableName, rs, col)) {
+            if (resultSetCallback == null || resultSetCallback.shouldInsert(tableName, rs, col, processedTables)) {
                 if (!first) {
                     columns.append(",");
                     values.append(",");
@@ -152,6 +157,7 @@ public class Exporter {
         }
         try {
             pinsert.executeBatch();
+            processedTables.add(tableName.toLowerCase());
         } catch (SQLException e) {
             System.out.println("Failed to copy data from " + tableName + " " + e.getMessage());
         }

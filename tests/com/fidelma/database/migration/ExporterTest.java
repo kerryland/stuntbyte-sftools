@@ -23,8 +23,10 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TimeZone;
 
 import static org.junit.Assert.*;
@@ -135,10 +137,11 @@ public class ExporterTest {
         criteria = new MigrationCriteria("four__c");
         criteriaList.add(criteria);
 
+        Set<String> processedTables = new HashSet<String>();
 
         Exporter exporter = new Exporter();
         exporter.createLocalSchema(sfconn, h2Conn);
-        exporter.downloadData(sfconn, h2Conn, criteriaList);
+        exporter.downloadData(sfconn, h2Conn, criteriaList, processedTables);
 
 //        if (1==1)
 //        throw new Exception("Check h2 one__c row count");

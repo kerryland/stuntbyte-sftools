@@ -122,7 +122,7 @@ public class MigratorTest {
                 "jdbc:h2:/tmp/sfdc-prod"
                 , info);
 
-        String destUser = "fronde.admin@localist.co.nz.preprod";
+        String destUser = "fronde.admin@localist.co.nz.preprod2";
         String destPwd = "jrP2U0TnW09DesQIaxOmAb3yWiN9lRLu";
 
 //        String destUser = "fronde.admin@localist.co.nz.devkerry";
@@ -136,7 +136,8 @@ public class MigratorTest {
                 "jdbc:sfdc:https://test.salesforce.com"
                 , info);
 
-        // TODO: Sort these into a dependency order
+        // TODO: 1. Sort these into a dependency order
+        // TODO: 2.
         // TODO: Maybe NOT disable some explicitly listed workflow or triggers?
 
 

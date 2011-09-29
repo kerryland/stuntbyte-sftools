@@ -216,6 +216,8 @@ public class Migrator {
                             List<MigrationCriteria> restoreRequests,
                             List<MigrationCriteria> existingDataCriteriaList) throws SQLException {
 
+        Set<String> processedTables = new HashSet<String>();
+
         Exporter exporter = new Exporter();
 
         // Insert all data, except for references and unwritable fields
@@ -231,33 +233,34 @@ public class Migrator {
         final PreparedStatement insertKeymap = localDb.prepareStatement(
                 "insert into keyMap(tableName, oldId, newId) values (?,?,?)");
 
-        mapRecordTypes(insertKeymap, destination, localDb);
+        mapRecordTypes(insertKeymap, destination, localDb, processedTables);
 
         final String defaultUserId = getDefaultUser(destination);
 
         mapDataInDestination(insertKeymap, destination, localDb,
                 "select Id, Name from User where isActive = true",
                 "User",
-                new SimpleKeyBuilder("Name"));
+                new SimpleKeyBuilder("Name"),
+                processedTables);
 
         mapDataInDestination(insertKeymap, destination, localDb, "select Id, Name from UserRole",
                 "UserRole",
-                new SimpleKeyBuilder("Name"));
+                new SimpleKeyBuilder("Name"), processedTables);
 
 
         for (MigrationCriteria migrationCriteria : existingDataCriteriaList) {
             mapDataInDestination(insertKeymap, destination, localDb,
                     "select Id, " + migrationCriteria.keyBuilderColumns + " from " + migrationCriteria.tableName + "  " + migrationCriteria.sql,
                     migrationCriteria.tableName,
-                    migrationCriteria.keyBuilder);
-//                    new SimpleKeyBuilder("Name"));
+                    migrationCriteria.keyBuilder,
+                    processedTables);
         }
 
 
         // Create fresh master-detail records
         final ResultSetFactory salesforceMetadata = destination.getMetaDataFactory();
 
-        final List<Column> requiredColumns = new ArrayList<Column>();
+//        final List<Column> requiredColumns = new ArrayList<Column>();
 
         ResultSetCallback callback = new ResultSetCallback() {
             public void onRow(ResultSet rs) {
@@ -277,7 +280,7 @@ public class Migrator {
                 }
             }
 
-            public boolean shouldInsert(String tableName, ResultSet rs, int col) throws SQLException {
+            public boolean shouldInsert(String tableName, ResultSet rs, int col, Set<String> processedTables) throws SQLException {
                 boolean insertColumn = true;
 
                 Table table = salesforceMetadata.getTable(tableName);
@@ -291,13 +294,17 @@ public class Migrator {
                 if (column.isCalculated() || !column.isUpdateable()) {
                     insertColumn = false;
 
+                } else if (column.getType().equalsIgnoreCase("Reference") &&
+                        processedTables.contains(column.getReferencedTable().toLowerCase())) {
+                    insertColumn = true;
+
                 } else if (column.getType().equalsIgnoreCase("Reference") && column.isNillable()) {
                     insertColumn = false;
                 }
 
-                if (insertColumn && !column.isNillable()) {
-                    requiredColumns.add(column);
-                }
+//                if (insertColumn && !column.isNillable()) {
+//                    requiredColumns.add(column);
+//                }
 
                 return insertColumn;
             }
@@ -347,8 +354,6 @@ public class Migrator {
             }
         };
 
-        Set<String> processedTables = new HashSet<String>();
-
         // Copy the base data to Salesforce, but not the relationships
         for (MigrationCriteria restoreRequest : restoreRequests) {
             if (!tableContainsMasterDetail(salesforceMetadata.getTable(restoreRequest.tableName))) {
@@ -364,9 +369,10 @@ public class Migrator {
                         destination,
                         restoreRequest.tableName,
                         rs,
+                        processedTables,
                         callback);
 
-                processedTables.add(restoreRequest.tableName.toUpperCase());
+//                processedTables.add(restoreRequest.tableName.toUpperCase());
             }
         }
 
@@ -377,7 +383,7 @@ public class Migrator {
         for (MigrationCriteria restoreRequest : restoreRequests) {
             Table table = salesforceMetadata.getTable(restoreRequest.tableName);
             if (tableContainsMasterDetail(table)) {
-                masterRecordTables.add(table.getName().toUpperCase());
+                masterRecordTables.add(table.getName().toLowerCase());
             }
         }
 
@@ -392,7 +398,7 @@ public class Migrator {
                 Boolean ok = true;
                 for (Column col : table.getColumns()) {
                     if ((col.getType().equalsIgnoreCase("masterrecord")) &&
-                            (!processedTables.contains(col.getReferencedTable().toUpperCase()))) {
+                            (!processedTables.contains(col.getReferencedTable().toLowerCase()))) {
                         ok = false;
                         break;
                     }
@@ -400,8 +406,8 @@ public class Migrator {
 
                 if (ok) {
                     correctReferences(destination, localDbStatement, table, callback);
-                    masterRecordTables.remove(tableName.toUpperCase());
-                    processedTables.add(tableName.toUpperCase());
+                    masterRecordTables.remove(tableName.toLowerCase());
+                    processedTables.add(tableName.toLowerCase());
                     processingOccurred = true;
                 }
             }
@@ -436,7 +442,7 @@ public class Migrator {
 
 
     // Record type is a special case. Setup the mapping here
-    private void mapRecordTypes(PreparedStatement insertKeymap, SfConnection destination, Connection localDb) throws SQLException {
+    private void mapRecordTypes(PreparedStatement insertKeymap, SfConnection destination, Connection localDb, Set<String> processedTables) throws SQLException {
         String sql = "select Id, SobjectType, DeveloperName from RecordType where isActive = true";
 
         KeyBuilder kb = new KeyBuilder() {
@@ -445,7 +451,7 @@ public class Migrator {
             }
         };
 
-        mapDataInDestination(insertKeymap, destination, localDb, sql, "RecordType", kb);
+        mapDataInDestination(insertKeymap, destination, localDb, sql, "RecordType", kb, processedTables);
 
     }
 
@@ -455,10 +461,10 @@ public class Migrator {
      * @param destination - the salesforce instance where the existing data lives
      * @param tableName - the name of the table that we can't change
      * @param kb - something that tells us how to identify the key common to the source and destination environments
-     *             (often the 'Name' column)
+     * @param processedTables
      */
     private void mapDataInDestination(PreparedStatement insertKeymap, SfConnection destination,
-                                      Connection localDb, String sql, String tableName, KeyBuilder kb) throws SQLException {
+                                      Connection localDb, String sql, String tableName, KeyBuilder kb, Set<String> processedTables) throws SQLException {
         Map<String, String> oldIds = new HashMap<String, String>();
 
         PreparedStatement stmt = localDb.prepareStatement(sql);
@@ -483,6 +489,8 @@ public class Migrator {
         }
         rs.close();
         stmt.close();
+
+        processedTables.add(tableName.toLowerCase());
     }
 
 
@@ -639,7 +647,11 @@ public class Migrator {
      * (TODO: We could populate localdb from sourceSalesforce for those tables not in migration list,
      * which should allow for incremental migrations that still respect new ids)
      * <p/>
-     * h2Conn is a local database connection used to hold data during migration.
+     *
+     * @param h2Conn - is a local database connection used to hold data during migration.
+     * @param migrationCriteriaList - is a list of tables that will be deleted from dest and migrated from source
+     * @param existingDataCriteriaList - is a list of tables that NOT be deleted from dest and NOT migrated from source,
+     *                                   but who have references that will be used to link migrated data from other tables
      */
     public void migrateData(SfConnection sourceSalesforce, SfConnection destSalesforce, Connection h2Conn,
                             List<MigrationCriteria> migrationCriteriaList,
@@ -648,8 +660,6 @@ public class Migrator {
         Set<String> tableNames = correctTableNames(sourceSalesforce, migrationCriteriaList);
 
         Reconnector destinationConnector = new Reconnector(destSalesforce.getHelper());
-
-
 
         StringBuilder errors = new StringBuilder();
         DdlDeploymentListener del = new DdlDeploymentListener(errors, null);
@@ -692,6 +702,7 @@ public class Migrator {
 
 
 
+            Set<String> processedTables = new HashSet<String>();
 
 
 
@@ -700,9 +711,10 @@ public class Migrator {
             migrationCriteriaList.add(new MigrationCriteria("User"));
             migrationCriteriaList.add(new MigrationCriteria("UserRole"));
 //            migrationCriteriaList.add(new MigrationCriteria("Group"));  -- TODO: Handle horrible table name!
-            exporter.downloadData(sourceSalesforce, h2Conn, migrationCriteriaList);
+            exporter.downloadData(sourceSalesforce, h2Conn, migrationCriteriaList, processedTables);
 
-            exporter.downloadData(sourceSalesforce, h2Conn, existingDataCriteriaList);
+            // Download data from source for use in id mapping only -- this is never loaded into destination
+            exporter.downloadData(sourceSalesforce, h2Conn, existingDataCriteriaList, processedTables);
 
 
             // Create a simpler restore migration criteria, with no 'sql' criteria,
