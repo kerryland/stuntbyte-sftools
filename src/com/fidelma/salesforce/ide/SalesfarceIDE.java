@@ -148,7 +148,7 @@ public class SalesfarceIDE {
 
             // Download latest for checksum
             PackageTypeMembers mems = new PackageTypeMembers();
-            String typeName = detemineApexType(filename);
+            String typeName = determineApexType(filename);
 
             mems.setName(typeName);
             String noSuffix = getNoSuffix(filename);
@@ -236,7 +236,7 @@ public class SalesfarceIDE {
     }
 
 
-    public String detemineApexType(String filename) {
+    public String determineApexType(String filename) {
         // Grab the directory name
         String directoryName = new File(filename).getParentFile().getName();
 
@@ -505,7 +505,7 @@ public class SalesfarceIDE {
             crcs.load(new FileReader(crcFile));
         }
 
-        String metadataType = detemineApexType(filename);
+        String metadataType = determineApexType(filename);
 
         String filenameNoPath = new File(filename).getName();
         filenameNoPath = getNoSuffix(filenameNoPath);
