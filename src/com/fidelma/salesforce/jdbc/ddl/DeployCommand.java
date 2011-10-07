@@ -107,6 +107,8 @@ public class DeployCommand {
             if (next.equalsIgnoreCase("STATUS")) {
                 deploymentId = al.getValue("Deployment id missing");
 
+            } else if (next.equalsIgnoreCase("CHECKONLY")) {
+                options.add(Deployer.DeploymentOptions.CHECK_ONLY);
             } else if (next.equalsIgnoreCase("ALLTESTS")) {
                 options.add(Deployer.DeploymentOptions.ALL_TESTS);
             } else if (next.equalsIgnoreCase("RUNTESTS")) {
@@ -116,7 +118,7 @@ public class DeployCommand {
             } else if (next.equalsIgnoreCase("IGNORE_WARNINGS")) {
                 options.add(Deployer.DeploymentOptions.IGNORE_WARNINGS);
             } else {
-                throw new Exception("Expected ALLTESTS, RUNTESTS, IGNORE_WARNINGS or IGNORE_ERRORS, not " + next);
+                throw new Exception("Expected ALLTESTS, RUNTESTS, IGNORE_WARNINGS, IGNORE_ERRORS, or CHECKONLY, not " + next);
             }
         }
 
