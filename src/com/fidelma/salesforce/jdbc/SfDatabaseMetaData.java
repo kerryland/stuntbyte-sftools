@@ -26,7 +26,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     private ResultSetFactory metaDataFactory;
 
     public SfDatabaseMetaData(SfConnection sfConnection,
-                              ResultSetFactory metaDataFactory) throws Exception {
+                              ResultSetFactory metaDataFactory) {
         this.sfConnection = sfConnection;
         this.metaDataFactory = metaDataFactory;
     }

@@ -30,10 +30,8 @@ public class WscService {
     private Filter filter;
     private PartnerConnection partnerConnection;
 
-    public WscService(PartnerConnection partnerConnection, Properties info) throws ConnectionException {
+    public WscService(PartnerConnection partnerConnection, Properties info)  {
         this.partnerConnection = partnerConnection;
-//        Properties props = new Properties();
-//        props.put("standard","true");
         this.filter = new Filter(info);
     }
 

@@ -138,13 +138,7 @@ public class LoginHelper {
     }
 
     public ResultSetFactory createResultSetFactory(Properties info) throws ConnectionException {
-        WscService svc;
-        try {
-            svc = new WscService(getPartnerConnection(), info);
-        } catch (ConnectionException e) {
-            reconnect();
-            svc = new WscService(getPartnerConnection(), info);
-        }
+        WscService svc = new WscService(getPartnerConnection(), info);
         return svc.createResultSetFactory();
     }
 
