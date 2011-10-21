@@ -85,7 +85,9 @@ public class SfResultSet implements java.sql.ResultSet {
         ResultSetFactory rsf = (conn).getMetaDataFactory();
         boolean useLabels = Boolean.parseBoolean(conn.getClientInfo("useLabels"));
         try {
-            batchSize = reconnector.getQueryOptions().getBatchSize();
+            if (reconnector.getQueryOptions() != null) {
+                batchSize = reconnector.getQueryOptions().getBatchSize();
+            }
         } catch (ConnectionException e) {
             throw new SQLException(e);
         }

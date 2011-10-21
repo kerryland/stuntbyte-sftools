@@ -422,26 +422,27 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("NO", rs.getString("IS_NULLABLE"));
     }
 
-/*
+
     @Test
     public void testRegression() throws Exception {
 
         Properties info = new Properties();
-        info.put("user", "kerry.sainsbury@nzpost.co.nz.sandbox");
-        info.put("password", "xJiKif3IeCLiZKNervuO3W3ozLxyQ6cm");
+//        info.put("user", "kerry.sainsbury@nzpost.co.nz.sandbox");
+//        info.put("password", "xJiKif3IeCLiZKNervuO3W3ozLxyQ6cm");
 //    info.put("standard", "true");
 //    info.put("includes", "Lead,Account");
 
-//        info.put("user", "fronde.admin@localist.co.nz");
-//        info.put("password", "jrP2U0TnW09DesQIaxOmAb3yWiN9lRLu");
+        info.put("user", "fronde.admin@localist.co.nz");
+        info.put("password", "jrP2U0TnW09DesQIaxOmAb3yWiN9lRLu");
 
 
         // Get a connection to the database
         Connection conn = DriverManager.getConnection(
-                "jdbc:sfdc:https://test.salesforce.com"
-//                "jdbc:sfdc:https://login.salesforce.com"
+//                "jdbc:sfdc:https://test.salesforce.com"
+                "jdbc:sfdc:https://login.salesforce.com"
                 , info);
 
+        while (true) {
         String soql = "select Localist_Order__r.Account__r.Customer_State__c, " +
                 "Localist_Order__r.State__c, count(Id)\n" +
                 "from localist_product__c\n" +
@@ -471,9 +472,10 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
             System.out.println("2>" + rs.getString(2));
             System.out.println("2>" + rs.getInt(3));
         }
+        }
 
     }
-  */
+
 
        /*
     @Test

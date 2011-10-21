@@ -119,16 +119,16 @@ public class Reconnector {
     }
 
     public QueryOptions_element getQueryOptions() throws ConnectionException {
+        QueryOptions_element result;
         try {
-            QueryOptions_element result = lh.getPartnerConnection().getQueryOptions();
-            if (result == null) {
-                throw new ConnectionException("getPartnerConnection returned null query options -- we've lost a connection");
-            }
-            return result;
+            result = lh.getPartnerConnection().getQueryOptions();
+
         } catch (ConnectionException e) {
             lh.reconnect();
-            return lh.getPartnerConnection().getQueryOptions();
+            result = lh.getPartnerConnection().getQueryOptions();
         }
+
+        return result;
     }
 
     public void setQueryOptions(int fetchSize) throws ConnectionException {
