@@ -48,21 +48,11 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public java.sql.Statement createStatement() throws SQLException {
-        try {
-            return new SfStatement(this, helper);
-        } catch (ConnectionException e) {
-            throw new SQLException(e);
-        }
+        return new SfStatement(this, helper);
     }
 
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        try {
-            return new SfPreparedStatement(this, helper, sql);
-        } catch (ConnectionException e) {
-             throw new SQLException(e);
-        } catch (Exception e) {
-            throw new SQLException(e);
-        }
+        return new SfPreparedStatement(this, helper, sql);
     }
 
     public CallableStatement prepareCall(String sql) throws SQLException {
@@ -99,11 +89,7 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public DatabaseMetaData getMetaData() throws SQLException {
-        try {
-            return new SfDatabaseMetaData(this, metaDataFactory);
-        } catch (Exception e) {
-            throw new SQLException(e);
-        }
+        return new SfDatabaseMetaData(this, metaDataFactory);
     }
 
     public void setReadOnly(boolean readOnly) throws SQLException {

@@ -43,9 +43,8 @@ public class SfStatement implements java.sql.Statement {
     private List<String> generatedIds = new ArrayList<String>();
     private List<Object> batchDDL = new ArrayList<Object>();
 
-    public SfStatement(SfConnection sfConnection, LoginHelper helper) throws ConnectionException, SQLException {
+    public SfStatement(SfConnection sfConnection, LoginHelper helper) {
         this.sfConnection = sfConnection;
-//        pc = helper.getPartnerConnection();
         reconnector = new Reconnector(helper);
     }
 

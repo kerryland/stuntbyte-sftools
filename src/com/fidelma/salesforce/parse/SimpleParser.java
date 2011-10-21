@@ -51,7 +51,7 @@ public class SimpleParser {
     }
 
 
-    public LexicalToken getToken() throws Exception {
+    public LexicalToken getToken()  {
         return al.getToken();
     }
 

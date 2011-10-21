@@ -86,12 +86,24 @@ public class FileUtil {
     public static String determineFileSuffix(String typeName) throws Exception {
         String directoryName = determineDirectoryName(typeName);
         String suffix;
+
         if (directoryName.equals("classes")) {
             suffix = "cls";
 
-        } else if (directoryName.equalsIgnoreCase("StaticResource")) {
+        } else if (directoryName.equals("staticresources")) {
             suffix = "resource";
+
+        } else if (directoryName.equals("remoteSiteSettings")) {
+            suffix = "remoteSite";
+
+        } else if (directoryName.equals("email") ||
+                directoryName.equals("document") ||
+                directoryName.equals("letterhead")) {
+            suffix = directoryName; // These types have singular directory names
+
         } else {
+            // These types have plural directory names
+            // Chop off the "s" from the end of the directory name
             suffix = directoryName.substring(0, directoryName.length() - 1);
         }
         return suffix;

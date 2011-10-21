@@ -41,8 +41,7 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
     private boolean oldTypeCount;
 
 
-    public SfPreparedStatement(SfConnection sfConnection, LoginHelper helper, String sql) throws
-            Exception {
+    public SfPreparedStatement(SfConnection sfConnection, LoginHelper helper, String sql) {
         super(sfConnection, helper);
 
         if (sql.toUpperCase().contains("COUNT()")) {
