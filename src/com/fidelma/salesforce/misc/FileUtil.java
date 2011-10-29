@@ -65,7 +65,7 @@ public class FileUtil {
         if (typeName.equalsIgnoreCase("PermissionSet")) return "permissionsets";
         if (typeName.equalsIgnoreCase("Portal")) return "portals";
         if (typeName.equalsIgnoreCase("Profile")) return "profiles";
-        if (typeName.equalsIgnoreCase("RecordType")) return "recordtypes";
+        if (typeName.equalsIgnoreCase("RecordType")) return "objects";
         if (typeName.equalsIgnoreCase("RemoteSiteSetting")) return "remoteSiteSettings";
         if (typeName.equalsIgnoreCase("Report")) return "reports";
         if (typeName.equalsIgnoreCase("ReportType")) return "reportTypes";
