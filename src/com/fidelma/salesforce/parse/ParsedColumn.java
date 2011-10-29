@@ -11,6 +11,12 @@ public class ParsedColumn {
     private String table;
     private String aliasName;
 
+    public String getExpressionContents() {
+        return expressionContents;
+    }
+
+    private String expressionContents;
+
     public ParsedColumn(String name) {
         this.name = name;
     }
@@ -61,5 +67,9 @@ public class ParsedColumn {
 
     public String getAliasName() {
         return aliasName;
+    }
+
+    public void setExpressionContents(String expressionContents) {
+        this.expressionContents = expressionContents;
     }
 }

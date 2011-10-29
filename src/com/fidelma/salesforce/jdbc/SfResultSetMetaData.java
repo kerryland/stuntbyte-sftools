@@ -4,6 +4,7 @@ import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.misc.TypeHelper;
+import com.fidelma.salesforce.parse.ParsedColumn;
 import com.sforce.soap.partner.sobject.SObject;
 
 import java.sql.ResultSetMetaData;
@@ -33,6 +34,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
             ResultSetFactory rsf,
             SObject record,
             List<String> resultFields,
+            List<ParsedColumn> resultDataTypes,
             boolean useLabels) throws SQLException {
 
         this.rsf = rsf;
@@ -44,15 +46,20 @@ public class SfResultSetMetaData implements ResultSetMetaData {
             baseType = drivingTable;
         }
 
-        addChildren(baseType, isAggregate, resultFields);
+        addChildren(baseType, isAggregate, resultFields, resultDataTypes);
     }
 
 
-    private void addChildren(String type, Boolean aggregate, List<String> resultFields) throws SQLException {
+    private void addChildren(String type, Boolean aggregate, List<String> resultFields, List<ParsedColumn> resultDataTypes)
+            throws SQLException {
+
+        int ptr = 0;
         for (String resultField : resultFields) {
 
+            ParsedColumn pc = resultDataTypes.get(ptr++);
+
             StringTokenizer tok = new StringTokenizer(resultField, ".", false);
-            Column column = keepDrilling(tok, type, null, aggregate);
+            Column column = keepDrilling(tok, type, pc, null, aggregate);
             if (column == null) {
                 throw new SQLException("Failed to find column " + resultField);
             }
@@ -62,12 +69,12 @@ public class SfResultSetMetaData implements ResultSetMetaData {
         }
     }
 
-    private Column keepDrilling(StringTokenizer tok, String type, Column column, Boolean aggregate) throws SQLException {
+    private Column keepDrilling(StringTokenizer tok, String type, ParsedColumn pc, Column column, Boolean aggregate) throws SQLException {
         while (tok.hasMoreTokens()) {
             String col = tok.nextToken();
             String lookup = col;
             if (col.toLowerCase().endsWith("__r")) {
-                lookup = col.substring(0, col.length()-1) + "c";
+                lookup = col.substring(0, col.length() - 1) + "c";
             }
             Table t = rsf.getTable(type);
             try {
@@ -82,7 +89,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
 
                 if (column.getRelationshipType() != null) {
                     type = column.getRelationshipType();
-                    return keepDrilling(tok, type, column, aggregate);
+                    return keepDrilling(tok, type, pc, column, aggregate);
                 }
 
             } catch (SQLException e) {
@@ -90,12 +97,52 @@ public class SfResultSetMetaData implements ResultSetMetaData {
                     throw new SQLException("Attempted to invent column data for " + lookup + " : " + e.getMessage());
                 }
 
-                // make something up
-                // TODO: Maybe we could figure out the data type for an aggregate result, but it would be hard!
-                column = new Column(lookup, "string");
+                // Try to figure out the data type for an aggregate result.
+                column = new Column(lookup);
                 column.setLabel(lookup);
-                column.setLength(10);
                 column.setCalculated(true);
+                column.setLength(10);
+
+                if (aggregate) {
+                    String aggregateDatatype = null;
+
+                    if ((pc.getFunctionName().equalsIgnoreCase("count")) ||
+                            (pc.getFunctionName().equalsIgnoreCase("COUNT_DISTINCT"))) {
+                        aggregateDatatype = "int";
+                    }
+
+                    // This should handle most expressions, including Max and min
+                    try {
+                        // Because SF expressions are so woeful (at least in 2011)
+                        // we don't have to be clever evaluating the expression contents
+                        // because we know it's always a single column.
+                        Column aggregateColumn = t.getColumn(pc.getExpressionContents());
+                        aggregateDatatype = aggregateColumn.getType();
+
+                        column.setLength(aggregateColumn.getLength());
+                        column.setPrecision(aggregateColumn.getPrecision());
+                        column.setScale(aggregateColumn.getScale());
+
+                    } catch (SQLException e1) {
+                    }
+
+                    // If we couldn't figure out the data type, make a guess
+                    if (aggregateDatatype == null) {
+                        if ((pc.getFunctionName().equalsIgnoreCase("avg")) ||
+                                (pc.getFunctionName().equalsIgnoreCase("sum"))) {
+                            aggregateDatatype = "decimal";
+                        } else {
+                            aggregateDatatype = "string";
+                        }
+                    }
+
+                    column.setType(aggregateDatatype);
+
+                } else {
+                    // Some columns (eg: Task.Who and Task.What) can be fk to more than one type of table.
+                    // Getting the data type right seems like more work than it's worth right now. TODO!
+                    column.setType("string");
+                }
 
                 return column;
             }
@@ -207,7 +254,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
     }
 
     private Column getColumn(int column) throws SQLException {
-        return cols.get(column-1);
+        return cols.get(column - 1);
     }
 
 

@@ -261,8 +261,19 @@ public class SelectEngineTests {
     @Test
     public void testSimpleAggregate() throws Exception {
         Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("select company, max(lastName), min(lastName) small, Max(firstName) as maxname from Lead where lastName = '" + surname + "' group by company");
-        assertEquals(4, rs.getMetaData().getColumnCount());
+        ResultSet rs = stmt.executeQuery("select company, max(lastName), min(lastName) small, " +
+                "Max(firstName) as maxname, " +
+                "Max(createdDate) as maxdate " +
+                "from Lead where lastName = '" + surname + "' group by company");
+        assertEquals(5, rs.getMetaData().getColumnCount());
+
+        assertEquals("string", rs.getMetaData().getColumnTypeName(1));
+        assertEquals("string", rs.getMetaData().getColumnTypeName(2));
+        assertEquals("string", rs.getMetaData().getColumnTypeName(3));
+        assertEquals("string", rs.getMetaData().getColumnTypeName(4));
+        assertEquals("datetime", rs.getMetaData().getColumnTypeName(5));
+
+
         assertTrue(rs.next());
         assertEquals("MikeCo", rs.getString(1));
         assertEquals(surname, rs.getString(2));
@@ -422,7 +433,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("NO", rs.getString("IS_NULLABLE"));
     }
 
-
+     /*
     @Test
     public void testRegression() throws Exception {
 
@@ -475,7 +486,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         }
 
     }
-
+              */
 
        /*
     @Test
@@ -637,7 +648,8 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals(3, md.getColumnCount());
         assertEquals("phone", rs.getMetaData().getColumnTypeName(1));
         assertEquals("date", rs.getMetaData().getColumnTypeName(2));
-        assertEquals("string", rs.getMetaData().getColumnTypeName(3)); // TODO: Should be integer!
+        assertEquals("int", rs.getMetaData().getColumnTypeName(3)); // TODO: Should be integer!
+        assertEquals(java.sql.Types.INTEGER, rs.getMetaData().getColumnType(3));
 
         assertTrue(rs.next());
 

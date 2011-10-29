@@ -111,9 +111,10 @@ public class SfResultSet implements java.sql.ResultSet {
                 cols.addAll(parsedSelect.getColumns());
                 drivingTable = parsedSelect.getDrivingTable();
             }
-            finaliseColumnList(columnsInResult, cols);
+            List<ParsedColumn> resultDataTypes = finaliseColumnList(columnsInResult, cols);
 
-            metaData = new SfResultSetMetaData(drivingTable, rsf, records[0], columnsInResult, useLabels);
+            metaData = new SfResultSetMetaData(drivingTable, rsf, records[0], columnsInResult, resultDataTypes,
+                    useLabels);
         } else {
             metaData = new SfResultSetMetaData();
         }
@@ -206,12 +207,14 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
 
-    private void finaliseColumnList(List<String> columnsInResult, List<ParsedColumn> columnsInSql) {
+    private List<ParsedColumn> finaliseColumnList(List<String> columnsInResult, List<ParsedColumn> columnsInSql) {
         List<String> newColumnsInResult = new ArrayList<String>(columnsInSql.size());
+        List<ParsedColumn> resultDataTypes = new ArrayList<ParsedColumn>();
 
         Set<Integer> done = new HashSet<Integer>();
         for (int i = 0; i < columnsInSql.size(); i++) {
             newColumnsInResult.add(null);
+            resultDataTypes.add(null);
             done.add(i);
         }
 
@@ -237,6 +240,7 @@ public class SfResultSet implements java.sql.ResultSet {
                         }
 
                         newColumnsInResult.set(i, columnsInResult.get(j));
+                        resultDataTypes.set(i, inSQl);
                         columnsInResult.set(j, null);
                         columnsInSql.set(i, null);
                         done.remove(i);
@@ -264,6 +268,7 @@ public class SfResultSet implements java.sql.ResultSet {
                             }
 
                             newColumnsInResult.set(i, columnsInSql.get(i).getName());
+                            resultDataTypes.set(i, columnsInSql.get(i));
                             columnsInResult.set(j, null);
                             columnsInSql.set(i, null);
                             done.remove(i);
@@ -280,6 +285,7 @@ public class SfResultSet implements java.sql.ResultSet {
             for (int i = 0; i < columnsInSql.size(); i++) {
                 if (newColumnsInResult.get(i) == null) {
                     newColumnsInResult.set(i, columnsInSql.get(i).getName());
+                    resultDataTypes.set(i, columnsInSql.get(i));
 
                     if (columnsInSql.get(i).getAliasName() != null) {
                         columnNameCaseMap.put(columnsInSql.get(i).getAliasName().toUpperCase(), columnsInSql.get(i).getName());
@@ -296,7 +302,7 @@ public class SfResultSet implements java.sql.ResultSet {
 
         columnsInResult.clear();
         columnsInResult.addAll(newColumnsInResult);
-
+        return resultDataTypes;
     }
 
     private class FullName {
@@ -637,12 +643,10 @@ public class SfResultSet implements java.sql.ResultSet {
         return getTimestamp(getObject(columnLabel));
     }
 
-    // TODO: I guess -- what is cal for?
     public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
         return getTimestamp(columnIndex);
     }
 
-    // TODO: I guess -- what is cal for?
     public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
         return getTimestamp(columnLabel);
     }
@@ -678,12 +682,10 @@ public class SfResultSet implements java.sql.ResultSet {
         return getDate(getObject(columnLabel));
     }
 
-    // TODO: Handle cal
     public Date getDate(int columnIndex, Calendar cal) throws SQLException {
         return getDate(getObject(columnIndex));
     }
 
-    // TODO: Handle cal
     public Date getDate(String columnLabel, Calendar cal) throws SQLException {
         return getDate(getObject(columnLabel));
     }

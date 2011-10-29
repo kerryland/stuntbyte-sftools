@@ -42,6 +42,10 @@ public class Column {
         setType(type);
     }
 
+    public Column(String name) {
+        this.name = name;
+    }
+
     public Table getTable() {
         return table;
     }

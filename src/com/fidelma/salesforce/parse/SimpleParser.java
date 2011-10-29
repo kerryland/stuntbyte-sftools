@@ -94,7 +94,9 @@ public class SimpleParser {
         while ((token != null) && (!token.getValue().equalsIgnoreCase("FROM"))) {
             if (token.getValue().equals("(")) {
                 parsedSelect.addToSql("(");
-                token = swallowUntilMatchingBracket(parsedSelect, la);
+
+                StringBuilder expressionContents = new StringBuilder();
+                token = swallowUntilMatchingBracket(parsedSelect, la, expressionContents);
 
                 if ((token != null) && (!token.getValue().equalsIgnoreCase("FROM") && (!(token.getValue().equals(","))))) {
                     String aliasName;
@@ -109,6 +111,7 @@ public class SimpleParser {
                     pc.setAliasName(aliasName);
                     pc.setFunction(true);
                     pc.setFunctionName(result.get(result.size() - 1).getName());
+                    pc.setExpressionContents(expressionContents.toString());
 
                     result.set(result.size() - 1, pc);
 
@@ -121,6 +124,8 @@ public class SimpleParser {
                     prevPc.setFunction(true);
                     prevPc.setFunctionName(prevPc.getName());
                     prevPc.setName("EXPR" + (expr++));
+                    prevPc.setExpressionContents(expressionContents.toString());
+
                 }
 
             } else if (token.getValue().equals(")")) {
@@ -215,7 +220,8 @@ public class SimpleParser {
         return table;
     }
 
-    private LexicalToken swallowUntilMatchingBracket(ParsedSelect parsedSelect, SimpleParser la) throws Exception {
+    private LexicalToken swallowUntilMatchingBracket(ParsedSelect parsedSelect, SimpleParser la,
+                                                     StringBuilder expressionContents) throws Exception {
         LexicalToken token = la.getToken();
 
         if ((token.getValue().equalsIgnoreCase("SELECT"))) {
@@ -226,10 +232,11 @@ public class SimpleParser {
         while ((token != null) && (!token.getValue().equals(")"))) {
             if (parsedSelect != null) {
                 parsedSelect.addToSql(token.getValue());
+                expressionContents.append(token.getValue());
             }
 
             if (token.getValue().equals("(")) {
-                token = swallowUntilMatchingBracket(parsedSelect, la);
+                token = swallowUntilMatchingBracket(parsedSelect, la, expressionContents);
             } else {
                 token = la.getToken();
             }
