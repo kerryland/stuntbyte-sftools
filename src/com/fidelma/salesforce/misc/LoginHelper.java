@@ -2,8 +2,8 @@ package com.fidelma.salesforce.misc;
 
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.WscService;
-import com.sforce.async.AsyncApiException;
-import com.sforce.async.RestConnection;
+//import com.sforce.async.AsyncApiException;
+//import com.sforce.async.RestConnection;
 import com.sforce.soap.apex.SoapConnection;
 import com.sforce.soap.metadata.MetadataConnection;
 import com.sforce.soap.partner.Connector;
@@ -11,7 +11,7 @@ import com.sforce.soap.partner.LoginResult;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
-import com.sforce.ws.wsdl.Part;
+//import com.sforce.ws.wsdl.Part;
 
 import java.util.Properties;
 
@@ -39,7 +39,7 @@ public class LoginHelper {
 //    private SoapConnection soapConnection;
     private MetadataConnection metadataConnection;
     private PartnerConnection partnerConnection;
-    private RubbishRestConnection bulkConnection;
+//    private RubbishRestConnection bulkConnection;
 
 
     public LoginHelper(String server, String username, String password) {
@@ -52,7 +52,7 @@ public class LoginHelper {
 //        SoapConnection soapConnection = null;
         metadataConnection = null;
         partnerConnection = null;
-        bulkConnection = null;
+//        bulkConnection = null;
     }
 
 
@@ -142,6 +142,7 @@ public class LoginHelper {
         return svc.createResultSetFactory();
     }
 
+    /*
     public class RubbishRestConnection {
         RestConnection conn;
         public String url;
@@ -183,6 +184,7 @@ public class LoginHelper {
 //        return null;
     }
 
+*/
 
     private void configureTracing(ConnectorConfig cc) {
         cc.setTraceMessage(trace);

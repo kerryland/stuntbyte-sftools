@@ -401,14 +401,21 @@ public class SfResultSet implements java.sql.ResultSet {
 
 
     public String getString(String columnName) throws SQLException {
-        return (String) getObject(columnName);
+        Object obj =  getObject(columnName);
+        if (obj == null) {
+            return null;
+        }
+        return obj.toString();
     }
 
     public String getString(int columnIndex) throws SQLException {
         Object obj = null;
         try {
             obj = getObject(columnIndex);
-            return (String) obj;
+            if (obj == null) {
+                return null;
+            }
+            return obj.toString();
         } catch (ClassCastException e) {
             throw new SQLException("Tried to cast " + obj + " " + columnsInResult + " index: " + columnIndex + " to String");
 
