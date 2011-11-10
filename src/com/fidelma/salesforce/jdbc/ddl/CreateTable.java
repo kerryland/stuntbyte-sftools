@@ -215,7 +215,9 @@ public class CreateTable {
                     value = al.getValue();
 
                 } else if (dataType.equalsIgnoreCase("String") ||
-                        dataType.equalsIgnoreCase("TEXTAREA")) {
+                        dataType.equalsIgnoreCase("TEXTAREA") ||
+                        dataType.equalsIgnoreCase("LongTextArea"))
+                    {
 
                     value = al.getValue();
                     if (value != null && value.equals("(")) {

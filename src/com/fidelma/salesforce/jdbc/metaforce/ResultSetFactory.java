@@ -308,7 +308,8 @@ public class ResultSetFactory {
 
     static TypeInfo lookupTypeInfo(String forceTypeName) throws SQLException {
         for (TypeInfo entry : TYPE_INFO_DATA) {
-            if (forceTypeName.equalsIgnoreCase(entry.typeName)) {
+            if ((forceTypeName.equalsIgnoreCase(entry.typeName)  ||
+                (forceTypeName.equalsIgnoreCase(entry.niceName)))) {
                 return entry;
             }
         }
