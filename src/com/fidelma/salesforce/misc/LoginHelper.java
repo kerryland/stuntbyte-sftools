@@ -82,7 +82,13 @@ public class LoginHelper {
 
         cc.setManualLogin(true);
         PartnerConnection pConn = Connector.newConnection(cc);
-        return pConn.login(username, password);
+        LoginResult lr = null;
+        try {
+            lr = pConn.login(username, password);
+        } catch (ConnectionException e) {
+            throw new ConnectionException("Unable to connect " + serverEndpoint + " with " + username, e);
+        }
+        return lr;
     }
 
 

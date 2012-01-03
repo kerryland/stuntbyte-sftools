@@ -21,8 +21,8 @@ import java.util.Properties;
 public class SalesfarceIDETests {
 
     private static String srcDirectory;
-    private static String debugFile;
-    private static String crcFile;
+//    private static String debugFile;
+//    private static String crcFile;
 
 
     @BeforeClass
@@ -32,15 +32,30 @@ public class SalesfarceIDETests {
         prop.load(new FileReader("local.build.properties"));
 
         srcDirectory = prop.getProperty("src.dir");
-        debugFile = prop.getProperty("debug.file");
-        crcFile = prop.getProperty("crc.file");
+
+//        new File(srcDirectory).mkdir();
+        // Assert.assertTrue(new File(srcDirectory).mkdir());
+//        debugFile = prop.getProperty("debug.file");
+//        crcFile = prop.getProperty("crc.file");
     }
 
 
     @Test
     public void testClassEditing() throws Exception {
+
+        // Create metadata for class
+        String fileName = srcDirectory + "/classes/IdeTestClass.cls-meta.xml";
+        String metadata =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n" +
+                        "    <apiVersion>20.0</apiVersion>\n" +
+                        "    <status>Active</status>\n" +
+                        "</ApexClass>";
+
+        writeCode(metadata, fileName);
+
         // Create a class
-        String fileName = srcDirectory + "/classes/IdeTestClass.cls";
+        fileName = srcDirectory + "/classes/IdeTestClass.cls";
         String simpleClass =
                 "public class IdeTestClass {\n" +
                         "public void Hello() {\n" +
@@ -49,8 +64,11 @@ public class SalesfarceIDETests {
 
         writeCode(simpleClass, fileName);
 
+
         // Upload the class
-        SalesfarceIDE.main(new String[] {fileName});
+        System.out.println("Trying to upload");
+        SalesfarceIDE.main(new String[] {"-force", fileName});
+        System.out.println("Trying to upload... done");
 
         // Edit a class
         simpleClass =
@@ -61,7 +79,7 @@ public class SalesfarceIDETests {
         writeCode(simpleClass, fileName);
 
         // Upload a class
-        SalesfarceIDE.main(new String[] {fileName});
+        SalesfarceIDE.main(new String[]{fileName});
 
         // Delete the file locally
         Assert.assertTrue(new File(fileName).delete());
@@ -144,7 +162,9 @@ public class SalesfarceIDETests {
     }
 
     private String writeCode(String simpleClass, String fileName) throws IOException {
-        FileWriter fw = new FileWriter(fileName);
+        File f = new File(fileName);
+        f.getParentFile().mkdirs();
+        FileWriter fw = new FileWriter(f);
         fw.write(simpleClass);
         fw.close();
         return fileName;

@@ -29,9 +29,9 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public SfConnection(String server, String username, String password, Properties info) {
-        System.out.println("WARNING: BETA SALESFORCE JDBC DRIVER EXPIRES 31 December 2011");
+        System.out.println("WARNING: BETA SALESFORCE JDBC DRIVER EXPIRES end March 2012");
         Calendar now = Calendar.getInstance();
-        if (now.get(Calendar.YEAR) > 2011) {
+        if (now.get(Calendar.YEAR) > 2011 && now.get(Calendar.MONTH) > Calendar.MARCH)  {
             throw new RuntimeException("JDBC Driver has expired. Please visit www.fidelma.com for an update");
         }
         this.server = server;

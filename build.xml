@@ -17,6 +17,39 @@
     </target>
 
 
+    <target name="test" depends="compile" description="Run unit tests">
+        <javac srcdir="tests"
+               destdir="classes"
+               debug="on">
+	  <classpath>
+              <fileset dir="lib">
+                  <include name="**/*.jar"/>
+              </fileset>
+              <pathelement path="classes"/>
+	  </classpath>
+        </javac>
+
+     
+	<junit printsummary="yes" haltonfailure="yes">
+	  <classpath>
+              <fileset dir="lib">
+                  <include name="**/*.jar"/>
+              </fileset>
+              <pathelement path="classes"/>
+	  </classpath>
+
+	  <formatter type="plain"/>
+
+	  <batchtest fork="yes" todir="tmp">
+	    <fileset dir="tests">
+	      <include name="**/*Tests.java"/>
+	      <exclude name="**/AllTests.java"/>
+	    </fileset>
+	  </batchtest>
+	</junit>
+    </target>
+
+
     <target name="compile" description="Compile farce.ide">
         <delete dir="classes"/>
 
@@ -25,31 +58,30 @@
                destdir="classes"
                debug="on">
             <!--<classpath location="lib/ant-salesforce.jar"/>-->
-            <classpath location="lib/wsdl-partner.jar"/>
-            <classpath location="lib/wsdl-metadata.jar"/>
-            <classpath location="lib/hibernate-core-3.3.1.GA.jar"/>
-            <classpath location="lib/mvel2-2.0.19.jar"/>
+            <classpath location="lib/wsc-22.jar"/>
+            <classpath location="lib/partner.jar"/>
+            <classpath location="lib/metadata.jar"/>
+            <classpath location="lib/apex.jar"/>
+            <classpath location="lib/hibernate3.jar"/>
+            <classpath location="lib/mvel2-2.1.Beta7.jar"/>
+            <!-- <classpath location="lib/mvel2-2.0.19.jar"/ -->
 
             <!--<classpath location="lib/wsc-20-partner-21-java-5.jar"/>-->
             <!--<classpath location="lib/force-metadata-jdbc-driver-2.0.jar"/>-->
         </javac>
 
 
-        <jar destfile="c:/apps/sql-workbench/drivers/sfdc-kjs-driver-2.jar">
+        <jar destfile="${outputfile}">
             <fileset dir="classes"/>
-            <zipfileset includes="**/*.class" src="lib/wsc-20.jar"/>
-            <zipfileset includes="**/*.class" src="lib/wsdl-partner.jar"/>
-            <zipfileset includes="**/*.class" src="lib/wsdl-metadata.jar"/>
-            <zipfileset includes="**/*.class" src="lib/wsdl-apex.jar"/>
-            <zipfileset includes="**/*.class" src="lib/mvel2-2.0.19.jar"/>
+            <zipfileset includes="**/*.class" src="lib/wsc-22.jar"/>
+            <zipfileset includes="**/*.class" src="lib/partner.jar"/>
+            <zipfileset includes="**/*.class" src="lib/metadata.jar"/>
+            <zipfileset includes="**/*.class" src="lib/apex.jar"/>
+            <zipfileset includes="**/*.class" src="lib/mvel2-2.1.Beta7.jar"/>
 
 
             <!--<zipfileset includes="**/*.class" src="lib/ant-salesforce.jar"/>-->
-
-
-
             <!--<zipfileset includes="**/*.class" src="lib/wsc-20-partner-21-java-5.jar"/>-->
-
             <!--<zipfileset includes="**/*.class" src="lib/force-metadata-jdbc-driver-2.0.jar"/>-->
             <!--
             <manifest>

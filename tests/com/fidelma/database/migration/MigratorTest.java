@@ -15,12 +15,17 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
 /**
  */
 public class MigratorTest {
+    @Test
+    // A dummy test so that JUNIT doesn't complain there is nothing to test in this class
+    public void testNothing() throws Exception {
+    }
 
     //    @Test
     public void testDeleteEverything() throws Exception {

@@ -92,6 +92,8 @@ public class ExporterTest {
         psfdc.setTimestamp(2, new Timestamp(cal.getTimeInMillis()));
         psfdc.addBatch();
 
+        System.out.println("Stored " + cal.getTimeInMillis());
+
         psfdc.setString(1, "Wibbles");
         cal.set(2010, Calendar.FEBRUARY, 15, 17, 0);
         psfdc.setTimestamp(2, new Timestamp(cal.getTimeInMillis()));
@@ -201,6 +203,7 @@ public class ExporterTest {
         Timestamp ts = rs.getTimestamp(3);
 
         cal.setTimeInMillis(ts.getTime());
+        System.out.println("Back " + ts.getTime());
         Assert.assertEquals(2010, cal.get(Calendar.YEAR));
         Assert.assertEquals(Calendar.FEBRUARY, cal.get(Calendar.MONTH));
         Assert.assertEquals(11, cal.get(Calendar.DATE));

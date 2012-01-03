@@ -28,7 +28,7 @@ public class SalesforceDialect extends org.hibernate.dialect.Dialect {
 
         super();
 
-        getDefaultProperties().setProperty( Environment.VERSION, DEFAULT_BATCH_SIZE );
+//        getDefaultProperties().setProperty( Environment.VERSION, DEFAULT_BATCH_SIZE );
         getDefaultProperties().setProperty(Environment.USE_GET_GENERATED_KEYS, "true");
 
         registerColumnType(Types.VARCHAR, "string");
@@ -259,6 +259,7 @@ public class SalesforceDialect extends org.hibernate.dialect.Dialect {
             super(lockable, lockMode);
         }
 
+/*
         public void lock(Serializable id, Object version, Object object, SessionImplementor session)
                 throws StaleObjectStateException, JDBCException {
             if (getLockMode().greaterThan(LockMode.READ)) {
@@ -266,6 +267,7 @@ public class SalesforceDialect extends org.hibernate.dialect.Dialect {
             }
             super.lock(id, version, object, session);
         }
+*/
     }
 
 

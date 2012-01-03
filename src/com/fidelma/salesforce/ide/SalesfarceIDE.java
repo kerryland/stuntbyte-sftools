@@ -118,7 +118,12 @@ public class SalesfarceIDE {
         Properties prop = loadConfig();
         String srcDirectory = prop.getProperty("src.dir");
         String debugFile = prop.getProperty("debug.file");
-        String crcFile = prop.getProperty("crc.file");
+        String crcFileName = prop.getProperty("crc.file");
+        
+        File crcFile = new File(crcFileName);
+        if (!crcFile.exists()) {
+            crcFile.createNewFile();
+        }
 
         String filenameNoPath = new File(filename).getName();
 //        File messageLogFile = File.createTempFile("vim", "log");
@@ -128,11 +133,11 @@ public class SalesfarceIDE {
 
         try {
             if (arg.equals("-download")) {
-                downloadFile(srcDirectory, filename, new File(crcFile));
+                downloadFile(srcDirectory, filename, crcFile);
                 return;
             }
             if (arg.equals("-downloadall")) {
-                downloadFiles(srcDirectory, new File(crcFile));
+                downloadFiles(srcDirectory, crcFile);
                 return;
             }
 
@@ -185,7 +190,7 @@ public class SalesfarceIDE {
             }
 
             if (uploadCode) {
-                uploadCode(filename, prop, srcDirectory, debugFile, crcFile, filenameNoPath, crcs, retrieveRequest, runTests);
+                uploadCode(filename, prop, srcDirectory, debugFile, filenameNoPath, crcs, retrieveRequest, runTests);
                 crcs.store(new FileWriter(crcFile), "Automatically generated for " + crcResults.crcKey);
             }
 
@@ -196,7 +201,7 @@ public class SalesfarceIDE {
     }
 
     private void uploadCode(String filename, Properties prop, String srcDirectory, String debugFile,
-                            String crcFile, String filenameNoPath,
+                            String filenameNoPath,
                             Properties crcs, RetrieveRequest retrieveRequest, boolean runTests) throws Exception {
         File result;
         ZipFile zip;

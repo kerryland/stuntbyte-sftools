@@ -1,5 +1,6 @@
-Kerry
-ChangeEventSenderTest
+
+https://bitbucket.org/repo/mine
+bhttps://sites.google.com/a/fidelma.com/main/
 
 WHO:
 ----
@@ -41,10 +42,35 @@ HOW: (ie: INSTALLATION INSTRUCTIONS)
 ----
 Via a combination of the VIM editor, CTAGS, and Salesforce's "Apex" API.
 
-- Download "the Force.com Migration Tool"
 
-  http://www.salesforce.com/us/developer/docs/apexcode/Content/apex_deploying_ant.htm
+COMPILATION:
+
+- Download jars:
+
+1. Browse to http://code.google.com/p/sfdc-wsc/
+    Click the Downloads tab.
+    Click the wsc-22.jar link and save the file to lib directory.
+
+    Download partner, metadata and apex wsdls
+
+    java -classpath lib/wsc-22.jar com.sforce.ws.tools.wsdlc wsdl/partner.wsdl lib/partner.jar
+    java -classpath lib/wsc-22.jar com.sforce.ws.tools.wsdlc wsdl/metadata.wsdl lib/metadata.jar
+    java -classpath lib/wsc-22.jar com.sforce.ws.tools.wsdlc wsdl/apex.wsdl lib/apex.jar
+
+
+2. http://mvel.codehaus.org/Downloading+MVEL into lib
+
+3. Hibernate 
+
+4. slf4j (for use with Hibernate)
+
+- ... and jars that are just for testing
+
+5. JUNIT: https://github.com/KentBeck/junit/downloads
+
+6. H2: http://www.h2database.com/html/download.html
 
   
+
 
 mvn install:install-file -Dfile=c:/apps/sql-workbench/drivers/sfdc-kjs-driver-2.jar -DgroupId=com.fidelma -DartifactId=farce-base -Dversion=1.1 -Dpackaging=jar -DgeneratePom=true
