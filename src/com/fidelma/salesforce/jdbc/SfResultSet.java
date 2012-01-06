@@ -1370,6 +1370,14 @@ public class SfResultSet implements java.sql.ResultSet {
         throw new SQLFeatureNotSupportedException();
     }
 
+    public <T> T getObject(int i, Class<T> tClass) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+    }
+
+    public <T> T getObject(String s, Class<T> tClass) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+    }
+
     public <T> T unwrap(Class<T> iface) throws SQLException {
         return null;
     }

@@ -3,9 +3,11 @@ package com.fidelma.salesforce.misc;
 /**
  * Created by IntelliJ IDEA.
  * User: kerry
- * Date: 3/01/12
- * Time: 3:58 PM
+ * Date: 5/01/12
+ * Time: 5:26 PM
  * To change this template use File | Settings | File Templates.
  */
-public class StringHelperTests {
+public interface Decrypter {
+
+    byte[] decrypt(String str);
 }

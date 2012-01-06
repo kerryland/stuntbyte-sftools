@@ -27,7 +27,7 @@ public class MigratorTest {
     public void testNothing() throws Exception {
     }
 
-    //    @Test
+//        @Test
     public void testDeleteEverything() throws Exception {
 
         SfConnection conn = TestHelper.getHackConnection();

@@ -2,6 +2,7 @@ package com.fidelma.salesforce.jdbc;
 
 import java.sql.*;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  */
@@ -48,5 +49,9 @@ public class SfDriver implements java.sql.Driver {
 
     public boolean jdbcCompliant() {
         return false;
+    }
+
+    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+        throw new SQLFeatureNotSupportedException();
     }
 }

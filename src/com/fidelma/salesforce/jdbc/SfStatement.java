@@ -433,6 +433,13 @@ public class SfStatement implements java.sql.Statement {
         return false;
     }
 
+    public void closeOnCompletion() throws SQLException {
+    }
+
+    public boolean isCloseOnCompletion() throws SQLException {
+        return true;
+    }
+
     public <T> T unwrap(Class<T> iface) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }

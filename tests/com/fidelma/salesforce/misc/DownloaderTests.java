@@ -1,6 +1,5 @@
 package com.fidelma.salesforce.misc;
 
-import com.fidelma.salesforce.deployment.DeploymentEventListener;
 import junit.framework.Assert;
 import org.junit.Test;
 
@@ -16,7 +15,7 @@ public class DownloaderTests {
     public void testDownload() throws Exception {
 
         LoginHelper lh = new LoginHelper(TestHelper.loginUrl,
-                TestHelper.username, TestHelper.password);
+                TestHelper.username, TestHelper.password, TestHelper.licence);
 
         String dir = System.getProperty("java.io.tmpdir");
         File crcFile = File.createTempFile("CRC", "x");

@@ -130,7 +130,7 @@ public class CreateTable {
                 value = al.getValue();
 
             } else if (columnName.equalsIgnoreCase("primary")) {
-                al.read("key");
+                al.read("licence");
                 al.read("(");
                 al.getValue(); // TODO: Do I care?
                 al.read(")");

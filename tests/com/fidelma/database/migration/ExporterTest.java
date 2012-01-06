@@ -267,7 +267,7 @@ public class ExporterTest {
 //        Statement stmt = conn.createStatement();
 //        stmt.execute(
 //                "create table customer " +
-//                "(Id varchar primary key, extId varchar) ");
+//                "(Id varchar primary licence, extId varchar) ");
 
         String inFile = "testData/create-tables.txt";
 //         InputStream is = getClass().getClassLoader().getResourceAsStream(inFile);

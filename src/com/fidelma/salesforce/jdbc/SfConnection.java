@@ -2,6 +2,7 @@ package com.fidelma.salesforce.jdbc;
 
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.WscService;
+import com.fidelma.salesforce.misc.LicenceService;
 import com.fidelma.salesforce.misc.LoginHelper;
 import com.sforce.ws.ConnectionException;
 
@@ -10,6 +11,7 @@ import java.sql.Statement;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Executor;
 
 /**
  */
@@ -29,15 +31,31 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public SfConnection(String server, String username, String password, Properties info) {
-        System.out.println("WARNING: BETA SALESFORCE JDBC DRIVER EXPIRES end March 2012");
-        Calendar now = Calendar.getInstance();
-        if (now.get(Calendar.YEAR) > 2011 && now.get(Calendar.MONTH) > Calendar.MARCH)  {
-            throw new RuntimeException("JDBC Driver has expired. Please visit www.fidelma.com for an update");
+
+        String key = null;
+        if (info.containsKey("licence")) {
+            key = info.getProperty("licence");
         }
+
+        if (password.startsWith("licence(")) {
+            int sfdcPos = password.indexOf("sfdc(");
+            if (sfdcPos == -1) {
+                throw new RuntimeException("Password starts with licence( but does not contain sfdc(");
+            }
+            key = password.substring(8, password.indexOf(")"));
+            password = password.substring(sfdcPos + 5, password.lastIndexOf(")"));
+        }
+
+
         this.server = server;
         this.username = username;
         this.info = info;
-        helper = new LoginHelper(server, username, password);
+        helper = new LoginHelper(server, username, password, key);
+
+        if (key == null) {
+            throw new RuntimeException("No licence information found");
+        }
+
 
         try {
             metaDataFactory = helper.createResultSetFactory(info);
@@ -233,6 +251,24 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+    }
+
+    public void setSchema(String s) throws SQLException {
+    }
+
+    public String getSchema() throws SQLException {
+        return null;
+    }
+
+    public void abort(Executor executor) throws SQLException {
+    }
+
+    public void setNetworkTimeout(Executor executor, int i) throws SQLException {
+        throw new SQLFeatureNotSupportedException();
+    }
+
+    public int getNetworkTimeout() throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 

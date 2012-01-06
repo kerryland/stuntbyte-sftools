@@ -460,7 +460,7 @@ public class Migrator {
      *
      * @param destination - the salesforce instance where the existing data lives
      * @param tableName - the name of the table that we can't change
-     * @param kb - something that tells us how to identify the key common to the source and destination environments
+     * @param kb - something that tells us how to identify the licence common to the source and destination environments
      * @param processedTables
      */
     private void mapDataInDestination(PreparedStatement insertKeymap, SfConnection destination,

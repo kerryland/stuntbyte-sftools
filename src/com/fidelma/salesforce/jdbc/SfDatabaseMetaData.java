@@ -759,6 +759,15 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
         return null;
     }
 
+    public ResultSet getPseudoColumns(String s, String s1, String s2, String s3) throws SQLException {
+        List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
+        return new ForceResultSet(maps);
+    }
+
+    public boolean generatedKeyAlwaysReturned() throws SQLException {
+        return true;
+    }
+
     public <T> T unwrap(Class<T> iface) throws SQLException {
         throw new SQLException("Unsupported");
     }

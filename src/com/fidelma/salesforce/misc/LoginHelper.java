@@ -30,6 +30,7 @@ public class LoginHelper {
     private String server;
     private String username;
     private String password;
+    private String key;
 
     private boolean trace = false;
 
@@ -39,13 +40,19 @@ public class LoginHelper {
 //    private SoapConnection soapConnection;
     private MetadataConnection metadataConnection;
     private PartnerConnection partnerConnection;
+
 //    private RubbishRestConnection bulkConnection;
 
 
     public LoginHelper(String server, String username, String password) {
+        this(server, username, password, null);
+
+    }
+    public LoginHelper(String server, String username, String password, String key) {
         this.server = server;
         this.username = username;
         this.password = password;
+        this.key = key;
     }
 
     public void reconnect() {
@@ -82,10 +89,25 @@ public class LoginHelper {
 
         cc.setManualLogin(true);
         PartnerConnection pConn = Connector.newConnection(cc);
-        LoginResult lr = null;
+        LoginResult lr;
         try {
             lr = pConn.login(username, password);
-        } catch (ConnectionException e) {
+
+//            System.out.println("Login to " + lr.getUserInfo().getUserFullName());
+
+
+            if (key != null) {
+                LicenceService ls = new LicenceService();
+                if (!ls.checkLicence(lr.getUserInfo().getUserFullName(),
+                            lr.getUserInfo().getOrganizationName(),
+                            key)) {
+                    throw new ConnectionException("JDBC Driver Licence problem for " +
+                            lr.getUserInfo().getUserFullName() + " at " +
+                            lr.getUserInfo().getOrganizationName());
+                }
+            }
+
+        } catch (Exception e) {
             throw new ConnectionException("Unable to connect " + serverEndpoint + " with " + username, e);
         }
         return lr;
