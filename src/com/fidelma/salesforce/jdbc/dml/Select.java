@@ -130,7 +130,6 @@ public class Select {
     // SQL Workbench likes to put quotes around some column names, like "Type",
     // for no obvious reason. This undoes that, kinda crudely....
     private String removeQuotedColumns(String sql, ParsedSelect parsedSelect) {
-        String upper = sql.toUpperCase();
         for (ParsedColumn parsedColumn : parsedSelect.getColumns()) {
             sql = replace(sql, parsedColumn.getName(), "\"" + parsedColumn.getName() + "\"");
         }

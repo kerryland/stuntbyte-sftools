@@ -23,6 +23,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
 
     private List<Column> cols = new ArrayList<Column>();
     private List<String> colName = new ArrayList<String>();
+    private List<String> colAliases = new ArrayList<String>();
 
     // For an empty result set
     public SfResultSetMetaData() {
@@ -66,6 +67,14 @@ public class SfResultSetMetaData implements ResultSetMetaData {
 
             cols.add(column);
             colName.add(resultField);
+
+//            System.out.println("KJS GOT " + pc.isAlias() + " " + pc.getAliasName() + " " + pc.getName() + " " + column.getName());
+            
+            if (pc.isAlias()) {
+                colAliases.add(pc.getAliasName());
+            } else {
+                colAliases.add(column.getName());
+            }
         }
     }
 
@@ -203,11 +212,13 @@ public class SfResultSetMetaData implements ResultSetMetaData {
     }
 
     public String getColumnLabel(int column) throws SQLException {
-        Column col = getColumn(column);
-        if ((col != null) && useLabels) {
-            return col.getLabel();
-        }
-        return getColumnName(column);
+//        System.out.println("Label=" + colAliases.get(column - 1));
+        return colAliases.get(column - 1);
+//        Column col = getColumn(column);
+//        if ((col != null) && useLabels) {
+//            return col.getLabel();
+//        }
+//        return getColumnName(column) +"X";
     }
 
     public String getColumnName(int column) throws SQLException {

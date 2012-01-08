@@ -149,9 +149,18 @@ public class SelectEngineTests {
                         " from Lead where lastName = '" + surname + "'");
         ResultSetMetaData rsmd = rs.getMetaData();
 
+        assertEquals("fn", rsmd.getColumnLabel(1));
+        assertEquals("ln", rsmd.getColumnLabel(2));
+        assertEquals("CreatedDate", rsmd.getColumnLabel(3));
+        assertEquals("cn", rsmd.getColumnLabel(4));
+
         // TODO: What about select FirstName as LastName, LastName as FirstName"
         assertEquals(DatabaseMetaData.columnNullable, rsmd.isNullable(1));
         assertEquals(DatabaseMetaData.columnNoNulls, rsmd.isNullable(2));
+        assertEquals("FirstName", rsmd.getColumnName(1));
+        assertEquals("LastName", rsmd.getColumnName(2));
+        assertEquals("CreatedDate", rsmd.getColumnName(3));
+        assertEquals("CreatedBy.Name", rsmd.getColumnName(4));
 
         assertEquals(-1, stmt.getUpdateCount());
 
@@ -159,8 +168,10 @@ public class SelectEngineTests {
         while (rs.next()) {
             foundCount++;
             assertEquals("Mike", rs.getString("fn"));
+            assertEquals("Mike", rs.getString("FirstName"));
             assertEquals("Mike", rs.getString("FN"));
             assertEquals(surname, rs.getString("ln"));
+            assertEquals(surname, rs.getString("LastName"));
             assertEquals("Kerry Sainsbury", rs.getString("cn"));
         }
 
@@ -585,7 +596,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
                 "select name, " +
                         "bbb__r.name, " +
                         "bbb__r.ccc__r.Name, " +
-                        "bbb__r.ccc__r.ddd__r.Name " +
+                        "bbb__r.ccc__r.ddd__r.Name as ddd_name" +
                         " from aaa__c " +
                         "where id = '" + aaa.getId() + "'");
 
@@ -597,10 +608,10 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("bbb__r.ccc__r.Name", md.getColumnName(3));
         assertEquals("bbb__r.ccc__r.ddd__r.Name", md.getColumnName(4));
 
-        assertEquals("aaa Name", md.getColumnLabel(1));
-        assertEquals("bbb Name", md.getColumnLabel(2));
-        assertEquals("ccc Name", md.getColumnLabel(3));
-        assertEquals("ddd Name", md.getColumnLabel(4));
+        assertEquals("Name", md.getColumnLabel(1));
+        assertEquals("Name", md.getColumnLabel(2));
+        assertEquals("Name", md.getColumnLabel(3));
+        assertEquals("ddd_name", md.getColumnLabel(4));
 
 
         int foundCount = 0;
@@ -745,7 +756,6 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
                         " from aaa__c " +
                         "where id = '" + aaa.getId() + "'");
 
-        ResultSetMetaData md = rs.getMetaData();
         int foundCount = 0;
         while (rs.next()) {
             foundCount++;
@@ -757,6 +767,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals(1, foundCount);
     }
 
+    //---------------------- UPDATES ----------------------------
 
     @Test
     public void testUpdateOneRowViaId() throws Exception {
@@ -1098,7 +1109,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
 
         // Check Name metadata
         ResultSetMetaData rsm = rs.getMetaData();
-        assertEquals("aaa Name", rsm.getColumnLabel(1));
+        assertEquals("Name", rsm.getColumnLabel(1));
         assertEquals("Name", rsm.getColumnName(1));
         assertEquals("", rsm.getCatalogName(1));
         assertEquals("java.lang.String", rsm.getColumnClassName(1));
@@ -1106,7 +1117,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("string", rsm.getColumnTypeName(1));
         assertEquals(Types.VARCHAR, rsm.getColumnType(1));
 
-        assertEquals("bbb", rsm.getColumnLabel(2));
+        assertEquals("bbb__c", rsm.getColumnLabel(2));
         assertEquals("bbb__c", rsm.getColumnName(2));
         assertEquals("", rsm.getCatalogName(2));
         assertEquals("java.lang.String", rsm.getColumnClassName(2));
@@ -1116,7 +1127,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
 
 
         // long_text_1__c
-        assertEquals("long text 1", rsm.getColumnLabel(3));
+        assertEquals("long_text_1__c", rsm.getColumnLabel(3));
         assertEquals("long_text_1__c", rsm.getColumnName(3));
         assertEquals("", rsm.getCatalogName(3));
         assertEquals("java.lang.String", rsm.getColumnClassName(3));
@@ -1124,7 +1135,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("textarea", rsm.getColumnTypeName(3));
         assertEquals(Types.LONGVARCHAR, rsm.getColumnType(3));
 
-        assertEquals("checkbox", rsm.getColumnLabel(5));
+        assertEquals("checkbox__c", rsm.getColumnLabel(5));
         assertEquals("checkbox__c", rsm.getColumnName(5));
         assertEquals("", rsm.getCatalogName(5));
         assertEquals("java.lang.Boolean", rsm.getColumnClassName(5));
@@ -1132,7 +1143,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("boolean", rsm.getColumnTypeName(5));
         assertEquals(Types.BOOLEAN, rsm.getColumnType(5));
 
-        assertEquals("currency2dp", rsm.getColumnLabel(6));
+        assertEquals("currency__c", rsm.getColumnLabel(6));
         assertEquals("currency__c", rsm.getColumnName(6));
         assertEquals("", rsm.getCatalogName(6));
         assertEquals("java.lang.Double", rsm.getColumnClassName(6));
@@ -1142,7 +1153,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals(14, rsm.getPrecision(6));
         assertEquals(2, rsm.getScale(6));
 
-        assertEquals("date", rsm.getColumnLabel(7));
+        assertEquals("date__c", rsm.getColumnLabel(7));
         assertEquals("date__c", rsm.getColumnName(7));
         assertEquals("", rsm.getCatalogName(7));
         assertEquals("java.sql.Date", rsm.getColumnClassName(7));
@@ -1150,7 +1161,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("date", rsm.getColumnTypeName(7));
         assertEquals(Types.DATE, rsm.getColumnType(7));
 
-        assertEquals("datetime", rsm.getColumnLabel(8));
+        assertEquals("datetime__c", rsm.getColumnLabel(8));
         assertEquals("datetime__c", rsm.getColumnName(8));
         assertEquals("", rsm.getCatalogName(8));
         assertEquals("java.sql.Timestamp", rsm.getColumnClassName(8));
@@ -1174,7 +1185,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
 //        assertEquals(Types.ARRAY, rsm.getColumnType(13));
 
 
-        assertEquals("picklist", rsm.getColumnLabel(13));
+        assertEquals("picklist__c", rsm.getColumnLabel(13));
         assertEquals("picklist__c", rsm.getColumnName(13));
         assertEquals("", rsm.getCatalogName(13));
         assertEquals("java.lang.String", rsm.getColumnClassName(13));
@@ -1182,7 +1193,7 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("picklist", rsm.getColumnTypeName(13));
         assertEquals(Types.VARCHAR, rsm.getColumnType(13));
 
-        assertEquals("multipicklist", rsm.getColumnLabel(14));
+        assertEquals("multipicklist__c", rsm.getColumnLabel(14));
         assertEquals("multipicklist__c", rsm.getColumnName(14));
         assertEquals("", rsm.getCatalogName(14));
         assertEquals("java.lang.String", rsm.getColumnClassName(14));

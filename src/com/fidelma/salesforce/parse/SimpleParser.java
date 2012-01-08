@@ -156,6 +156,7 @@ public class SimpleParser {
                 // Ending with dot indicates a table alias was used. We don't need that
                 if ((columnName.length() > 0) && (!columnName.endsWith("."))) {
                     ParsedColumn pc = new ParsedColumn(columnName);
+                    pc.setAlias(aliasName != null);
                     pc.setAliasName(aliasName);
                     result.add(pc);
 

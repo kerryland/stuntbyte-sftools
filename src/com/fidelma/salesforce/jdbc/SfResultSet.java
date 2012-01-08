@@ -53,7 +53,9 @@ public class SfResultSet implements java.sql.ResultSet {
     private QueryResult qr;
     private int maxRows;
     private List<String> columnsInResult;
-    private Map<String, String> columnNameCaseMap = new HashMap<String, String>();
+
+    // Map SELECT column names or aliases to the results
+    private Map<String, String> selectColumnsToResultsMap = new HashMap<String, String>();
 
     private int ptr = -1;
     private int rowCount = 0;
@@ -234,9 +236,9 @@ public class SfResultSet implements java.sql.ResultSet {
                             (inSQl.isFunction() && inResult.toUpperCase().startsWith("EXPR"))) {
 
                         if (columnsInSql.get(i).getAliasName() != null) {
-                            columnNameCaseMap.put(columnsInSql.get(i).getAliasName().toUpperCase(), columnsInResult.get(j));
+                            selectColumnsToResultsMap.put(columnsInSql.get(i).getAliasName().toUpperCase(), columnsInResult.get(j));
                         } else {
-                            columnNameCaseMap.put(columnsInSql.get(i).getName().toUpperCase(), columnsInResult.get(j));
+                            selectColumnsToResultsMap.put(columnsInSql.get(i).getName().toUpperCase(), columnsInResult.get(j));
                         }
 
                         newColumnsInResult.set(i, columnsInResult.get(j));
@@ -262,9 +264,9 @@ public class SfResultSet implements java.sql.ResultSet {
                                         "." + columnsInResult.get(j).toUpperCase()))) {
 
                             if (columnsInSql.get(i).getAliasName() != null) {
-                                columnNameCaseMap.put(columnsInSql.get(i).getAliasName().toUpperCase(), columnsInResult.get(j));
+                                selectColumnsToResultsMap.put(columnsInSql.get(i).getAliasName().toUpperCase(), columnsInResult.get(j));
                             } else {
-                                columnNameCaseMap.put(columnsInSql.get(i).getName().toUpperCase(), columnsInResult.get(j));
+                                selectColumnsToResultsMap.put(columnsInSql.get(i).getName().toUpperCase(), columnsInResult.get(j));
                             }
 
                             newColumnsInResult.set(i, columnsInSql.get(i).getName());
@@ -288,9 +290,9 @@ public class SfResultSet implements java.sql.ResultSet {
                     resultDataTypes.set(i, columnsInSql.get(i));
 
                     if (columnsInSql.get(i).getAliasName() != null) {
-                        columnNameCaseMap.put(columnsInSql.get(i).getAliasName().toUpperCase(), columnsInSql.get(i).getName());
+                        selectColumnsToResultsMap.put(columnsInSql.get(i).getAliasName().toUpperCase(), columnsInSql.get(i).getName());
                     } else {
-                        columnNameCaseMap.put(columnsInSql.get(i).getName().toUpperCase(), columnsInSql.get(i).getName());
+                        selectColumnsToResultsMap.put(columnsInSql.get(i).getName().toUpperCase(), columnsInSql.get(i).getName());
                     }
 
                     done.remove(i);
@@ -434,8 +436,13 @@ public class SfResultSet implements java.sql.ResultSet {
             throw new SQLException("No data available -- next not called");
         }
 
-        String realColumnName = columnNameCaseMap.get(columnLabel.toUpperCase());
+        String realColumnName = selectColumnsToResultsMap.get(columnLabel.toUpperCase());
 //        System.out.println("Mapped " + columnLabel + " to " + realColumnName);
+
+        // We if couldn't find the provided label, see if it's actually a column name
+        if (realColumnName == null && selectColumnsToResultsMap.containsValue(columnLabel)) {
+            realColumnName = columnLabel;
+        }
 
         if (realColumnName == null) {
             wasNull = true;
@@ -445,7 +452,7 @@ public class SfResultSet implements java.sql.ResultSet {
         } else {
             SObject obj = records[ptr];
 //            System.out.println("DRILLING for " + columnLabel + " with REALCOLUMNANME " + realColumnName);
-            result = drillToChild(obj, realColumnName, columnNameCaseMap, realColumnName, new FullName());
+            result = drillToChild(obj, realColumnName, selectColumnsToResultsMap, realColumnName, new FullName());
         }
         wasNull = (result == null);
         return result;
