@@ -5,16 +5,11 @@ import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.SimpleParser;
 
 /**
- * ALTER TABLE <tableName> (
+ * ALTER TABLE <tableName> ADD  (
  * <columnName> <dataType>
- * [ DEFAULT <expression> ]
- * [ NOT | NOT NULL ]
- * [ IDENTITY ]
- * [ COMMENT <expression> ]
- * [ PRIMARY KEY | UNIQUE ]
- * )
- * <p/>
- * //
+ *
+ * ALTER TABLE <tableName> DROP COLUMN <columnname>
+ *
  */
 public class AlterTable {
     private SimpleParser al;

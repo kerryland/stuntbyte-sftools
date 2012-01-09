@@ -109,12 +109,13 @@ public class ResultSetFactory {
 
            // TODO: How handle autonumber?
 //            new TypeInfo("AutoNumber", "string", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("AutoNumber", "autonumber", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
 
             // new TypeInfo("picklist", Types.ARRAY, 0, 0, 0, 0),
             // new TypeInfo("multipicklist", Types.ARRAY, 0, 0, 0, 0),
             // new TypeInfo("combobox", Types.ARRAY, 0, 0, 0, 0),
 
-            new TypeInfo("Summary", "anyType", Types.OTHER, 0, 0, 0, 0),      // Summary?
+            new TypeInfo("Summary", "summary", Types.OTHER, 0, 0, 0, 0),      // Summary?
     };
 
     private Map<String, Table> tableMap = new HashMap<String, Table>();

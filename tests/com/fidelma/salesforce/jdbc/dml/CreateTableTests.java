@@ -47,9 +47,10 @@ public class CreateTableTests {
         conn.createStatement().execute("drop table wibble__c if exists");
 
         String sql = "create table wibble__c(" +
-                "Spang__c int, " +
+                "Spang__c INT, " +
                 "Namero__c string(20)," +
                 "price__c decimal(16,2)," +
+                "description__c longTextArea(12000) with (visibleLines 3)," +
                 "colour__c picklist('red', 'blue' default, 'green') sorted" +
                 ")";
         conn.createStatement().execute(sql);
@@ -121,6 +122,81 @@ public class CreateTableTests {
 
 
     @Test
+    public void testAutonumberName() throws Exception {
+        conn.createStatement().execute("drop table wibble__c if exists");
+
+        String sql = "create table wibble__c(" +
+                "name autonumber, " +    // TODO: Handle case automatically if needed
+                "custom_field__c string(10) )";
+
+        conn.createStatement().execute(sql);
+
+        Statement stmt = conn.createStatement();
+        stmt.execute("insert into wibble__c(custom_field__c) values ('Zeta')");
+        stmt.execute("insert into wibble__c(custom_field__c) values ('Alpha')");
+
+        ResultSet rs = conn.prepareStatement("select Name, Custom_Field__c from wibble__c order by name").executeQuery();
+        Assert.assertTrue(rs.next());
+        Assert.assertEquals("0000000000", rs.getString("name"));
+        Assert.assertEquals("Zeta", rs.getString("custom_field__c"));
+        Assert.assertTrue(rs.next());
+        Assert.assertEquals("0000000001", rs.getString("name"));
+        Assert.assertEquals("Alpha", rs.getString("custom_field__c"));
+        Assert.assertFalse(rs.next());
+    }
+
+
+    // Do we create a name column automatically?
+    @Test
+    public void testDefaultNameColumn() throws Exception {
+        conn.createStatement().execute("drop table wibble__c if exists");
+
+        String sql = "create table wibble__c(" +
+                "custom_field__c string(10) )";
+
+        conn.createStatement().execute(sql);
+
+        Statement stmt = conn.createStatement();
+        stmt.execute("insert into wibble__c(name, custom_field__c) values ('aaa', 'Zeta')");
+        stmt.execute("insert into wibble__c(name, custom_field__c) values ('bbb', 'Alpha')");
+
+        ResultSet rs = conn.prepareStatement("select * from wibble__c order by name").executeQuery();
+        Assert.assertTrue(rs.next());
+        Assert.assertEquals("aaa", rs.getString("name"));
+        Assert.assertEquals("Zeta", rs.getString("custom_field__c"));
+        Assert.assertTrue(rs.next());
+        Assert.assertEquals("bbb", rs.getString("name"));
+        Assert.assertEquals("Alpha", rs.getString("custom_field__c"));
+        Assert.assertFalse(rs.next());
+    }
+
+
+    @Test
+    public void testDefaultNameColumnExplicity() throws Exception {
+        conn.createStatement().execute("drop table wibble__c if exists");
+
+        String sql = "create table wibble__c(" +
+                "name String(10), " +
+                "custom_field__c string(10) )";
+
+        conn.createStatement().execute(sql);
+
+        Statement stmt = conn.createStatement();
+        stmt.execute("insert into wibble__c(name, custom_field__c) values ('aaa', 'Zeta')");
+        stmt.execute("insert into wibble__c(name, custom_field__c) values ('bbb', 'Alpha')");
+
+        ResultSet rs = conn.prepareStatement("select name, custom_field__c from wibble__c order by name").executeQuery();
+        Assert.assertTrue(rs.next());
+        Assert.assertEquals("aaa", rs.getString("name"));
+        Assert.assertEquals("Zeta", rs.getString("custom_field__c"));
+        Assert.assertTrue(rs.next());
+        Assert.assertEquals("bbb", rs.getString("name"));
+        Assert.assertEquals("Alpha", rs.getString("custom_field__c"));
+        Assert.assertFalse(rs.next());
+    }
+
+
+        @Test
     public void testCreateReference() throws Exception {
         Statement stmt = conn.createStatement();
         stmt.addBatch("drop table four__c if exists");

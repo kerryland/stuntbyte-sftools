@@ -38,8 +38,9 @@ public class Deployment {
 //    private boolean assembled;
 
 
-    public void addMember(String typeName, String member, String code, String metaData) throws Exception {
-        member = rememberMember(typeName, member, typesToDeploy);
+    // Does NOT store the member in the package.xml. Useful when working with CustomFields
+    public void addDeploymentResource(String typeName, String member, String code, String metaData) throws Exception {
+//        member = rememberMember(typeName, member, typesToDeploy);
         if (code != null) {
             DeploymentResource resource = new DeploymentResource();
             resource.setCode(code);
@@ -47,6 +48,19 @@ public class Deployment {
             resource.setFilepath(FileUtil.determineDirectoryName(typeName) + "/" + member + "." + FileUtil.determineFileSuffix(typeName));
             deploymentResources.add(resource);
         }
+    }
+
+
+    public void addMember(String typeName, String member, String code, String metaData) throws Exception {
+        member = rememberMember(typeName, member, typesToDeploy);
+        addDeploymentResource(typeName, member, code, metaData);
+//        if (code != null) {
+//            DeploymentResource resource = new DeploymentResource();
+//            resource.setCode(code);
+//            resource.setMetaData(metaData);
+//            resource.setFilepath(FileUtil.determineDirectoryName(typeName) + "/" + member + "." + FileUtil.determineFileSuffix(typeName));
+//            deploymentResources.add(resource);
+//        }
     }
 
     public void dropMember(String typeName, String member) throws Exception {

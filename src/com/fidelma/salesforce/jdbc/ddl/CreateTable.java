@@ -2,7 +2,6 @@ package com.fidelma.salesforce.jdbc.ddl;
 
 import com.fidelma.salesforce.deployment.Deployer;
 import com.fidelma.salesforce.deployment.Deployment;
-import com.fidelma.salesforce.deployment.DeploymentEventListener;
 import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
@@ -40,6 +39,7 @@ public class CreateTable {
     private SimpleParser al;
     private ResultSetFactory metaDataFactory;
     private Reconnector reconnector;
+    private boolean alterMode = false;
 
     public CreateTable(SimpleParser al, ResultSetFactory metaDataFactory, Reconnector reconnector) {
         this.al = al;
@@ -49,12 +49,14 @@ public class CreateTable {
 
     public void executeCreate() throws Exception {
         String tableName = al.getToken().getValue();
-        execute(tableName, false);
+        alterMode = false;
+        execute(tableName);
     }
 
 
     public void executeAlter(String tableName) throws Exception {
-        execute(tableName, true);
+        alterMode = true;
+        execute(tableName);
     }
 
     public void createTables(List<Table> tables) throws SQLException {
@@ -65,7 +67,17 @@ public class CreateTable {
 
             for (Table table : tables) {
                 String xml = createMetadataXml(table);
-                deployment.addMember("CustomObject", table.getName(), xml, null);
+                
+                if (alterMode) {
+                    for (Column col : table.getColumns()) {
+                        if (!col.getName().equalsIgnoreCase("Id") && !col.getName().equalsIgnoreCase("Name")) {
+                            deployment.addMember("CustomField", table.getName() + "." + col.getName(), null, null);
+                        } 
+                    }
+                    deployment.addDeploymentResource("CustomObject", table.getName(), xml, null);
+                } else {
+                    deployment.addMember("CustomObject", table.getName(), xml, null);
+                }
             }
 
             deployer.deploy(deployment, new DdlDeploymentListener(deployError, null));
@@ -98,7 +110,7 @@ public class CreateTable {
     }
 
 
-    private void execute(String tableName, boolean alterMode) throws Exception {
+    private void execute(String tableName) throws Exception {
         Table table = parse(tableName, alterMode);
         List<Table> tables = new ArrayList<Table>(1);
         tables.add(table);
@@ -178,7 +190,9 @@ public class CreateTable {
                     col.setPrecision(precision);
                     col.setScale(scale);
 
-                } else if (dataType.equalsIgnoreCase("Picklist")) {
+                } else if (dataType.equalsIgnoreCase("Picklist") ||
+                        dataType.equalsIgnoreCase("combobox") ||
+                        dataType.equalsIgnoreCase("multipicklist")) {
                     //    colour__c picklist('green', 'blue' default, 'red') [ sorted ]
                     al.read("(");
                     do {
@@ -216,8 +230,9 @@ public class CreateTable {
 
                 } else if (dataType.equalsIgnoreCase("String") ||
                         dataType.equalsIgnoreCase("TEXTAREA") ||
-                        dataType.equalsIgnoreCase("LongTextArea"))
-                    {
+                        dataType.equalsIgnoreCase("base64") ||
+                        dataType.equalsIgnoreCase("encryptedstring") ||
+                        dataType.equalsIgnoreCase("LongTextArea")) {
 
                     value = al.getValue();
                     if (value != null && value.equals("(")) {
@@ -302,31 +317,26 @@ public class CreateTable {
         Element rootElement = document.createElementNS("http://soap.sforce.com/2006/04/metadata", "CustomObject");
         document.appendChild(rootElement);
 
-        addElement(document, rootElement, "label", table.getName());
-        addElement(document, rootElement, "pluralLabel", table.getName() + "s");
+        if (!alterMode) {
+            // TODO: Remove hard-coding of these values -- support "with" on the end of create table
+            addElement(document, rootElement, "label", table.getName());
+            addElement(document, rootElement, "pluralLabel", table.getName() + "s");
 //        addElement(document, rootElement, "enableFeeds", "false");
-        addElement(document, rootElement, "deploymentStatus", "Deployed");
-        addElement(document, rootElement, "sharingModel", "ReadWrite");
+            addElement(document, rootElement, "deploymentStatus", "Deployed");
+            addElement(document, rootElement, "sharingModel", "ReadWrite");
 
-        // TODO: Handle auto number namefields! (and length != 15 :-)
-        Element nameField = document.createElement("nameField");
-        rootElement.appendChild(nameField);
-        addElement(document, nameField, "label", "Name");
-        addElement(document, nameField, "fullName", "Name");
-        addElement(document, nameField, "type", "Text");
-        addElement(document, nameField, "length", "15");
+            Element nameField = document.createElement("nameField");
+            rootElement.appendChild(nameField);
 
-//<displayFormat>C-{00000}</displayFormat>
-//<label>Candidate Number</label>
-//<type>AutoNumber</type>
-//</nameField>
-
+            // Handle auto number namefields! (and length != 15 :-)
+            defineNameField(document, nameField, table);
+        }
 
         List<Column> cols = table.getColumns();
         for (Column col : cols) {
-            Element fieldsX = document.createElement("fields");
-            rootElement.appendChild(fieldsX);
-            if (!col.getName().equalsIgnoreCase("Id")) {
+            if (!col.getName().equalsIgnoreCase("Id") && !col.getName().equalsIgnoreCase("Name")) {
+                Element fieldsX = document.createElement("fields");
+                rootElement.appendChild(fieldsX);
 
                 List<Element> fields = new ArrayList<Element>();
 
@@ -356,7 +366,8 @@ public class CreateTable {
 //                if (col.getScale() != 0) {
 //
 //                }
-                if (col.getLength() != 0) {
+                // Formula fields can't have a length defined
+                if ((col.getLength() != 0) && (!col.getExtraProperties().containsKey("formula"))) {
                     addElement(document, fields, "length", "" + col.getLength());
                 }
 
@@ -380,8 +391,6 @@ public class CreateTable {
                     if (col.isPicklistIsSorted()) {
                         addElement(document, picklist, "sorted", "true");
                     }
-
-
                 }
 
                 Collections.sort(fields, new Comparator<Element>() {
@@ -436,6 +445,72 @@ public class CreateTable {
         transformer.transform(source, result);
         */
         return sw.toString();
+
+    }
+
+    private void defineNameField(Document document, Element nameField, Table table) throws SQLException {
+        List<Column> cols = table.getColumns();
+
+        Column nameColumn = null;
+
+        for (Column col : cols) {
+            if (col.getName().equalsIgnoreCase("name")) {
+                nameColumn = col;
+                break;
+            }
+        }
+
+        // No explicit name column
+        if (nameColumn == null) {
+            addElement(document, nameField, "label", "Name");
+            addElement(document, nameField, "fullName", "Name");
+            addElement(document, nameField, "type", "Text"); // vs AutoNumber
+            addElement(document, nameField, "length", "80");
+
+        } else {
+
+            if (nameColumn.getLabel() == null) {
+                nameColumn.setLabel(nameColumn.getName());
+            }
+            addElement(document, nameField, "fullName", "Name");
+            if (nameColumn.getType().equalsIgnoreCase("AutoNumber")) {
+                String displayFormat = nameColumn.getExtraProperties().get("displayFormat");
+                if (displayFormat == null) {
+                    displayFormat = "{0000000000}";
+                    addElement(document, nameField, "displayFormat", displayFormat);
+                }
+
+            } else {
+                addElement(document, nameField, "length", "" + nameColumn.getLength());
+            }
+
+            addElement(document, nameField, "label", nameColumn.getLabel());
+
+            String adjustedDataType = ResultSetFactory.lookupExternalTypeName(nameColumn.getType());
+
+            addElement(document, nameField, "type", adjustedDataType);
+
+            for (String name : nameColumn.getExtraProperties().keySet()) {
+                addElement(document, nameField, name, nameColumn.getExtraProperties().get(name));
+            }
+
+//            System.out.println("KJS create with type " + nameColumn.getType());
+
+
+//            if (nameColumn.getType().equalsIgnoreCase("AutoNumber")) {
+//
+//
+//            } else {
+//                addElement(document, nameField, "length", "" + nameColumn.getLength());
+//            }
+        }
+
+
+//<displayFormat>C-{00000}</displayFormat>
+//<label>Candidate Number</label>
+//<type>AutoNumber</type>
+//</nameField>
+
 
     }
 
