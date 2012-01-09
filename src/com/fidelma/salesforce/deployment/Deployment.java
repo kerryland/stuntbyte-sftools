@@ -54,13 +54,6 @@ public class Deployment {
     public void addMember(String typeName, String member, String code, String metaData) throws Exception {
         member = rememberMember(typeName, member, typesToDeploy);
         addDeploymentResource(typeName, member, code, metaData);
-//        if (code != null) {
-//            DeploymentResource resource = new DeploymentResource();
-//            resource.setCode(code);
-//            resource.setMetaData(metaData);
-//            resource.setFilepath(FileUtil.determineDirectoryName(typeName) + "/" + member + "." + FileUtil.determineFileSuffix(typeName));
-//            deploymentResources.add(resource);
-//        }
     }
 
     public void dropMember(String typeName, String member) throws Exception {
