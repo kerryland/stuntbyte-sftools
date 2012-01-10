@@ -1,10 +1,7 @@
 package com.fidelma.salesforce.jdbc;
 
-import com.fidelma.salesforce.jdbc.ddl.AlterTable;
-import com.fidelma.salesforce.jdbc.ddl.CreateTable;
-import com.fidelma.salesforce.jdbc.ddl.DeployCommand;
-import com.fidelma.salesforce.jdbc.ddl.DropTable;
-import com.fidelma.salesforce.jdbc.ddl.Grant;
+import com.fidelma.salesforce.core.metadata.MetadataServiceImpl;
+import com.fidelma.salesforce.jdbc.ddl.*;
 import com.fidelma.salesforce.jdbc.dml.Delete;
 import com.fidelma.salesforce.jdbc.dml.Insert;
 import com.fidelma.salesforce.jdbc.dml.Select;
@@ -38,29 +35,43 @@ public class SfStatement implements java.sql.Statement {
     private SfConnection sfConnection;
     //    private PartnerConnection pc;
     private Reconnector reconnector;
+    private MetadataServiceImpl metadataService;
+
     private int updateCount = -1;
-    private String generatedId;
     private List<String> generatedIds = new ArrayList<String>();
     private List<Object> batchDDL = new ArrayList<Object>();
 
     public SfStatement(SfConnection sfConnection, LoginHelper helper) {
         this.sfConnection = sfConnection;
         reconnector = new Reconnector(helper);
+        metadataService = new MetadataServiceImpl(reconnector);
     }
 
     public ResultSet executeQuery(String sql) throws SQLException {
         generatedIds.clear();
         sql = stripComments(sql);
-        if (sql.toUpperCase().startsWith("SELECT")) {
-            Select select = new Select(this, reconnector);
+
+        SimpleParser al = new SimpleParser(sql);
+        LexicalToken token = al.getToken();
+
+        if (token.getValue().equalsIgnoreCase("SELECT")) {
+            Select select = new Select(this, metadataService, reconnector);
             return select.execute(sql);
+
+//        } else if (token.getValue().equalsIgnoreCase("SHOW")) {
+//            try {
+//                return new Show(al, metadataService, reconnector).execute();
+//            } catch (Exception e) {
+//                throw new SQLException("Error while processing SHOW command", e);
+//            }
+
         } else {
             throw new SQLFeatureNotSupportedException("Don't understand that SQL command");
         }
     }
 
     private String stripComments(String sql) {
-        LineNumberReader r = new LineNumberReader(new StringReader(sql));
+        LineNumberReader r = new LineNumberReader(new StringReader(sql.trim()));
         String line;
         StringBuilder result = new StringBuilder();
         try {
@@ -245,6 +256,7 @@ public class SfStatement implements java.sql.Statement {
     private ResultSet executeResultSet;
 
     public boolean execute(String sql) throws SQLException {
+        sql = stripComments(sql);
         if (sql.toUpperCase().startsWith("SELECT")) {
             executeResultSet = executeQuery(sql);
         } else {

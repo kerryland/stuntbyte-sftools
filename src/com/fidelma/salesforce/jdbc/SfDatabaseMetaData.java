@@ -517,6 +517,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
                                String tableNamePattern,
                                String[] types) throws SQLException {
 
+        // TODO: We could add support for "metadata" as a type here
         return metaDataFactory.getTables(tableNamePattern, types);
     }
 

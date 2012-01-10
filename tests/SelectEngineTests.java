@@ -1322,6 +1322,81 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
 
     }
 
+    @Test
+    public void testSelectMetaDataTypesNoParameter() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("select * from metadata.types");
+
+        Set<String> expectedValues = new HashSet<String>();
+        expectedValues.add("ApexClass");
+        expectedValues.add("EmailTemplate");
+        expectedValues.add("Unexpected Value");
+
+        while (rs.next()) {
+            expectedValues.remove(rs.getString("Identifier"));
+        }
+
+        // Should have removed "ApexClass" and "EmailTemplate", but not "Unexpected Value"
+        assertEquals(1, expectedValues.size());
+    }
+
+
+    @Test
+    public void testSelectMetaDataTypesForProfiles() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("select * from metadata.profile");
+
+        Set<String> expectedValues = new HashSet<String>();
+        expectedValues.add("Admin");
+        expectedValues.add("Guest");
+        expectedValues.add("Unexpected Value");
+
+        while (rs.next()) {
+            expectedValues.remove(rs.getString("Identifier"));
+        }
+
+        // Should have removed "Admin" and "Guest", but not "Unexpected Value"
+        assertEquals(1, expectedValues.size());
+    }
+
+
+    @Test
+    public void testSelectMetaDataTypesForProfilesWithWhere() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("select * from metadata.profile where Identifier like 'Adm%'");
+
+        Set<String> expectedValues = new HashSet<String>();
+        expectedValues.add("Admin");
+        expectedValues.add("Guest");
+        expectedValues.add("Unexpected Value");
+
+        while (rs.next()) {
+            expectedValues.remove(rs.getString("Identifier"));
+        }
+
+        // Should have removed "Admin",  but not "Guest" or "Unexpected Value"
+        assertEquals(2, expectedValues.size());
+    }
+
+
+
+    @Test
+    public void testShowNoParameter() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("show");
+
+        Set<String> expectedValues = new HashSet<String>();
+        expectedValues.add("ApexClass");
+        expectedValues.add("EmailTemplate");
+        expectedValues.add("Unexpected Value");
+        
+        while (rs.next()) {
+            expectedValues.remove(rs.getString("TypeName"));
+        }
+
+        // Should have removed "ApexClass" and "EmailTemplate", but not "Unexpected Value"
+        assertEquals(1, expectedValues.size());
+    }
 
     private static String checkSaveResult(SaveResult[] sr) throws Exception {
         String id = null;

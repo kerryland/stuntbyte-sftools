@@ -1,15 +1,16 @@
 package com.fidelma.salesforce.jdbc.dml;
 
+import com.fidelma.salesforce.core.metadata.MetadataServiceImpl;
 import com.fidelma.salesforce.jdbc.SfConnection;
 import com.fidelma.salesforce.jdbc.SfResultSet;
 import com.fidelma.salesforce.jdbc.SfStatement;
+import com.fidelma.salesforce.jdbc.ddl.Show;
 import com.fidelma.salesforce.jdbc.metaforce.Column;
 import com.fidelma.salesforce.jdbc.metaforce.Table;
 import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.ParsedColumn;
 import com.fidelma.salesforce.parse.ParsedSelect;
 import com.fidelma.salesforce.parse.SimpleParser;
-import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.QueryResult;
 import com.sforce.ws.ConnectionException;
 
@@ -23,12 +24,14 @@ import java.util.List;
 public class Select {
 
     private SfStatement statement;
-    private Reconnector pc;
+    private MetadataServiceImpl metadataService;
+    private Reconnector reconnector;
     private String table;
 
-    public Select(SfStatement statement, Reconnector pc) {
+    public Select(SfStatement statement, MetadataServiceImpl metadataService, Reconnector reconnector) {
         this.statement = statement;
-        this.pc = pc;
+        this.metadataService = metadataService;
+        this.reconnector = reconnector;
     }
 
     public ResultSet execute(String sql) throws SQLException {
@@ -44,6 +47,10 @@ public class Select {
 
             table = parsedSelect.getDrivingTable();
 
+            if (table.toLowerCase().startsWith("metadata.")) {
+                return new Show(parsedSelect, metadataService).execute();
+            }
+
             sql = removeQuotedColumns(sql, parsedSelect);
             sql = removeQuotedTableName(sql);
             sql = patchWhereZeroEqualsOne(sql);
@@ -51,18 +58,18 @@ public class Select {
             // System.out.println("EXECUTE " + sql);
 
             Integer oldBatchSize = 2000;
-            if (pc.getQueryOptions() != null) {
-                oldBatchSize = pc.getQueryOptions().getBatchSize();
+            if (reconnector.getQueryOptions() != null) {
+                oldBatchSize = reconnector.getQueryOptions().getBatchSize();
             }
 
             try {
-                pc.setQueryOptions(statement.getFetchSize());
-                QueryResult qr = pc.query(sql);
+                reconnector.setQueryOptions(statement.getFetchSize());
+                QueryResult qr = reconnector.query(sql);
 
-                return new SfResultSet(statement, pc, qr, parsedSelects);
+                return new SfResultSet(statement, reconnector, qr, parsedSelects);
 
             } finally {
-                pc.setQueryOptions(oldBatchSize);
+                reconnector.setQueryOptions(oldBatchSize);
             }
 
         } catch (ConnectionException e) {

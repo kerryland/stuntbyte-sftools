@@ -37,11 +37,4 @@ public class ParsedSelect {
         return parsedSql;
     }
 
-    public void addRemainderToSql() {
-        //To change body of created methods use File | Settings | File Templates.
-    }
-
-    public void setParsedSql(String parsedSql) {
-        this.parsedSql = parsedSql;
-    }
 }
