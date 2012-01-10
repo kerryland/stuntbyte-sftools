@@ -1,5 +1,13 @@
 <project name="salesfarce IDE" default="compile" basedir="." xmlns:sf="antlib:com.salesforce">
 
+    <tstamp>
+        <format property="TODAY" pattern="yyyy-MM-dd HH:mm:ss" />
+    </tstamp>
+
+
+    <taskdef resource="proguard/ant/task.properties"
+             classpath="lib/proguard.jar" />
+
     <property file="local.build.properties"/>
     <property file="build.properties"/>
     <property environment="env"/>
@@ -75,8 +83,12 @@
             <!--<classpath location="lib/force-metadata-jdbc-driver-2.0.jar"/>-->
         </javac>
 
+        <manifest file="MANIFEST.MF">
+            <attribute name="Built-By" value="${user.name}"/>
+            <attribute name="Built-Date" value="${TODAY}"/>
+        </manifest>
 
-        <jar destfile="${outputfile}">
+        <jar destfile="${outputfile}" manifest="MANIFEST.MF">
             <fileset dir="classes">
                 <include name="**/*"/>
                 <exclude name="**/KeyGen.class"/>
@@ -106,6 +118,69 @@
 
     </target>
 
+
+
+
+    <target name="proguard" description="Opfuscates Code">
+
+        <proguard>
+            -libraryjars ${java.home}/lib/rt.jar
+            -libraryjars ${java.home}/lib/jce.jar
+            -libraryjars lib/wsc-22.jar
+            <!---libraryjars lib/partner.jar-->
+            <!---libraryjars lib/metadata.jar-->
+            <!---libraryjars lib/apex.jar-->
+            -libraryjars lib/hibernate3.jar
+            -libraryjars lib/h2-1.3.154.jar
+            <!---libraryjars lib/mvel2-2.1.Beta7.jar-->
+
+            -keep class org.mvel2.integration.PropertyHandlerFactory { *; }
+            <!---keep class org.mvel2.** { *; }-->
+
+            <!-- TODO: Try bringing in Rhino and Google jars -->
+            <!---keep class com.sforce.** { *; }-->
+
+            <!---keep class com.sforce.**.*Enum { *; }-->
+            <!---keep class com.sforce.ws.ConnectionException { *; }-->
+            <!---keep class com.sforce.ws.types.Time { *; }-->
+            <!---keep class com.sforce.ws.util.Base64 { *; }-->
+            <!---keep class com.sforce.ws.ConnectorConfig { *; }-->
+            <!---keep class com.sforce.ws.parser.XmlInputStream { *; }-->
+            <!---keep class com.sforce.ws.parser.XmlOutputStream { *; }-->
+            <!---keep class com.sforce.ws.wsdl.Constants { *; }-->
+            <!---keep class com.sforce.ws.wsdl.Restriction { *; }-->
+            <!---keep class com.sforce.ws.wsdl.SfdcApiType { *; }-->
+            <!---keep class com.sforce.ws.wsdl.SimpleType { *; }-->
+            <!---keep class com.sforce.ws.wsdl.Types { *; }-->
+            <!---keep class com.sforce.soap.partner.SoapType { *; }-->
+
+
+
+            <!---keep public class com.fidelma.salesforce.jdbc.hibernate.**-->
+
+            <!---keep class * implements java.sql.**-->
+
+            -keep class com.sforce.soap.**
+            -keep public enum * { *; }
+
+            -keep class * implements java.sql.Driver
+
+            -injars      ${outputfile}
+            -outjars     pro-${outputfile}
+
+            -printmapping proguard.map
+            -renamesourcefileattribute SourceFile
+            -keepattributes SourceFile,LineNumberTable
+            <!---dontskipnonpubliclibraryclassmembers-->
+            -optimizationpasses 3
+            -flattenpackagehierarchy com.fidelma
+
+        </proguard>
+
+        <copyfile src="pro-${outputfile}" dest="${outputfile}"/>
+
+
+    </target>
 
     <!--<target name="farcemake" description="Compile (and perhaps test) Apex code">-->
     <!--<java classname="com.fidelma.salesforce.ide.SalesfarceIDE">-->

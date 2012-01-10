@@ -16,17 +16,9 @@ import com.sforce.ws.ConnectorConfig;
 import java.util.Properties;
 
 /**
- * Created by IntelliJ IDEA.
- * User: kerry
- * Date: 8/03/2011
- * Time: 6:35:34 PM
- * To change this template use File | Settings | File Templates.
+ * Login to Salesforce, and get useful connections
  */
 public class LoginHelper {
-
-    private static final String HTTP_PREFIX = "http://";
-    private static final String HTTPS_PREFIX = "https://";
-
     private String server;
     private String username;
     private String password;
@@ -37,17 +29,13 @@ public class LoginHelper {
     public static final double SFDC_VERSION = 22D;
     public static final double WSDL_VERSION = 22D;
 
-//    private SoapConnection soapConnection;
     private MetadataConnection metadataConnection;
     private PartnerConnection partnerConnection;
 
-//    private RubbishRestConnection bulkConnection;
-
-
     public LoginHelper(String server, String username, String password) {
         this(server, username, password, null);
-
     }
+
     public LoginHelper(String server, String username, String password, String key) {
         this.server = server;
         this.username = username;
@@ -56,10 +44,8 @@ public class LoginHelper {
     }
 
     public void reconnect() {
-//        SoapConnection soapConnection = null;
         metadataConnection = null;
         partnerConnection = null;
-//        bulkConnection = null;
     }
 
 
@@ -79,13 +65,6 @@ public class LoginHelper {
             throw new RuntimeException("Server URL should point to API Version: " + WSDL_VERSION);
         cc.setAuthEndpoint(serverEndpoint);
         cc.setServiceEndpoint(serverEndpoint);
-//        if (sessionId != null) {
-//            LoginResult lResult = new LoginResult();
-//            lResult.setSessionId(sessionId);
-//            lResult.setServerUrl(serverEndpoint);
-//            lResult.setMetadataServerUrl(serverEndpoint.replaceFirst("/u/", "/m/"));
-//            return lResult;
-//        }
 
         cc.setManualLogin(true);
         PartnerConnection pConn = Connector.newConnection(cc);
@@ -95,12 +74,11 @@ public class LoginHelper {
 
 //            System.out.println("Login to " + lr.getUserInfo().getUserFullName());
 
-
             if (key != null) {
                 LicenceService ls = new LicenceService();
                 if (!ls.checkLicence(lr.getUserInfo().getUserFullName(),
-                            lr.getUserInfo().getOrganizationName(),
-                            key)) {
+                        lr.getUserInfo().getOrganizationName(),
+                        key)) {
                     throw new ConnectionException("JDBC Driver Licence problem for " +
                             lr.getUserInfo().getUserFullName() + " at " +
                             lr.getUserInfo().getOrganizationName());
@@ -115,30 +93,23 @@ public class LoginHelper {
 
 
     SoapConnection getApexConnection() throws ConnectionException {
-//        if (soapConnection == null) {
-            ConnectorConfig cc;
-            LoginResult lResult = doLogin();
-            cc = new ConnectorConfig();
-            configureTracing(cc);
-            configureProxy(cc);
-            cc.setSessionId(lResult.getSessionId());
-            String endpoint = lResult.getServerUrl();
-            int baseUrl = endpoint.indexOf("/services/Soap/u");
-            String serviceUrl = endpoint.substring(0, baseUrl);
-            cc.setServiceEndpoint((new StringBuilder()).append(serviceUrl).append("/services/Soap/s/").append(WSDL_VERSION).toString());
-            SoapConnection soapConnection = com.sforce.soap.apex.Connector.newConnection(cc);
-//        }
+        LoginResult lResult = doLogin();
+
+        ConnectorConfig cc = setupConnectorConfig(lResult);
+        String endpoint = lResult.getServerUrl();
+        int baseUrl = endpoint.indexOf("/services/Soap/u");
+        String serviceUrl = endpoint.substring(0, baseUrl);
+        cc.setServiceEndpoint((new StringBuilder()).append(serviceUrl).append("/services/Soap/s/").append(WSDL_VERSION).toString());
+        SoapConnection soapConnection = com.sforce.soap.apex.Connector.newConnection(cc);
         return soapConnection;
     }
 
+
     MetadataConnection getMetadataConnection() throws ConnectionException {
         if (metadataConnection == null) {
-            ConnectorConfig cc;
             LoginResult lResult = doLogin();
-            cc = new ConnectorConfig();
-            configureTracing(cc);
-            configureProxy(cc);
-            cc.setSessionId(lResult.getSessionId());
+
+            ConnectorConfig cc = setupConnectorConfig(lResult);
             cc.setServiceEndpoint(lResult.getMetadataServerUrl());
 
             metadataConnection = com.sforce.soap.metadata.Connector.newConnection(cc);
@@ -153,12 +124,9 @@ public class LoginHelper {
 
     PartnerConnection getPartnerConnection() throws ConnectionException {
         if (partnerConnection == null) {
-            ConnectorConfig cc;
             LoginResult lResult = doLogin();
-            cc = new ConnectorConfig();
-            configureTracing(cc);
-            configureProxy(cc);
-            cc.setSessionId(lResult.getSessionId());
+
+            ConnectorConfig cc = setupConnectorConfig(lResult);
             cc.setServiceEndpoint(lResult.getServerUrl());
             partnerConnection = new PartnerConnection(cc);
         }
@@ -170,49 +138,15 @@ public class LoginHelper {
         return svc.createResultSetFactory();
     }
 
-    /*
-    public class RubbishRestConnection {
-        RestConnection conn;
-        public String url;
-        public String sessionId;
+
+    private ConnectorConfig setupConnectorConfig(LoginResult lResult) {
+        ConnectorConfig cc;
+        cc = new ConnectorConfig();
+        configureTracing(cc);
+        configureProxy(cc);
+        cc.setSessionId(lResult.getSessionId());
+        return cc;
     }
-
-
-    RubbishRestConnection getBulkConnection() throws ConnectionException, AsyncApiException {
-        if (bulkConnection == null) {
-            ConnectorConfig cc;
-            LoginResult lResult = doLogin();
-            cc = new ConnectorConfig();
-            configureTracing(cc);
-            configureProxy(cc);
-            cc.setSessionId(lResult.getSessionId());
-            cc.setServiceEndpoint(lResult.getServerUrl());
-            System.out.println("SID+" + lResult.getSessionId());
-            //   String apiVersion = "22.0";
-            String soapEndpoint = cc.getServiceEndpoint();
-            System.out.println("KJS GOT " + soapEndpoint);
-
-            String restEndpoint = soapEndpoint.substring(0, soapEndpoint.indexOf("Soap/"))
-                    + "async/" + WSDL_VERSION;
-            cc.setRestEndpoint(restEndpoint);
-            // This should only be false when doing debugging.
-            cc.setCompression(true);
-            // Set this to true to see HTTP requests and responses on stdout
-            cc.setTraceMessage(false);
-//        RestConnection rc = new RestConnection(cc);
-            RubbishRestConnection rrc = new RubbishRestConnection();
-
-            rrc.url = cc.getRestEndpoint();
-            rrc.sessionId = cc.getSessionId();
-            bulkConnection = rrc;
-        }
-        return bulkConnection;
-
-
-//        return null;
-    }
-
-*/
 
     private void configureTracing(ConnectorConfig cc) {
         cc.setTraceMessage(trace);

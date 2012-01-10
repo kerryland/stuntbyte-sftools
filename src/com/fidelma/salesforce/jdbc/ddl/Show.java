@@ -4,10 +4,8 @@ import com.fidelma.salesforce.core.metadata.Metadata;
 import com.fidelma.salesforce.core.metadata.MetadataService;
 import com.fidelma.salesforce.jdbc.metaforce.ColumnMap;
 import com.fidelma.salesforce.jdbc.metaforce.ForceResultSet;
-import com.fidelma.salesforce.misc.Reconnector;
 import com.fidelma.salesforce.parse.ParsedSelect;
 import com.fidelma.salesforce.parse.SimpleParser;
-import sun.misc.Regexp;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

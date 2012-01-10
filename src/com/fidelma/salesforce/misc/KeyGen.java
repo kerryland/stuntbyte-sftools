@@ -12,7 +12,8 @@ public class KeyGen {
         checkLicence(999, "Kerry Sainsbury", "Kerry Sainsbury", "Fidelma Company", Licence.USER_LICENCE, 2010, Calendar.DECEMBER, 31);
         checkLicence(1000, "Kerry Sainsbury", "Kerry Sainsbury", "Fidelma Company", Licence.USER_LICENCE, 3000, Calendar.DECEMBER, 31);
         checkLicence(1001, "Jukka Hakala", "Jukka Hakala", "Jukka Company", Licence.USER_LICENCE, 2013, Calendar.DECEMBER, 31);
-        checkLicence(1002, "Demo Example", "Demo Exmaple", "Demo Exmaple", Licence.USER_LICENCE, 2009, Calendar.JANUARY, 15);
+        checkLicence(1002, "Darko Bohinc", "Darko Bohinc", "Darko Bohinc", Licence.USER_LICENCE, 3000, Calendar.DECEMBER, 31);
+        checkLicence(1003, "Fronde Admin", "Fronde Admin", "Fronde Admin", Licence.USER_LICENCE, 3000, Calendar.DECEMBER, 31);
     }
 
     public static String checkLicence(int customerNumber, String licenceName, String username, String orgname, byte licenceType,
