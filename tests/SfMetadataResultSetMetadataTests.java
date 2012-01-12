@@ -1,6 +1,6 @@
 
-import com.fidelma.salesforce.jdbc.metaforce.ColumnMap;
-import com.fidelma.salesforce.jdbc.metaforce.ForceResultSet;
+import com.stuntbyte.salesforce.jdbc.metaforce.ColumnMap;
+import com.stuntbyte.salesforce.jdbc.metaforce.ForceResultSet;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -3,10 +3,10 @@
 dataSource {
     loggingSql = true
     pooled = true
-    driverClassName = "com.fidelma.salesforce.jdbc.SfDriver"
+    driverClassName = "com.stuntbyte.salesforce.jdbc.SfDriver"
     username = "salesforce@fidelma.com"
     password = "u9SABqa2dQxG0Y3kqWiJQVEwnYtryr1Ja1"
-    dialect  = com.fidelma.salesforce.jdbc.hibernate.SalesforceDialect
+    dialect  = com.stuntbyte.salesforce.jdbc.hibernate.SalesforceDialect
 }
 hibernate {
     cache.use_second_level_cache = true

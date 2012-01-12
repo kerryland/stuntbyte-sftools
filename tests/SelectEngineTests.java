@@ -1,9 +1,6 @@
-import com.fidelma.salesforce.jdbc.SfConnection;
-import com.fidelma.salesforce.jdbc.SfPreparedStatement;
-import com.fidelma.salesforce.jdbc.sqlforce.LexicalToken;
-import com.fidelma.salesforce.misc.TestHelper;
-import com.fidelma.salesforce.misc.TypeHelper;
-import com.fidelma.salesforce.parse.SimpleParser;
+import com.stuntbyte.salesforce.jdbc.SfConnection;
+import com.stuntbyte.salesforce.misc.TestHelper;
+import com.stuntbyte.salesforce.misc.TypeHelper;
 import com.sforce.soap.partner.*;
 import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.sobject.SObject;
@@ -21,7 +18,6 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
-import java.util.prefs.BackingStoreException;
 
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
@@ -44,7 +40,7 @@ public class SelectEngineTests {
 
     @BeforeClass
     public static void oneTimeSetUp() throws Exception {
-        Class.forName("com.fidelma.salesforce.jdbc.SfDriver");
+        Class.forName("com.stuntbyte.salesforce.jdbc.SfDriver");
 
         Properties info = new Properties();
         info.put("user", TestHelper.username);
@@ -1378,25 +1374,6 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals(2, expectedValues.size());
     }
 
-
-
-    @Test
-    public void testShowNoParameter() throws Exception {
-        Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("show");
-
-        Set<String> expectedValues = new HashSet<String>();
-        expectedValues.add("ApexClass");
-        expectedValues.add("EmailTemplate");
-        expectedValues.add("Unexpected Value");
-        
-        while (rs.next()) {
-            expectedValues.remove(rs.getString("TypeName"));
-        }
-
-        // Should have removed "ApexClass" and "EmailTemplate", but not "Unexpected Value"
-        assertEquals(1, expectedValues.size());
-    }
 
     private static String checkSaveResult(SaveResult[] sr) throws Exception {
         String id = null;

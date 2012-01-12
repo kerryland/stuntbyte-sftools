@@ -1,4 +1,4 @@
-import com.fidelma.salesforce.jdbc.SfResultSet;
+import com.stuntbyte.salesforce.jdbc.SfResultSet;
 import org.junit.Assert;
 import org.junit.Test;
 
