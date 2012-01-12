@@ -1,13 +1,20 @@
 package com.fidelma.salesforce.misc;
 
 import java.util.Calendar;
-import java.util.Date;
 
 /**
  */
 public class KeyGen {
 
     public static void main(String[] args) throws Exception {
+        /*
+Minion O'Toole licence is 3qj6e8qaLfxP72hE5M2noA
+Kerry Sainsbury expired licence is 8Y5Ez6AiYm1cYvbB4MMqog
+Kerry Sainsbury licence is ntpOo9JjXHQ2uOYAlM724w
+Jukka Hakala licence is sPZB0H-rlfKrSUZlsYEQhQ
+Darko Bohinc licence is cKuBGhDLCb0lzpw80CNM8w
+Fronde Admin licence is mUv1IP4b5zWa4m-Er8EiLw
+         */
         checkLicence(999, "Minion O'Toole", "Minion O'Toole", "Fidelma Company", Licence.USER_LICENCE, 3000, Calendar.DECEMBER, 31);
         checkLicence(999, "Kerry Sainsbury", "Kerry Sainsbury", "Fidelma Company", Licence.USER_LICENCE, 2010, Calendar.DECEMBER, 31);
         checkLicence(1000, "Kerry Sainsbury", "Kerry Sainsbury", "Fidelma Company", Licence.USER_LICENCE, 3000, Calendar.DECEMBER, 31);
