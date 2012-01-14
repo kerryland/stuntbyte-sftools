@@ -1,5 +1,7 @@
 package com.stuntbyte.salesforce.misc;
 
+import com.sforce.ws.ConnectionException;
+
 import java.util.Arrays;
 import java.util.Calendar;
 
@@ -13,20 +15,39 @@ public class LicenceService {
         userFullName = userFullName.toLowerCase();
         organizationName = organizationName.toLowerCase();
 
-        boolean result = true;
+        Licence licence = decryptLicence("PERSONAL_DEMO".toLowerCase(), key);
 
-        if (!checkLicenceOk(userFullName, key, Licence.USER_LICENCE)) {
-            if (!checkLicenceOk(organizationName, key, Licence.ORG_LICENCE)) {
-                result = false;
+        boolean licenceOk = (licence != null &&
+                licence.isFeatureAvailable(Licence.PERSONAL_USER_LICENCE_BIT) &&
+                licence.isFeatureAvailable(Licence.JDBC_LICENCE_BIT));
+
+
+        if (!licenceOk) {
+            licence = decryptLicence(userFullName, key);
+
+            licenceOk = (licence != null &&
+                    licence.isFeatureAvailable(Licence.PERSONAL_USER_LICENCE_BIT) &&
+                    licence.isFeatureAvailable(Licence.JDBC_LICENCE_BIT));
+
+            if (!licenceOk) {
+                licence = decryptLicence(organizationName, key);
+
+                licenceOk = (licence != null && licence.isFeatureAvailable(Licence.ORGANISATION_LICENCE_BIT) &&
+                        licence.isFeatureAvailable(Licence.JDBC_LICENCE_BIT));
+
+
             }
         }
-        return result;
+
+        if (licence == null || licence.getExpires().before(Calendar.getInstance())) {
+            throw new ConnectionException("JDBC Licence has expired or is invalid");
+        }
+
+        return licenceOk;
     }
 
 
-    private boolean checkLicenceOk(String name, String key, byte licenceType) throws Exception {
-        Boolean result = false;
-
+    private Licence decryptLicence(String name, String key) throws Exception {
         Decrypter decrypter = new SyncCrypto(name);
 
         int padCount = key.length() % 4;
@@ -34,24 +55,11 @@ public class LicenceService {
             key = key + "=";
         }
 
+        Licence licence = null;
         byte[] decrypted = decrypter.decrypt(key);
         if (decrypted != null) {
-            Licence licence = new Licence(decrypted, name);
-
-            if (licence.getExpires().before(Calendar.getInstance())) {
-                throw new Exception("JDBC Licence has expired");
-            }
-
-            if (licence.getType() == licenceType) {
-
-                byte[] nameHash = licence.calculateNameHash(name);
-
-                if (Arrays.equals(nameHash, licence.getStoredNameHash())) {
-                    result = true;
-
-                }
-            }
+            licence = new Licence(decrypted, name);
         }
-        return result;
+        return licence;
     }
 }

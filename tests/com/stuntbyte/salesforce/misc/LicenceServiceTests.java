@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.BitSet;
 import java.util.Calendar;
 
 /**
@@ -15,7 +16,7 @@ public class LicenceServiceTests {
     public void testActiveLicenceCheck() throws Exception {
         Calendar now = Calendar.getInstance();
 
-        String licence = KeyGen.checkLicence(1, "Bob", "Bob", "BobCo", Licence.USER_LICENCE,
+        String licence = KeyGen.checkLicence(1, "Bob", "Bob", "BobCo", KeyGen.getPersonalLicenceFeatures(),
                 now.get(Calendar.YEAR),
                 now.get(Calendar.MONTH),
                 now.get(Calendar.DAY_OF_MONTH));
@@ -31,7 +32,7 @@ public class LicenceServiceTests {
         Calendar now = Calendar.getInstance();
         now.add(Calendar.DAY_OF_YEAR, -1);
 
-        String licence = KeyGen.checkLicence(1, "Bob", "Bob", "BobCo", Licence.USER_LICENCE,
+        String licence = KeyGen.checkLicence(1, "Bob", "Bob", "BobCo", KeyGen.getPersonalLicenceFeatures(),
                 now.get(Calendar.YEAR),
                 now.get(Calendar.MONTH),
                 now.get(Calendar.DAY_OF_MONTH));

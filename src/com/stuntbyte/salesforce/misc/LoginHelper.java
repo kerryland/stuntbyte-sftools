@@ -85,6 +85,8 @@ public class LoginHelper {
                 }
             }
 
+        } catch (ConnectionException e) {
+            throw e;
         } catch (Exception e) {
             throw new ConnectionException("Unable to connect " + serverEndpoint + " with " + username, e);
         }

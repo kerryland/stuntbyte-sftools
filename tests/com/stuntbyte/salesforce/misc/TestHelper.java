@@ -7,17 +7,14 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 /**
- * Created by IntelliJ IDEA.
- * User: kerry
- * Date: 22/05/11
- * Time: 7:46 AM
- * To change this template use File | Settings | File Templates.
+ * Simple helper class for unit tests
  */
 public class TestHelper {
     public static String loginUrl = "https://login.salesforce.com";
     public static String username = "salesforce@fidelma.com";
     public static String password = "u9SABqa2dQxG0Y3kqWiJQVEwnYtryr1Ja1";
-    public static String licence = "ntpOo9JjXHQ2uOYAlM724w";
+    public static String licence = "MxjetovtygmPUHNqoPAXGQ"; // Demo licence
+//    public static String licence = "ntpOo9JjXHQ2uOYAlM724w";
 
     public static String plebUsername = "pleb@fidelma.com";
     public static String plebPassword = "utC1bQWQOa6JsT8mp3dTD4O6vpwpOdQIv";

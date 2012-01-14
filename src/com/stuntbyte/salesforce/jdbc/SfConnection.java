@@ -26,7 +26,7 @@ public class SfConnection implements java.sql.Connection {
         return metaDataFactory;
     }
 
-    public SfConnection(String server, String username, String password, Properties info) {
+    public SfConnection(String server, String username, String password, Properties info) throws SQLException {
 
         String key = null;
         if (info.containsKey("licence")) {
@@ -49,7 +49,7 @@ public class SfConnection implements java.sql.Connection {
         helper = new LoginHelper(server, username, password, key);
 
         if (key == null) {
-            throw new RuntimeException("No licence information found");
+            throw new SQLException("No licence information found");
         }
 
 

@@ -37,7 +37,7 @@ public class SyncCrypto implements Encrypter, Decrypter {
             Cipher cipher = setupCipher(passPhrase, Cipher.ENCRYPT_MODE);
 
             byte[] enc = cipher.doFinal(utf8);
-            return new String(Base64.encodeBytes(enc, Base64.URL_SAFE));
+            return Base64.encodeBytes(enc, Base64.URL_SAFE);
 
         } catch (Exception e) {
         }

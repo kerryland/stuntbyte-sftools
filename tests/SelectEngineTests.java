@@ -80,12 +80,13 @@ public class SelectEngineTests {
 
     @AfterClass
     public static void oneTimeTearDown() throws Exception {
-        SfConnection sfConnection = (SfConnection) conn;
-        PartnerConnection pc = sfConnection.getHelper().getPartnerConnectionForTestingOnly();
+//        SfConnection sfConnection = (SfConnection) conn;
+        if (conn != null) {
+            PartnerConnection pc = conn.getHelper().getPartnerConnectionForTestingOnly();
 
-        String[] delete = new String[deleteMe.size()];
-        deleteMe.toArray(delete);
-        DeleteResult[] drs = pc.delete(delete);
+            String[] delete = new String[deleteMe.size()];
+            deleteMe.toArray(delete);
+            DeleteResult[] drs = pc.delete(delete);
 //        String msg = "";
 //        for (DeleteResult dr : drs) {
 //            if (!dr.isSuccess()) {
@@ -95,6 +96,7 @@ public class SelectEngineTests {
 //        if (!msg.equals("")) {
 //            throw new Exception(msg);
 //        }
+        }
     }
 
 
@@ -441,62 +443,62 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("NO", rs.getString("IS_NULLABLE"));
     }
 
-     /*
-    @Test
-    public void testRegression() throws Exception {
+    /*
+@Test
+public void testRegression() throws Exception {
 
-        Properties info = new Properties();
+Properties info = new Properties();
 //        info.put("user", "kerry.sainsbury@nzpost.co.nz.sandbox");
 //        info.put("password", "xJiKif3IeCLiZKNervuO3W3ozLxyQ6cm");
 //    info.put("standard", "true");
 //    info.put("includes", "Lead,Account");
 
-        info.put("user", "fronde.admin@localist.co.nz");
-        info.put("password", "jrP2U0TnW09DesQIaxOmAb3yWiN9lRLu");
+info.put("user", "fronde.admin@localist.co.nz");
+info.put("password", "jrP2U0TnW09DesQIaxOmAb3yWiN9lRLu");
 
 
-        // Get a connection to the database
-        Connection conn = DriverManager.getConnection(
+// Get a connection to the database
+Connection conn = DriverManager.getConnection(
 //                "jdbc:sfdc:https://test.salesforce.com"
-                "jdbc:sfdc:https://login.salesforce.com"
-                , info);
+      "jdbc:sfdc:https://login.salesforce.com"
+      , info);
 
-        while (true) {
-        String soql = "select Localist_Order__r.Account__r.Customer_State__c, " +
-                "Localist_Order__r.State__c, count(Id)\n" +
-                "from localist_product__c\n" +
-                "where Product_Offering__r.ProductCode = 'D-LP'\n" +
-                "and state__c = 'Pending'\n" +
-                "group by Localist_Order__r.Account__r.Customer_State__c, Localist_Order__r.State__c";
+while (true) {
+String soql = "select Localist_Order__r.Account__r.Customer_State__c, " +
+      "Localist_Order__r.State__c, count(Id)\n" +
+      "from localist_product__c\n" +
+      "where Product_Offering__r.ProductCode = 'D-LP'\n" +
+      "and state__c = 'Pending'\n" +
+      "group by Localist_Order__r.Account__r.Customer_State__c, Localist_Order__r.State__c";
 
-        Statement stmt = conn.createStatement();
+Statement stmt = conn.createStatement();
 
 
 //        System.out.println(stmt.executeUpdate(soql));
 
-        ResultSet rs = stmt.executeQuery(soql);
-        assertEquals(3, rs.getMetaData().getColumnCount());
+ResultSet rs = stmt.executeQuery(soql);
+assertEquals(3, rs.getMetaData().getColumnCount());
 
-        System.out.println(rs.getMetaData().getColumnName(1) + " " + rs.getMetaData().getColumnLabel(1));
-        System.out.println(rs.getMetaData().getColumnName(2) + " " + rs.getMetaData().getColumnLabel(2));
-        System.out.println(rs.getMetaData().getColumnName(3) + " " + rs.getMetaData().getColumnLabel(3));
+System.out.println(rs.getMetaData().getColumnName(1) + " " + rs.getMetaData().getColumnLabel(1));
+System.out.println(rs.getMetaData().getColumnName(2) + " " + rs.getMetaData().getColumnLabel(2));
+System.out.println(rs.getMetaData().getColumnName(3) + " " + rs.getMetaData().getColumnLabel(3));
 
 //        System.out.println("LAB IS " + lab);
 //        System.out.println("COL IS " + col);
-        while (rs.next()) {
+while (rs.next()) {
 //            System.out.println("1>" + rs.getString("Main_Category__c"));
 //            System.out.println("1>" + rs.getString("Main_Category__r.Name"));
 //            System.out.println("1>" + rs.getInt("expr0"));
-            System.out.println("2>" + rs.getString(1));
-            System.out.println("2>" + rs.getString(2));
-            System.out.println("2>" + rs.getInt(3));
-        }
-        }
+  System.out.println("2>" + rs.getString(1));
+  System.out.println("2>" + rs.getString(2));
+  System.out.println("2>" + rs.getInt(3));
+}
+}
 
-    }
-              */
+}
+    */
 
-       /*
+    /*
     @Test
     public void testRegression() throws Exception {
 
