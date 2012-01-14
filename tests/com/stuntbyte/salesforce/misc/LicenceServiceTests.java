@@ -23,7 +23,9 @@ public class LicenceServiceTests {
 
         LicenceService ls = new LicenceService();
 
-        Assert.assertTrue(ls.checkLicence("Bob", "Bob Co", licence));
+        LicenceResult licenceResult = ls.checkLicence("Bob", "Bob Co", licence);
+
+        Assert.assertTrue(licenceResult.getLicenceOk());
     }
 
 

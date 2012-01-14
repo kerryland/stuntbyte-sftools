@@ -18,8 +18,8 @@ public class Licence {
     // Licence type bits
     public static int JDBC_LICENCE_BIT = 0;
     public static int DEPLOYMENT_TOOL_LICENCE_BIT = 1;
-    public static int PERSONAL_USER_LICENCE_BIT = 2;
-    public static int ORGANISATION_LICENCE_BIT = 3;
+    public static int PERSONAL_USER_LICENCE_BIT = 2; // on = personal. off = organisation
+    public static int FREE_LIMITED_LICENCE_BIT = 3;
 
     private int customerNumber;
     private String name;

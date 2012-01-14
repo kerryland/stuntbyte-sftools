@@ -1,7 +1,5 @@
 package com.stuntbyte.salesforce.misc;
 
-import javax.swing.text.DateFormatter;
-import java.text.DateFormat;
 import java.util.BitSet;
 import java.util.Calendar;
 
@@ -29,7 +27,15 @@ Fronde Admin licence is mUv1IP4b5zWa4m-Er8EiLw
         checkLicence(1003, "Fronde Admin", "Fronde Admin", "Fronde Admin", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
 
         checkLicence(1004, "PERSONAL_DEMO", "PERSONAL_DEMO", "PERSONAL_DEMO", USER_LICENCE, 2012, Calendar.MARCH, 31);
+
+        BitSet FREE_LIMITED_SQL = new BitSet(8);
+        FREE_LIMITED_SQL.set(Licence.JDBC_LICENCE_BIT);
+        FREE_LIMITED_SQL.set(Licence.PERSONAL_USER_LICENCE_BIT);
+        FREE_LIMITED_SQL.set(Licence.FREE_LIMITED_LICENCE_BIT);
+
+        checkLicence(1005, "PERSONAL_DEMO", "Free Limited SQL", "PERSONAL_DEMO", FREE_LIMITED_SQL, 3000, Calendar.MARCH, 31);
     }
+
 
     public static String checkLicence(int customerNumber, String licenceName, String username, String orgname, BitSet licenceType,
                                       int year, int month, int day) throws Exception {
@@ -45,14 +51,15 @@ Fronde Admin licence is mUv1IP4b5zWa4m-Er8EiLw
 
         String key = encrypter.encrypt(licence.getBytes());
         key = key.replaceAll("=", "");
-        System.out.println(licenceName + " licence is " + key + " " + year + "-" + (month + 1) + "-" + day);
+        System.out.println(username + " licence is " + key + " " + year + "-" + (month + 1) + "-" + day);
 
         LicenceService ls = new LicenceService();
 
         Calendar today = Calendar.getInstance();
 
         if (expires.after(today)) {
-            if (!ls.checkLicence(username, orgname, key)) {
+            LicenceResult licenceResult = ls.checkLicence(username, orgname, key);
+            if (!licenceResult.getLicenceOk()) {
                 throw new Exception("Licence failed for " + customerNumber + " " + username);
             }
         }

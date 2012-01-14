@@ -1,6 +1,7 @@
 package com.stuntbyte.salesforce.jdbc;
 
 import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
+import com.stuntbyte.salesforce.misc.LicenceResult;
 import com.stuntbyte.salesforce.misc.LoginHelper;
 
 import java.sql.*;
@@ -21,6 +22,7 @@ public class SfConnection implements java.sql.Connection {
     private LoginHelper helper;
     private ResultSetFactory metaDataFactory;
     private Properties info;
+    private LicenceResult licenceResult;
 
     public ResultSetFactory getMetaDataFactory() {
         return metaDataFactory;
@@ -52,6 +54,7 @@ public class SfConnection implements java.sql.Connection {
             throw new SQLException("No licence information found");
         }
 
+        licenceResult = helper.getLicenceResult();
 
         try {
             metaDataFactory = helper.createResultSetFactory(info);
@@ -287,4 +290,6 @@ public class SfConnection implements java.sql.Connection {
     public LoginHelper getHelper() {
         return helper;
     }
+
+
 }

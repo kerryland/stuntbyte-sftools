@@ -21,7 +21,7 @@ public class LicenceTests {
         Assert.assertEquals(1000, licence.getCustomerNumber());
         Assert.assertEquals("Kerry Sainsbury", licence.getName());
         Assert.assertTrue(licence.isFeatureAvailable(Licence.JDBC_LICENCE_BIT));
-        Assert.assertFalse(licence.isFeatureAvailable(Licence.ORGANISATION_LICENCE_BIT));
+        Assert.assertFalse(licence.isFeatureAvailable(Licence.PERSONAL_USER_LICENCE_BIT));
         licence.generateNameHash();
 
         byte[] bytes = licence.getBytes();
@@ -31,7 +31,7 @@ public class LicenceTests {
         Assert.assertEquals(1000, second.getCustomerNumber());
         Assert.assertEquals("Kerry Sainsbury", second.getName());
         Assert.assertTrue(second.isFeatureAvailable(Licence.JDBC_LICENCE_BIT));
-        Assert.assertFalse(second.isFeatureAvailable(Licence.ORGANISATION_LICENCE_BIT));
+        Assert.assertFalse(second.isFeatureAvailable(Licence.PERSONAL_USER_LICENCE_BIT));
 
         Assert.assertTrue(Arrays.equals(licence.getStoredNameHash(), second.getStoredNameHash()));
     }

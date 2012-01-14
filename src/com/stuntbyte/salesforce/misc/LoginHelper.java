@@ -24,6 +24,8 @@ public class LoginHelper {
     private String password;
     private String key;
 
+    private LicenceResult licenceResult;
+
     private boolean trace = false;
 
     public static final double SFDC_VERSION = 22D;
@@ -76,9 +78,12 @@ public class LoginHelper {
 
             if (key != null) {
                 LicenceService ls = new LicenceService();
-                if (!ls.checkLicence(lr.getUserInfo().getUserFullName(),
+
+                licenceResult = ls.checkLicence(lr.getUserInfo().getUserFullName(),
                         lr.getUserInfo().getOrganizationName(),
-                        key)) {
+                        key);
+
+                if (!licenceResult.getLicenceOk()) {
                     throw new ConnectionException("JDBC Driver Licence problem for " +
                             lr.getUserInfo().getUserFullName() + " at " +
                             lr.getUserInfo().getOrganizationName());
@@ -175,5 +180,9 @@ public class LoginHelper {
 
     private void log(String msg) {
         System.out.println(msg);
+    }
+
+    public LicenceResult getLicenceResult() {
+        return licenceResult;
     }
 }

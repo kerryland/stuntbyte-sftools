@@ -28,7 +28,7 @@ import java.util.Set;
  */
 public class Update {
 
-    private static int MAX_UPDATES_PER_CALL = 200;
+    private static int MAX_UPDATES_PER_CALL = 100; // We hit "Too many fields describes" at 200.
 
     private SimpleParser al;
     private ResultSetFactory metaDataFactory;

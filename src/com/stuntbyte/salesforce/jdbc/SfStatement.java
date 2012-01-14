@@ -10,6 +10,7 @@ import com.stuntbyte.salesforce.jdbc.metaforce.ColumnMap;
 import com.stuntbyte.salesforce.jdbc.metaforce.ForceResultSet;
 import com.stuntbyte.salesforce.jdbc.metaforce.Table;
 import com.stuntbyte.salesforce.jdbc.sqlforce.LexicalToken;
+import com.stuntbyte.salesforce.misc.Licence;
 import com.stuntbyte.salesforce.misc.LoginHelper;
 import com.stuntbyte.salesforce.misc.Reconnector;
 import com.stuntbyte.salesforce.parse.SimpleParser;
@@ -114,6 +115,10 @@ public class SfStatement implements java.sql.Statement {
 
     public int executeUpdate(String sql, Boolean batchMode) throws SQLException {
         try {
+            if (sfConnection.getHelper().getLicenceResult().getLicence().isFeatureAvailable(Licence.FREE_LIMITED_LICENCE_BIT)) {
+                throw new SQLException("Free Licence only supports SELECT -- sorry!");
+            }
+
             sql = stripComments(sql);
             // System.out.println(sql);
             generatedIds.clear();
@@ -363,7 +368,7 @@ public class SfStatement implements java.sql.Statement {
             if (batchDmlType == DmlType.INSERT) {
                 Insert insert = new Insert(null, sfConnection.getMetaDataFactory(), reconnector);
 
-                SObjectChunker chunker = new SObjectChunker(200, batchSObjects);
+                SObjectChunker chunker = new SObjectChunker(100, batchSObjects);
                 while (chunker.next()) {
                     SObject[] arr = chunker.nextChunk();
 
@@ -376,7 +381,7 @@ public class SfStatement implements java.sql.Statement {
             } else if (batchDmlType == DmlType.UPDATE) {
                 Update update = new Update(null, sfConnection.getMetaDataFactory(), reconnector);
 
-                SObjectChunker chunker = new SObjectChunker(200, batchSObjects);
+                SObjectChunker chunker = new SObjectChunker(100, batchSObjects);
                 while (chunker.next()) {
                     SObject[] arr = chunker.nextChunk();
                     update.saveSObjects(arr);
@@ -384,7 +389,7 @@ public class SfStatement implements java.sql.Statement {
 
             } else if (batchDmlType == DmlType.DELETE) {
                 Delete delete = new Delete(null, reconnector);
-                SObjectChunker chunker = new SObjectChunker(200, batchSObjects);
+                SObjectChunker chunker = new SObjectChunker(100, batchSObjects);
                 while (chunker.next()) {
                     SObject[] arr = chunker.nextChunk();
                     delete.deleteSObjects(arr);

@@ -11,7 +11,7 @@ public class LicenceService {
 
 
     // Tested via LoginHelperTests
-    public boolean checkLicence(String userFullName, String organizationName, String key) throws Exception {
+    public LicenceResult checkLicence(String userFullName, String organizationName, String key) throws Exception {
         userFullName = userFullName.toLowerCase();
         organizationName = organizationName.toLowerCase();
 
@@ -32,7 +32,7 @@ public class LicenceService {
             if (!licenceOk) {
                 licence = decryptLicence(organizationName, key);
 
-                licenceOk = (licence != null && licence.isFeatureAvailable(Licence.ORGANISATION_LICENCE_BIT) &&
+                licenceOk = (licence != null && !licence.isFeatureAvailable(Licence.PERSONAL_USER_LICENCE_BIT) &&
                         licence.isFeatureAvailable(Licence.JDBC_LICENCE_BIT));
 
 
@@ -43,7 +43,10 @@ public class LicenceService {
             throw new ConnectionException("JDBC Licence has expired or is invalid");
         }
 
-        return licenceOk;
+        LicenceResult result = new LicenceResult();
+        result.setLicenceOk(licenceOk);
+        result.setLicence(licence);
+        return result;
     }
 
 
