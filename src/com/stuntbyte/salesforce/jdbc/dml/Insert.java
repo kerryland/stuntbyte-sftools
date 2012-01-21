@@ -99,7 +99,7 @@ public class Insert {
         }
 
         al.read("values");
-        token = al.getToken("(");
+        al.read("(");
         token = al.getToken();
 
         List<String> values = new ArrayList<String>();
@@ -115,7 +115,6 @@ public class Insert {
                 break;
             } else if (token.getValue().equals(",")) {
                 token = al.getToken();
-                continue;
             } else {
                 throw new SQLException("Unexpected token " + token.getValue() + " in " + al.getCommandString());
             }
@@ -131,7 +130,7 @@ public class Insert {
         Table tableData = metaDataFactory.getTable(table);
 
         int i = 0;
-          List<String> fieldsToNull = new ArrayList<String>();
+        List<String> fieldsToNull = new ArrayList<String>();
         for (String key : columns) {
             String val = values.get(i++);
             Integer dataType = ResultSetFactory.lookupJdbcType(tableData.getColumn(key).getType());
@@ -139,7 +138,7 @@ public class Insert {
             Object value;
             if (val.equalsIgnoreCase("null")) {
                 value = null;
-                  fieldsToNull.add(key);
+                fieldsToNull.add(key);
             } else {
                 value = TypeHelper.dataTypeConvert(val, dataType);
             }

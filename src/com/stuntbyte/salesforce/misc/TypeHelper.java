@@ -8,6 +8,7 @@ import java.sql.Types;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.TimeZone;
 
 /**
  * Created by IntelliJ IDEA.
@@ -94,6 +95,7 @@ public class TypeHelper {
 
         if (dataType == Types.DATE) {
             SimpleDateFormat dateSdf = new SimpleDateFormat(dateFormat);
+            dateSdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             return dateSdf.parse(value);
         }
 

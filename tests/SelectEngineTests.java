@@ -9,6 +9,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -73,8 +74,6 @@ public class SelectEngineTests {
         lead2.addField("FirstName", "Mike");
         lead2.addField("LastName", "X" + surname);
         checkSaveResult(pc.create(new SObject[]{lead2}));
-
-
     }
 
 
@@ -1036,7 +1035,7 @@ while (rs.next()) {
         pstmt.setString(++col, sb.toString().replaceAll("x", "y"));
         pstmt.setBoolean(++col, true);                       // checkbox__c
         pstmt.setBigDecimal(++col, new BigDecimal("12.25")); // currency__c
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        Calendar cal = Calendar.getInstance(); // TimeZone.getTimeZone("UTC"));
         cal.set(2010, Calendar.FEBRUARY, 11, 23, 59, 59);
         pstmt.setDate(++col, new java.sql.Date(cal.getTimeInMillis())); // date__c
         cal.set(2010, Calendar.OCTOBER, 21, 23, 15, 0);
@@ -1055,55 +1054,7 @@ while (rs.next()) {
 
         assertEquals(1, count);
 
-        Statement stmt = conn.createStatement();
-
-        ResultSet rs = stmt.executeQuery("select " +
-                "Name, bbb__c, long_text_1__c, long_text_2__c, \n" +
-                "checkbox__c, currency__c, date__c, datetime__c, email__c, \n" +
-                "number4dp__c, percent0dp__c, phone__c, picklist__c, multipicklist__c, \n" +
-                "textarea__c, textarearich__c, url__c " +
-                " from aaa__c where Name = '" + name + "'");
-
-        int foundCount = 0;
-        while (rs.next()) {
-            foundCount++;
-            assertEquals(name, rs.getString("name"));
-            assertEquals(bid, rs.getString("bbb__c"));
-            assertEquals(sb.toString(), rs.getString("long_text_1__c"));
-            assertEquals(Boolean.TRUE, rs.getBoolean("checkbox__c"));
-            assertEquals("12.25", rs.getBigDecimal("currency__c").toPlainString());
-
-            SimpleDateFormat sdf = new SimpleDateFormat(TypeHelper.dateFormat);
-            Date d = new Date(rs.getDate("date__c").getTime());
-            assertEquals("2010-02-11", sdf.format(d));
-
-            Timestamp ts = rs.getTimestamp("datetime__c");
-            d = new Date(ts.getTime());
-            sdf = new SimpleDateFormat(TypeHelper.timestampFormat);
-            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-            assertEquals("2010-10-21T23:15:00.000Z", sdf.format(d));
-
-            assertEquals("noddy@example.com", rs.getString("email__c"));
-            assertEquals("17.12345", rs.getBigDecimal("number4dp__c").toPlainString());
-            assertEquals("96.7777", rs.getBigDecimal("percent0dp__c").toPlainString());
-            assertEquals("0800-PHONE", rs.getString("phone__c"));
-            assertEquals("PickMe", rs.getString("picklist__c"));
-            assertEquals("red;green;Blue", rs.getString("multipicklist__c"));
-            assertEquals("Text Area", rs.getString("textarea__c"));
-
-            Reader ta = rs.getCharacterStream("textarea__c");
-            LineNumberReader lnr = new LineNumberReader(ta);
-            String line = lnr.readLine();
-            while (line != null) {
-                assertEquals("Text Area", line);
-                line = lnr.readLine();
-            }
-
-            assertEquals("Text Area Rich", rs.getString("textarearich__c"));
-            assertEquals("http://www.example.com", rs.getString("url__c"));
-
-        }
-        assertEquals(1, foundCount);
+        ResultSet rs = checkDatatypeInsertWorked(bid, name, sb);
 
         // Check Name metadata
         ResultSetMetaData rsm = rs.getMetaData();
@@ -1174,15 +1125,6 @@ while (rs.next()) {
 //        phone__c,                 // 12
 //       picklist__c,               // 13
 
-//        assertEquals("picklist", rsm.getColumnLabel(13));
-//        assertEquals("picklist__c", rsm.getColumnName(13));
-//        assertEquals("", rsm.getCatalogName(13));
-//        assertEquals("java.sql.Array", rsm.getColumnClassName(13));
-//        assertEquals(255, rsm.getColumnDisplaySize(13));
-//        assertEquals("picklist", rsm.getColumnTypeName(13));
-//        assertEquals(Types.ARRAY, rsm.getColumnType(13));
-
-
         assertEquals("picklist__c", rsm.getColumnLabel(13));
         assertEquals("picklist__c", rsm.getColumnName(13));
         assertEquals("", rsm.getCatalogName(13));
@@ -1204,7 +1146,134 @@ while (rs.next()) {
 //      url__c " +                  // 17
 
 
-        stmt.execute("delete from aaa__c where name = '" + name + "'");
+        conn.createStatement().execute("delete from aaa__c where name = '" + name + "'");
+    }
+
+
+    @Test
+    public void testDatatypesStringLiterals() throws Exception {
+
+        PartnerConnection pc = conn.getHelper().getPartnerConnectionForTestingOnly();
+
+        bbb = new SObject();
+        bbb.setType("bbb__c");
+        bbb.addField("Name", "bbb Name");
+        String bid = checkSaveResult(pc.create(new SObject[]{bbb}));
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 31000; i++) {
+            sb.append("x");
+        }
+
+        String name = "Willy" + System.currentTimeMillis();
+
+        String soql = "insert into aaa__c(\n" +
+                "Name, bbb__c, long_text_1__c, long_text_2__c, \n" +
+                "checkbox__c, currency__c, date__c, datetime__c, email__c, \n" +
+                "number4dp__c, percent0dp__c, phone__c, picklist__c, multipicklist__c, \n" +
+                "textarea__c, textarearich__c, url__c)\n" +
+                "values (" +
+                "'" + name + "'," +
+                "'" + bid + "'," +
+                "'" + sb.toString() + "'," +
+                "'" + sb.toString().replaceAll("x", "y") + "'," +
+                "true," +
+                "12.25," +
+                "2010-02-11," +
+                "2010-10-21T23:15:00.000Z," +
+                "'noddy@example.com'," +
+                "17.12345," +
+                "96.7777," +
+                "'0800-PHONE'," +
+                "'PickMe'," +
+                "'Red;Blue;Green'," +
+                "'Text Area'," +
+                "'Text Area Rich'," +
+                "'http://www.example.com')";
+
+        // http://www.salesforce.com/us/developer/docs/api/Content/field_types.htm
+        PreparedStatement pstmt = conn.prepareStatement(soql);
+
+        int count = pstmt.executeUpdate();
+
+        assertEquals(1, count);
+
+        checkDatatypeInsertWorked(bid, name, sb);
+
+        soql = "update aaa__c set " +
+                "bbb__c = '" + bid + "'," +
+                "long_text_1__c = '" + sb.toString() + "'," +
+                "checkbox__c = true," +
+                "currency__c = 12.25, " +
+                "date__c = 2010-02-11, " +
+                "datetime__c = 2010-10-21T23:15:00.000Z, " +
+                "email__c = 'noddy@example.com', " +
+                "number4dp__c = 17.12345," +
+                "percent0dp__c = 96.7777, " +
+                "phone__c = '0800-PHONE'," +
+                "picklist__c = 'PickMe'," +
+                "multipicklist__c = 'Red;Blue;Green'," +
+                "textarea__c = 'Text Area'," +
+                "textarearich__c = 'Text Area Rich'," +
+                "url__c = 'http://www.example.com' " +
+                " where name = '" + name + "'";
+
+        conn.createStatement().execute(soql);
+        checkDatatypeInsertWorked(bid, name, sb);
+
+        conn.createStatement().execute("delete from aaa__c where name = '" + name + "'");
+    }
+
+    private ResultSet checkDatatypeInsertWorked(String bid, String name, StringBuilder sb) throws SQLException, IOException {
+        Statement stmt = conn.createStatement();
+
+        ResultSet rs = stmt.executeQuery("select " +
+                "Name, bbb__c, long_text_1__c, long_text_2__c, \n" +
+                "checkbox__c, currency__c, date__c, datetime__c, email__c, \n" +
+                "number4dp__c, percent0dp__c, phone__c, picklist__c, multipicklist__c, \n" +
+                "textarea__c, textarearich__c, url__c " +
+                " from aaa__c where Name = '" + name + "'");
+
+        int foundCount = 0;
+        while (rs.next()) {
+            foundCount++;
+            assertEquals(name, rs.getString("name"));
+            assertEquals(bid, rs.getString("bbb__c"));
+            assertEquals(sb.toString(), rs.getString("long_text_1__c"));
+            assertEquals(Boolean.TRUE, rs.getBoolean("checkbox__c"));
+            assertEquals("12.25", rs.getBigDecimal("currency__c").toPlainString());
+
+            SimpleDateFormat sdf = new SimpleDateFormat(TypeHelper.dateFormat);
+            Date d = new Date(rs.getDate("date__c").getTime());
+            assertEquals("2010-02-11", sdf.format(d));
+
+            Timestamp ts = rs.getTimestamp("datetime__c");
+            d = new Date(ts.getTime());
+            sdf = new SimpleDateFormat(TypeHelper.timestampFormat);
+            assertEquals("2010-10-21T23:15:00.000Z", sdf.format(d));
+
+            assertEquals("noddy@example.com", rs.getString("email__c"));
+            assertEquals("17.12345", rs.getBigDecimal("number4dp__c").toPlainString());
+            assertEquals("96.7777", rs.getBigDecimal("percent0dp__c").toPlainString());
+            assertEquals("0800-PHONE", rs.getString("phone__c"));
+            assertEquals("PickMe", rs.getString("picklist__c"));
+            assertEquals("red;green;Blue", rs.getString("multipicklist__c"));
+            assertEquals("Text Area", rs.getString("textarea__c"));
+
+            Reader ta = rs.getCharacterStream("textarea__c");
+            LineNumberReader lnr = new LineNumberReader(ta);
+            String line = lnr.readLine();
+            while (line != null) {
+                assertEquals("Text Area", line);
+                line = lnr.readLine();
+            }
+
+            assertEquals("Text Area Rich", rs.getString("textarearich__c"));
+            assertEquals("http://www.example.com", rs.getString("url__c"));
+
+        }
+        assertEquals(1, foundCount);
+        return rs;
     }
 
     @Test

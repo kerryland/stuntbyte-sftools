@@ -137,7 +137,9 @@ public class Update {
         int bracketBalance = 0;
 
         do {
-            if (value.getType().equals(LexicalToken.Type.STRING)) {
+            if (value.getType().equals(LexicalToken.Type.STRING) ||
+                    value.getType().equals(LexicalToken.Type.DATE) ||
+                    value.getType().equals(LexicalToken.Type.DATETIME)) {
                 expression.append("'").append(value.getValue()).append("'");
 
             } else if (value.getType().equals(LexicalToken.Type.IDENTIFIER)) {
