@@ -1221,6 +1221,59 @@ while (rs.next()) {
         conn.createStatement().execute(soql);
         checkDatatypeInsertWorked(bid, name, sb);
 
+        ResultSet rs;
+
+        rs = checkMinDatatypes(name, "bbb__c");
+        assertEquals(bid, rs.getString(1));
+
+//      Cannot get a min of booleans
+//      rs = checkMinDatatypes(name, "checkbox__c");
+//      assertEquals(Boolean.TRUE, rs.getBoolean(1));
+
+        rs = checkMinDatatypes(name, "currency__c");
+        assertEquals("12.25", rs.getBigDecimal(1).toPlainString());
+
+        rs = checkMinDatatypes(name, "date__c");
+        SimpleDateFormat sdf = new SimpleDateFormat(TypeHelper.dateFormat);
+        Date d = new Date(rs.getDate(1).getTime());
+        assertEquals("2010-02-11", sdf.format(d));
+
+        rs = checkMinDatatypes(name, "datetime__c");
+        Timestamp ts = rs.getTimestamp(1);
+        d = new Date(ts.getTime());
+        sdf = new SimpleDateFormat(TypeHelper.timestampFormat);
+        assertEquals("2010-10-21T23:15:00.000Z", sdf.format(d));
+
+        rs = checkMinDatatypes(name, "email__c");
+        assertEquals("noddy@example.com", rs.getString(1));
+
+        rs = checkMinDatatypes(name, "number4dp__c");
+        assert(rs.getBigDecimal(1).toPlainString().startsWith("17.123"));
+
+        rs = checkMinDatatypes(name, "percent0dp__c");
+        assert(rs.getBigDecimal(1).toPlainString().startsWith("96.77"));
+
+        rs = checkMinDatatypes(name, "phone__c");
+        assertEquals("0800-PHONE", rs.getString(1));
+
+        rs = checkMinDatatypes(name, "picklist__c");
+        assertEquals("PickMe", rs.getString(1));
+
+//      Cannot get a min of multi-picklists
+//        rs = checkMinDatatypes(name, "multipicklist__c");
+//        assertEquals("red;green;Blue", rs.getString(1));
+
+        rs = checkMinDatatypes(name, "textarea__c");
+        assertEquals("Text Area", rs.getString(1));
+
+// Cannot get min of rich text area
+//        rs = checkMinDatatypes(name, "textarearich__c");
+//        assertEquals("Text Area Rich", rs.getString(1));
+
+        rs = checkMinDatatypes(name, "url__c");
+        assertEquals("http://www.example.com", rs.getString(1));
+
+
         conn.createStatement().execute("delete from aaa__c where name = '" + name + "'");
     }
 
@@ -1275,6 +1328,19 @@ while (rs.next()) {
         assertEquals(1, foundCount);
         return rs;
     }
+
+
+    private ResultSet checkMinDatatypes(String name, String columnName) throws SQLException, IOException {
+        Statement stmt = conn.createStatement();
+
+
+        ResultSet rs = stmt.executeQuery("select min(" + columnName + ") " +
+                " from aaa__c where Name = '" + name + "'");
+
+        assertTrue(rs.next());
+        return rs;
+    }
+
 
     @Test
     public void testSelectStar() throws Exception {

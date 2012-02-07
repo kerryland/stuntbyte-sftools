@@ -510,7 +510,7 @@ public class SfResultSet implements java.sql.ResultSet {
             BigDecimal bd = new BigDecimal((String) o);
             return bd.toBigInteger().longValue();
         } else {
-            throw new SQLException("No type conversion to long available for " + o);
+            throw new SQLException(typeConversionException("Long", o));
         }
     }
 
@@ -531,7 +531,7 @@ public class SfResultSet implements java.sql.ResultSet {
             BigDecimal bd = new BigDecimal((String) o);
             return bd.intValue();
         } else {
-            throw new SQLException("No type conversion to int available for " + o);
+            throw new SQLException(typeConversionException("Int", o));
         }
     }
 
@@ -552,7 +552,7 @@ public class SfResultSet implements java.sql.ResultSet {
             return Short.valueOf((String) o);
 
         } else {
-            throw new SQLException("No type conversion to short available for " + o);
+            throw new SQLException(typeConversionException("Short", o));
         }
     }
 
@@ -572,7 +572,7 @@ public class SfResultSet implements java.sql.ResultSet {
         } else if (o instanceof String) {
             return Double.valueOf((String) o);
         } else {
-            throw new SQLException("No type conversion to int available for " + o);
+            throw new SQLException(typeConversionException("Double", o));
         }
     }
 
@@ -593,10 +593,18 @@ public class SfResultSet implements java.sql.ResultSet {
         } else if (o instanceof String) {
             return Float.valueOf((String) o);
         } else {
-            throw new SQLException("No type conversion to int available for " + o);
+            throw new SQLException(typeConversionException("Float", o));
         }
     }
 
+    private String typeConversionException(String type, Object o)  {
+        String result = "No type conversion to " + type + " available for " + o;
+        if (o != null) {
+            result += " (" + o.getClass().getName() + ")";
+        }
+
+        return result;
+    }
 
     public boolean getBoolean(String columnLabel) throws SQLException {
         return getBoolean(getObject(columnLabel));
@@ -616,7 +624,7 @@ public class SfResultSet implements java.sql.ResultSet {
         } else if (o instanceof Number) {
             return ((Number) o).intValue() == 1;
         } else {
-            throw new SQLException("No type conversion to int available for " + o);
+            throw new SQLException(typeConversionException("Boolean", o));
         }
     }
 
@@ -644,8 +652,10 @@ public class SfResultSet implements java.sql.ResultSet {
             return ((BigDecimal) o);
         } else if (o instanceof String) {
             return new BigDecimal((String) o);
+        } else if (o instanceof Double) {
+            return new BigDecimal( (Double) o);
         } else {
-            throw new SQLException("No type conversion to int available for " + o);
+            throw new SQLException(typeConversionException("BigDecimal", o));
         }
     }
 
@@ -671,15 +681,20 @@ public class SfResultSet implements java.sql.ResultSet {
             return null;
         } else if (o instanceof Timestamp) {
             return ((Timestamp) o);
+
+        } else if (o instanceof Calendar) {
+            Calendar cal = (Calendar) o;
+            return new Timestamp(cal.getTime().getTime());
+
         } else if (o instanceof String) {
             try {
                 java.util.Date d = timestampSdf.parse((String) o);
                 return new Timestamp(d.getTime());
             } catch (ParseException e) {
-                throw new SQLException("No type conversion to Timestamp available for " + o);
+                throw new SQLException(typeConversionException("Timestamp", o));
             }
         } else {
-            throw new SQLException("No type conversion to Timestamp available for " + o);
+            throw new SQLException(typeConversionException("Timestamp", o));
         }
     }
 
@@ -717,10 +732,10 @@ public class SfResultSet implements java.sql.ResultSet {
                 java.util.Date d = dateSdf.parse((String) o);
                 return new Date(d.getTime());
             } catch (ParseException e) {
-                throw new SQLException("No type conversion to Date available for " + o);
+                throw new SQLException(typeConversionException("Date", o));
             }
         } else {
-            throw new SQLException("No type conversion to Date available for " + o + " " + o.getClass().getName());
+            throw new SQLException(typeConversionException("Date", o));
         }
     }
 
