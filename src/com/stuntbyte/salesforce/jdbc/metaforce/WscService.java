@@ -95,6 +95,20 @@ public class WscService {
                 DescribeSObjectResult sob = describeCache.get(tableName);
                 Field[] fields = sob.getFields();
 
+                StringBuilder recordTypes = new StringBuilder();
+                for (RecordTypeInfo rt : sob.getRecordTypeInfos()) {
+                    if (recordTypes.length() == 0) {
+                        recordTypes.append("RecordTypes: ");
+                    } else {
+                        recordTypes.append(" | ");
+                    }
+                    recordTypes.append(rt.getName());
+                    if (rt.isDefaultRecordTypeMapping()) {
+                        recordTypes.append(" (default)");
+                    }
+
+                }
+
                 String type = sob.isCreateable() && sob.getUpdateable() &&
                         sob.getReplicateable() && sob.getTriggerable() ? "TABLE" : "SYSTEM TABLE";
 
@@ -107,6 +121,9 @@ public class WscService {
                                     childParentReferenceNames,
                                     childCascadeDeletes,
                                     typesSet, sob, field);
+                            if (col.getName().equalsIgnoreCase("RecordTypeId")) {
+                                col.setComments(recordTypes.toString());
+                            }
                             table.addColumn(col);
                         }
                     }

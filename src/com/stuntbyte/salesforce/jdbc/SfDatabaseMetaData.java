@@ -50,11 +50,11 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public boolean nullsAreSortedLow() throws SQLException {
-        return false;
+        return true;
     }
 
     public boolean nullsAreSortedAtStart() throws SQLException {
-        return false;
+        return true;
     }
 
     public boolean nullsAreSortedAtEnd() throws SQLException {
@@ -199,7 +199,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public boolean supportsGroupBy() throws SQLException {
-        return false;
+        return true;
     }
 
     public boolean supportsGroupByUnrelated() throws SQLException {
@@ -558,7 +558,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
         row.put("COLUMN_NAME", "Id");
         row.put("DATA_TYPE", Types.VARCHAR);
         row.put("TYPE_NAME", "id");
-        row.put("COLUMN_SIZE", "18");
+        row.put("COLUMN_SIZE", 18);
         row.put("BUFFER_LENGTH", null);
         row.put("DECIMAL_DIGITS", null);
         row.put("PSEUDO_COLUMN", DatabaseMetaData.bestRowNotPseudo);
@@ -573,7 +573,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
         row.put("COLUMN_NAME", "LastModifiedDAte");
         row.put("DATA_TYPE", Types.TIMESTAMP);
         row.put("TYPE_NAME", "datetime");
-        row.put("COLUMN_SIZE", "24");
+        row.put("COLUMN_SIZE", 24);
         row.put("BUFFER_LENGTH", 24);
         row.put("DECIMAL_DIGITS", null);
         row.put("PSEUDO_COLUMN", DatabaseMetaData.bestRowNotPseudo);

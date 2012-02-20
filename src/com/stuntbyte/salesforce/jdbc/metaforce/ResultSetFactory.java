@@ -110,6 +110,9 @@ public class ResultSetFactory {
             // new TypeInfo("multipicklist", Types.ARRAY, 0, 0, 0, 0),
             // new TypeInfo("combobox", Types.ARRAY, 0, 0, 0, 0),
 
+
+            new TypeInfo("any", "anyType", Types.OTHER, 0, 0, 0, 0),
+
             new TypeInfo("Summary", "summary", Types.OTHER, 0, 0, 0, 0),      // Summary?
     };
 

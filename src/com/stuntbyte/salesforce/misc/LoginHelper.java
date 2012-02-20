@@ -86,7 +86,7 @@ public class LoginHelper {
                 if (!licenceResult.getLicenceOk()) {
                     throw new ConnectionException("JDBC Driver Licence problem for " +
                             lr.getUserInfo().getUserFullName() + " at " +
-                            lr.getUserInfo().getOrganizationName());
+                            lr.getUserInfo().getOrganizationName() + " with " + key);
                 }
             }
 

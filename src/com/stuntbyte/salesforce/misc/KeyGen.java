@@ -9,12 +9,16 @@ public class KeyGen {
 
     public static void main(String[] args) throws Exception {
         /*
-Minion O'Toole licence is 3qj6e8qaLfxP72hE5M2noA
-Kerry Sainsbury expired licence is 8Y5Ez6AiYm1cYvbB4MMqog
-Kerry Sainsbury licence is ntpOo9JjXHQ2uOYAlM724w
-Jukka Hakala licence is sPZB0H-rlfKrSUZlsYEQhQ
-Darko Bohinc licence is cKuBGhDLCb0lzpw80CNM8w
-Fronde Admin licence is mUv1IP4b5zWa4m-Er8EiLw
+
+
+Minion O'Toole licence is 3qj6e8qaLfzdhSQlPeQkDQ 3000-12-31
+Kerry Sainsbury licence is 8Y5Ez6AiYm2mTV6devuA5A 2010-12-31
+Kerry Sainsbury licence is ntpOo9JjXHTmYiYIyaG0XQ 3000-12-31
+Jukka Hakala licence is sPZB0H-rlfIKPNlKogqeew 2013-12-31
+Darko Bohinc licence is cKuBGhDLCb1-MZw3FtjPUQ 3000-12-31
+Fronde Admin licence is mUv1IP4b5zXQiWf1AYowdQ 3000-12-31
+PERSONAL_DEMO licence is MxjetovtygmPUHNqoPAXGQ 2012-3-31
+Free Limited SQL licence is bsCbe26QJkFi_7H_ICMPuQ 3000-3-31
          */
         
         BitSet USER_LICENCE = getPersonalLicenceFeatures();

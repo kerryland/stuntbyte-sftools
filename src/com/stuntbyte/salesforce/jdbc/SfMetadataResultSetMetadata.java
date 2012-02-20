@@ -1,10 +1,10 @@
 package com.stuntbyte.salesforce.jdbc;
 
 import com.stuntbyte.salesforce.jdbc.metaforce.ColumnMap;
+import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
 
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.math.BigDecimal;
+import java.sql.*;
 import java.util.List;
 
 /**
@@ -45,11 +45,56 @@ public class SfMetadataResultSetMetadata implements ResultSetMetaData {
 
     // TODO: Implement properly
     public int getColumnType(int column) throws SQLException {
-        return Types.VARCHAR;
+        return ResultSetFactory.lookupJdbcType(getColumnTypeName(column));
     }
+
     // TODO: Implement properly
     public String getColumnTypeName(int column) throws SQLException {
-        return "string";
+//        return "string";
+        if (getColumnCount() == 0) {
+            throw new SQLException("No data returned");
+        }
+        ColumnMap<String, Object> colMap = maps.get(0);
+        
+        Object x =  colMap.getValueByIndex(column);
+
+     if (x instanceof BigDecimal) {
+        return "double";
+
+    } else if (x instanceof Boolean) {
+        return "boolean";
+
+    } else if (x instanceof Date) {
+        return "datetime";
+
+    } else if (x instanceof Double) {
+         return "double";
+
+    } else if (x instanceof Float) {
+         return "double";
+
+    } else if (x instanceof Integer) {
+         return "int";
+
+    } else if (x instanceof Long) {
+         return "int";
+
+    } else if (x instanceof Short) {
+        return "int";
+
+    } else if (x instanceof String) {
+         return "string";
+
+    } else if (x instanceof Time) {
+         return "time";
+
+    } else if (x instanceof Timestamp) {
+         return "datetime";
+
+    }
+
+    return "string";
+
     }
 
     //--------- Here down not implemented
