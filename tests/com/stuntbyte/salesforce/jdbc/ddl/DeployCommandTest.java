@@ -2,6 +2,7 @@ package com.stuntbyte.salesforce.jdbc.ddl;
 
 import com.stuntbyte.salesforce.jdbc.SfConnection;
 import com.stuntbyte.salesforce.misc.TestHelper;
+import junit.framework.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -51,10 +52,16 @@ public class DeployCommandTest {
         stmt.execute("dep commit"); // TODO: Test dep rollback
 
         File packageFile = File.createTempFile("SFDC", "PKG");
+        Assert.assertTrue(packageFile.delete());
+
         File outFile = File.createTempFile("SFDCOUT", "txt");
+        Assert.assertTrue(outFile.delete());
 
         stmt.execute("dep PACKAGE TO '" + packageFile.getAbsolutePath() + "'");
         stmt.execute("dep UPLOAD PACKAGE FROM '" + packageFile.getAbsolutePath() + "' TO '" + outFile.getAbsolutePath() + "'");
+        
+        Assert.assertTrue(packageFile.exists());
+        Assert.assertTrue(outFile.exists());
 
 
 

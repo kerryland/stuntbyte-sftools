@@ -117,7 +117,7 @@ public class DeployCommand {
             } else if (next.equalsIgnoreCase("IGNORE_WARNINGS")) {
                 options.add(Deployer.DeploymentOptions.IGNORE_WARNINGS);
             } else {
-                throw new Exception("Expected ALLTESTS, RUNTESTS, IGNORE_WARNINGS, IGNORE_ERRORS, or CHECKONLY, not " + next);
+                throw new Exception("Expected ALLTESTS, RUNTESTS, IGNORE_WARNINGS, IGNORE_ERRORS, CHECKONLY, or STATUS, not " + next);
             }
         }
 
