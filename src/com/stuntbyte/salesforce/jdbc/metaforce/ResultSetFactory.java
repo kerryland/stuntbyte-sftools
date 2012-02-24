@@ -19,6 +19,8 @@ import java.util.Set;
  */
 public class ResultSetFactory {
 
+    public static String schemaName = "";
+
     private static class TypeInfo {
         public TypeInfo(
                 String niceName,
@@ -193,7 +195,7 @@ public class ResultSetFactory {
                 if (include(search, table.getName())) {
                     ColumnMap<String, Object> map = new ColumnMap<String, Object>();
                     map.put("TABLE_CAT", null);
-                    map.put("TABLE_SCHEM", null);
+                    map.put("TABLE_SCHEM", schemaName);
                     map.put("TABLE_NAME", table.getName());
                     map.put("TABLE_TYPE", table.getType());
                     map.put("REMARKS", table.getComments());
@@ -244,17 +246,16 @@ public class ResultSetFactory {
     }
 
     public ResultSet getSchemas() {
-        List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
-        return new ForceResultSet(maps);
-        /*
+//        List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
+//        return new ForceResultSet(maps);
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
         ColumnMap<String, Object> row = new ColumnMap<String, Object>();
-        row.put("TABLE_SCHEM", "SF");
+        row.put("TABLE_SCHEM", schemaName);
+//        row.put("TABLE_SCHEM", "SF");
         row.put("TABLE_CATALOG", null);
 //        row.put("IS_DEFAULT", true);// This is a non-standard column that breaks DBVisualizer
         maps.add(row);
         return new ForceResultSet(maps);
-        */
     }
 
     /**
@@ -271,7 +272,7 @@ public class ResultSetFactory {
                         ColumnMap<String, Object> map = new ColumnMap<String, Object>();
                         TypeInfo typeInfo = lookupTypeInfo(column.getType());
                         map.put("TABLE_CAT", null);
-                        map.put("TABLE_SCHEM", null);
+                        map.put("TABLE_SCHEM", schemaName);
                         map.put("TABLE_NAME", table.getName());
                         map.put("COLUMN_NAME", column.getName());
                         map.put("DATA_TYPE", typeInfo != null ? typeInfo.sqlDataType : Types.OTHER);
@@ -339,11 +340,11 @@ public class ResultSetFactory {
             if (column.getReferencedTable() != null && column.getReferencedColumn() != null) {
                 ColumnMap<String, Object> map = new ColumnMap<String, Object>();
                 map.put("PKTABLE_CAT", null);
-                map.put("PKTABLE_SCHEM", null);
+                map.put("PKTABLE_SCHEM", schemaName);
                 map.put("PKTABLE_NAME", column.getReferencedTable());
                 map.put("PKCOLUMN_NAME", column.getReferencedColumn());
                 map.put("FKTABLE_CAT", null);
-                map.put("FKTABLE_SCHEM", null);
+                map.put("FKTABLE_SCHEM", schemaName);
                 map.put("FKTABLE_NAME", tableName);
                 map.put("FKCOLUMN_NAME", column.getName());
                 map.put("KEY_SEQ", counter);
@@ -367,12 +368,12 @@ public class ResultSetFactory {
                 if (tableName.equalsIgnoreCase(column.getReferencedTable())) {
                     ColumnMap<String, Object> map = new ColumnMap<String, Object>();
                     map.put("PKTABLE_CAT", null);
-                    map.put("PKTABLE_SCHEM", null);
+                    map.put("PKTABLE_SCHEM", schemaName);
                     map.put("PKTABLE_NAME", column.getReferencedTable());
                     map.put("PKCOLUMN_NAME", column.getReferencedColumn());
 
                     map.put("FKTABLE_CAT", null);
-                    map.put("FKTABLE_SCHEM", null);
+                    map.put("FKTABLE_SCHEM", schemaName);
                     map.put("FKTABLE_NAME", table.getName());
                     map.put("FKCOLUMN_NAME", column.getName());
 
@@ -401,7 +402,7 @@ public class ResultSetFactory {
                     if (column.getName().equalsIgnoreCase("Id")) {
                         ColumnMap<String, Object> map = new ColumnMap<String, Object>();
                         map.put("TABLE_CAT", null);
-                        map.put("TABLE_SCHEM", null);
+                        map.put("TABLE_SCHEM", schemaName);
                         map.put("TABLE_NAME", table.getName());
                         map.put("COLUMN_NAME", "" + column.getName());
                         map.put("KEY_SEQ", 0);
@@ -426,7 +427,7 @@ public class ResultSetFactory {
                     if (column.getName().equalsIgnoreCase("Id")) {
                         ColumnMap<String, Object> map = new ColumnMap<String, Object>();
                         map.put("TABLE_CAT", null);
-                        map.put("TABLE_SCHEM", null);
+                        map.put("TABLE_SCHEM", schemaName);
                         map.put("TABLE_NAME", table.getName());
                         map.put("NON_UNIQUE", true);
                         map.put("INDEX_QUALIFIER", null);

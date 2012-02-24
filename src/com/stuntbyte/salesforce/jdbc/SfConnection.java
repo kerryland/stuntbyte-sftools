@@ -253,6 +253,7 @@ public class SfConnection implements java.sql.Connection {
         throw new SQLFeatureNotSupportedException();
     }
 
+    /*
     public void setSchema(String s) throws SQLException {
     }
 
@@ -270,6 +271,7 @@ public class SfConnection implements java.sql.Connection {
     public int getNetworkTimeout() throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
+    */
 
     public <T> T unwrap(Class<T> iface) throws SQLException {
         throw new SQLFeatureNotSupportedException();

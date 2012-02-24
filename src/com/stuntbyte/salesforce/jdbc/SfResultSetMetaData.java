@@ -226,7 +226,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
     }
 
     public String getSchemaName(int column) throws SQLException {
-        return "";
+        return ResultSetFactory.schemaName;
     }
 
     public int getPrecision(int column) throws SQLException {

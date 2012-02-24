@@ -109,9 +109,10 @@ public class WscService {
 
                 }
 
-                String type = sob.isCreateable() && sob.getUpdateable() &&
-                        sob.getReplicateable() && sob.getTriggerable() ? "TABLE" : "SYSTEM TABLE";
+//                String type = sob.isCreateable() && sob.getUpdateable() &&
+//                        sob.getReplicateable() && sob.getTriggerable() ? "TABLE" : "SYSTEM TABLE";
 
+                String type = "TABLE";
                 if (sob.isQueryable()) {
                     Table table = new Table(sob.getName(), getRecordTypes(sob.getRecordTypeInfos()), type);
 
