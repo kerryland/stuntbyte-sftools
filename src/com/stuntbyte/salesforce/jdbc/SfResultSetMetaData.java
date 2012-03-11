@@ -90,7 +90,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
                 column = null;
 
                 if (lookup.equalsIgnoreCase("CreatedBy") || (lookup.equalsIgnoreCase("LastModifiedBy"))) {
-                    column = new Column(lookup, "reference"); // TODO: Lookup?
+                    column = new Column(lookup, rsf.getType("reference")); // TODO: Lookup?
                     column.setRelationshipType("User");
                 } else {
                     column = t.getColumn(lookup);
@@ -145,12 +145,12 @@ public class SfResultSetMetaData implements ResultSetMetaData {
                         }
                     }
 
-                    column.setType(aggregateDatatype);
+                    column.setType(rsf.getType(aggregateDatatype));
 
                 } else {
                     // Some columns (eg: Task.Who and Task.What) can be fk to more than one type of table.
                     // Getting the data type right seems like more work than it's worth right now. TODO!
-                    column.setType("string");
+                    column.setType(rsf.getType("string"));
                 }
 
                 return column;
@@ -245,7 +245,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
     }
 
     public String getCatalogName(int column) throws SQLException {
-        return "";
+        return ResultSetFactory.catalogName;
     }
 
     public int getColumnType(int column) throws SQLException {

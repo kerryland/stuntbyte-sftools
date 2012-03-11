@@ -144,7 +144,7 @@ public class SfMetadataResultSetMetadata implements ResultSetMetaData {
 
 
     public String getCatalogName(int column) throws SQLException {
-        return "";
+        return ResultSetFactory.catalogName;
     }
 
     public boolean isReadOnly(int column) throws SQLException {

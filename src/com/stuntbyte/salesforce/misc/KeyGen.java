@@ -23,6 +23,7 @@ Free Limited SQL licence is bsCbe26QJkFi_7H_ICMPuQ 3000-3-31
         
         BitSet USER_LICENCE = getPersonalLicenceFeatures();
         
+        checkLicence(998, "Pleb Pleb", "Pleb Pleb", "Fidelma Company", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
         checkLicence(999, "Minion O'Toole", "Minion O'Toole", "Fidelma Company", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
         checkLicence(999, "Kerry Sainsbury", "Kerry Sainsbury", "Fidelma Company", USER_LICENCE, 2010, Calendar.DECEMBER, 31);
         checkLicence(1000, "Kerry Sainsbury", "Kerry Sainsbury", "Fidelma Company", USER_LICENCE, 3000, Calendar.DECEMBER, 31);

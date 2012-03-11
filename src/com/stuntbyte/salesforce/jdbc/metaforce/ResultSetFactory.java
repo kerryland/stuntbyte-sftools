@@ -19,10 +19,43 @@ import java.util.Set;
  */
 public class ResultSetFactory {
 
-    public static String schemaName = "";
+    public static final int DATATYPES_SQL92 = 0;
+    public static final int DATATYPES_SALESFORCE_UI = 1;
+    public static final int DATATYPES_SALESFORCE_API = 2;
+
+    public ResultSetFactory(int dataTypeMode) {
+        this.dataTypeMode = dataTypeMode;
+    }
+
+    private int dataTypeMode;
+
+//    public void setDataTypeMode(int dataTypeMode) {
+//        this.dataTypeMode = dataTypeMode;
+//    }
+
+    public static String schemaName = null;
+    public static String catalogName = "";
+
+    public static String getNiceName(String dataType) {
+        try {
+            return lookupTypeInfo(dataType).getNiceName();
+        } catch (SQLException e) {
+            return "unknown";
+        }
+    }
+
+    public static String getSql92Name(String dataType) {
+        try {
+            return lookupTypeInfo(dataType).getSql92name();
+        } catch (SQLException e) {
+            return "unknown";
+        }
+    }
+
 
     private static class TypeInfo {
         public TypeInfo(
+                String sql92name,
                 String niceName,
                 String typeName,
                 int sqlDataType,
@@ -30,6 +63,7 @@ public class ResultSetFactory {
                 int minScale,
                 int maxScale,
                 int radix) {
+            this.sql92name = sql92name;
             this.niceName = niceName;
             this.typeName = typeName;
             this.sqlDataType = sqlDataType;
@@ -39,6 +73,7 @@ public class ResultSetFactory {
             this.radix = radix;
         }
 
+        private String sql92name;
         private String niceName;
         String typeName;
         int sqlDataType;
@@ -46,6 +81,14 @@ public class ResultSetFactory {
         int minScale;
         int maxScale;
         int radix;
+
+        public String getSql92name() {
+            return sql92name;
+        }
+
+        public String getNiceName() {
+            return niceName;
+        }
     }
 
                 /*
@@ -74,49 +117,50 @@ public class ResultSetFactory {
     // LogTextArea
 
     private static TypeInfo TYPE_INFO_DATA[] = {
-            new TypeInfo("Id", "id", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("varchar", "Id", "id", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
 
-            new TypeInfo("MasterDetail", "masterrecord", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("Lookup", "reference", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("Text", "string", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("EncryptedText", "encryptedstring", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("Email", "email", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("Phone", "phone", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("Url", "url", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("TextArea", "textarea", Types.LONGVARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("LongTextArea", "base64", Types.LONGVARCHAR, 0x7fffffff, 0, 0, 0),  // LongTextArea?
-            new TypeInfo("Checkbox", "boolean", Types.BOOLEAN, 1, 0, 0, 0),
-            new TypeInfo("Checkbox", "_boolean", Types.BOOLEAN, 1, 0, 0, 0),
-            new TypeInfo("Byte", "byte", Types.VARBINARY, 10, 0, 0, 10),     // Byte ?
-            new TypeInfo("Byte","_byte", Types.VARBINARY, 10, 0, 0, 10),    // Byte?
-            new TypeInfo("Number", "decimal", Types.DECIMAL, 17, -324, 306, 10),
-            new TypeInfo("Number", "int", Types.INTEGER, 10, 0, 0, 10),
-            new TypeInfo("Number", "_int", Types.INTEGER, 10, 0, 0, 10),
-            new TypeInfo("Number", "double", Types.DOUBLE, 17, -324, 306, 10),
-            new TypeInfo("Number", "_double", Types.DOUBLE, 17, -324, 306, 10),
-            new TypeInfo("Percent", "percent", Types.DOUBLE, 17, -324, 306, 10),
-            new TypeInfo("Currency", "currency", Types.DOUBLE, 17, -324, 306, 10), // TODO: double for currency seems crazy!
-            new TypeInfo("Date", "date", Types.DATE, 10, 0, 0, 0),
-            new TypeInfo("Time", "time", Types.TIME, 10, 0, 0, 0),      // Time?
-            new TypeInfo("DateTime", "datetime", Types.TIMESTAMP, 10, 0, 0, 0),
+            new TypeInfo("varchar", "MasterDetail", "masterrecord", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("varchar", "Lookup", "reference", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("varchar", "Text", "string", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("varchar", "EncryptedText", "encryptedstring", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("varchar", "Email", "email", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("varchar", "Phone", "phone", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("varchar", "Url", "url", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("varchar", "TextArea", "textarea", Types.LONGVARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("varchar", "LongTextArea", "base64", Types.LONGVARCHAR, 0x7fffffff, 0, 0, 0),  // LongTextArea?
+            new TypeInfo("boolean", "Checkbox", "boolean", Types.BOOLEAN, 1, 0, 0, 0),
+            new TypeInfo("boolean", "Checkbox", "_boolean", Types.BOOLEAN, 1, 0, 0, 0),
+            new TypeInfo("binary", "Byte", "byte", Types.VARBINARY, 10, 0, 0, 10),     // Byte ?
+            new TypeInfo("binary", "Byte","_byte", Types.VARBINARY, 10, 0, 0, 10),    // Byte?
+            new TypeInfo("decimal", "Number", "decimal", Types.DECIMAL, 17, -324, 306, 10),
+            new TypeInfo("integer", "Number", "int", Types.INTEGER, 10, 0, 0, 10),
+            new TypeInfo("integer", "Number", "_int", Types.INTEGER, 10, 0, 0, 10),
+            new TypeInfo("double precision", "Number", "double", Types.DOUBLE, 17, -324, 306, 10),
+            new TypeInfo("double precision", "Number", "_double", Types.DOUBLE, 17, -324, 306, 10),
+            new TypeInfo("double precision", "Percent", "percent", Types.DOUBLE, 17, -324, 306, 10),
+            new TypeInfo("decimal", "Currency", "currency", Types.DOUBLE, 17, -324, 306, 10), // TODO: double for currency seems crazy!
+            new TypeInfo("date", "Date", "date", Types.DATE, 10, 0, 0, 0),
+            new TypeInfo("time", "Time", "time", Types.TIME, 10, 0, 0, 0),      // Time?
+            new TypeInfo("timestamp", "DateTime", "datetime", Types.TIMESTAMP, 10, 0, 0, 0),
 
-            new TypeInfo("Picklist", "picklist", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("MultiselectPicklist", "multipicklist", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("MultiselectPicklist", "combobox", Types.VARCHAR, 0x7fffffff, 0, 0, 0),  // MultiselectPicklist?
+            new TypeInfo("varchar", "Picklist", "picklist", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("varchar", "MultiselectPicklist", "multipicklist", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("varchar", "MultiselectPicklist", "combobox", Types.VARCHAR, 0x7fffffff, 0, 0, 0),  // MultiselectPicklist?
 
            // TODO: How handle autonumber?
-//            new TypeInfo("AutoNumber", "string", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
-            new TypeInfo("AutoNumber", "autonumber", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+//            new TypeInfo("varchar", "AutoNumber", "string", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("varchar", "AutoNumber", "autonumber", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
 
-            // new TypeInfo("picklist", Types.ARRAY, 0, 0, 0, 0),
-            // new TypeInfo("multipicklist", Types.ARRAY, 0, 0, 0, 0),
-            // new TypeInfo("combobox", Types.ARRAY, 0, 0, 0, 0),
+            // new TypeInfo("varchar", "picklist", Types.ARRAY, 0, 0, 0, 0),
+            // new TypeInfo("varchar", "multipicklist", Types.ARRAY, 0, 0, 0, 0),
+            // new TypeInfo("varchar", "combobox", Types.ARRAY, 0, 0, 0, 0),
 
 
-            new TypeInfo("any", "anyType", Types.OTHER, 0, 0, 0, 0),
+            new TypeInfo("binary", "any", "anyType", Types.OTHER, 0, 0, 0, 0),
 
-            new TypeInfo("Summary", "summary", Types.OTHER, 0, 0, 0, 0),      // Summary?
+            new TypeInfo("binary", "Summary", "summary", Types.OTHER, 0, 0, 0, 0),      // Summary?
     };
+
 
     private Map<String, Table> tableMap = new HashMap<String, Table>();
 
@@ -194,7 +238,7 @@ public class ResultSetFactory {
             if ((types == null) || (typeSet.contains(table.getType().toUpperCase()))) {
                 if (include(search, table.getName())) {
                     ColumnMap<String, Object> map = new ColumnMap<String, Object>();
-                    map.put("TABLE_CAT", null);
+                    map.put("TABLE_CAT", catalogName);
                     map.put("TABLE_SCHEM", schemaName);
                     map.put("TABLE_NAME", table.getName());
                     map.put("TABLE_TYPE", table.getType());
@@ -215,7 +259,7 @@ public class ResultSetFactory {
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
         for (TypeInfo typeInfo : TYPE_INFO_DATA) {
             ColumnMap<String, Object> map = new ColumnMap<String, Object>();
-            map.put("TYPE_NAME", typeInfo.typeName);
+            map.put("TYPE_NAME", getType(typeInfo.typeName));
             map.put("DATA_TYPE", typeInfo.sqlDataType);
             map.put("PRECISION", typeInfo.precision);
             map.put("LITERAL_PREFIX", null);
@@ -227,7 +271,7 @@ public class ResultSetFactory {
             map.put("UNSIGNED_ATTRIBUTE", false);
             map.put("FIXED_PREC_SCALE", false);
             map.put("AUTO_INCREMENT", false);
-            map.put("LOCAL_TYPE_NAME", typeInfo.typeName);
+            map.put("LOCAL_TYPE_NAME", getType(typeInfo.typeName));
             map.put("MINIMUM_SCALE", typeInfo.minScale);
             map.put("MAXIMUM_SCALE", typeInfo.maxScale);
             map.put("SQL_DATA_TYPE", typeInfo.sqlDataType);
@@ -242,19 +286,23 @@ public class ResultSetFactory {
 
     public ResultSet getCatalogs() {
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
+        if (catalogName != null) {
+            ColumnMap<String, Object> row = new ColumnMap<String, Object>();
+            row.put("TABLE_CAT", catalogName);
+            maps.add(row);
+        }
         return new ForceResultSet(maps);
     }
 
     public ResultSet getSchemas() {
-//        List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
-//        return new ForceResultSet(maps);
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
-        ColumnMap<String, Object> row = new ColumnMap<String, Object>();
-        row.put("TABLE_SCHEM", schemaName);
-//        row.put("TABLE_SCHEM", "SF");
-        row.put("TABLE_CATALOG", null);
-//        row.put("IS_DEFAULT", true);// This is a non-standard column that breaks DBVisualizer
+        if (schemaName != null || catalogName != null) {
+            ColumnMap<String, Object> row = new ColumnMap<String, Object>();
+            row.put("TABLE_SCHEM", schemaName);
+            row.put("TABLE_CATALOG", catalogName);
+    //        row.put("IS_DEFAULT", true);// This is a non-standard column that breaks DBVisualizer
         maps.add(row);
+        }
         return new ForceResultSet(maps);
     }
 
@@ -271,7 +319,7 @@ public class ResultSetFactory {
                     if (include(columnPattern, column.getName())) {
                         ColumnMap<String, Object> map = new ColumnMap<String, Object>();
                         TypeInfo typeInfo = lookupTypeInfo(column.getType());
-                        map.put("TABLE_CAT", null);
+                        map.put("TABLE_CAT", catalogName);
                         map.put("TABLE_SCHEM", schemaName);
                         map.put("TABLE_NAME", table.getName());
                         map.put("COLUMN_NAME", column.getName());
@@ -308,8 +356,24 @@ public class ResultSetFactory {
 
     static TypeInfo lookupTypeInfo(String forceTypeName) throws SQLException {
         for (TypeInfo entry : TYPE_INFO_DATA) {
+//            if ((dataTypeMode == DATATYPES_SALESFORCE_API) &&
+//                (forceTypeName.equalsIgnoreCase(entry.typeName))) {
+//                return entry;
+//            }
+//
+//            if ((dataTypeMode == DATATYPES_SALESFORCE_UI) &&
+//                    (forceTypeName.equalsIgnoreCase(entry.niceName))) {
+//                return entry;
+//            }
+//
+//            if ((dataTypeMode == DATATYPES_SQL92) &&
+//                    (forceTypeName.equalsIgnoreCase(entry.sql92name))) {
+//                return entry;
+//            }
+//
             if ((forceTypeName.equalsIgnoreCase(entry.typeName)  ||
-                (forceTypeName.equalsIgnoreCase(entry.niceName)))) {
+                (forceTypeName.equalsIgnoreCase(entry.niceName))) ||
+                (forceTypeName.equalsIgnoreCase(entry.sql92name))) {
                 return entry;
             }
         }
@@ -339,11 +403,11 @@ public class ResultSetFactory {
         for (Column column : table.getColumns()) {
             if (column.getReferencedTable() != null && column.getReferencedColumn() != null) {
                 ColumnMap<String, Object> map = new ColumnMap<String, Object>();
-                map.put("PKTABLE_CAT", null);
+                map.put("PKTABLE_CAT", catalogName);
                 map.put("PKTABLE_SCHEM", schemaName);
                 map.put("PKTABLE_NAME", column.getReferencedTable());
                 map.put("PKCOLUMN_NAME", column.getReferencedColumn());
-                map.put("FKTABLE_CAT", null);
+                map.put("FKTABLE_CAT", catalogName);
                 map.put("FKTABLE_SCHEM", schemaName);
                 map.put("FKTABLE_NAME", tableName);
                 map.put("FKCOLUMN_NAME", column.getName());
@@ -367,12 +431,12 @@ public class ResultSetFactory {
             for (Column column : table.getColumns()) {
                 if (tableName.equalsIgnoreCase(column.getReferencedTable())) {
                     ColumnMap<String, Object> map = new ColumnMap<String, Object>();
-                    map.put("PKTABLE_CAT", null);
+                    map.put("PKTABLE_CAT", catalogName);
                     map.put("PKTABLE_SCHEM", schemaName);
                     map.put("PKTABLE_NAME", column.getReferencedTable());
                     map.put("PKCOLUMN_NAME", column.getReferencedColumn());
 
-                    map.put("FKTABLE_CAT", null);
+                    map.put("FKTABLE_CAT", catalogName);
                     map.put("FKTABLE_SCHEM", schemaName);
                     map.put("FKTABLE_NAME", table.getName());
                     map.put("FKCOLUMN_NAME", column.getName());
@@ -401,7 +465,7 @@ public class ResultSetFactory {
                 for (Column column : table.getColumns()) {
                     if (column.getName().equalsIgnoreCase("Id")) {
                         ColumnMap<String, Object> map = new ColumnMap<String, Object>();
-                        map.put("TABLE_CAT", null);
+                        map.put("TABLE_CAT", catalogName);
                         map.put("TABLE_SCHEM", schemaName);
                         map.put("TABLE_NAME", table.getName());
                         map.put("COLUMN_NAME", "" + column.getName());
@@ -426,7 +490,7 @@ public class ResultSetFactory {
                 for (Column column : table.getColumns()) {
                     if (column.getName().equalsIgnoreCase("Id")) {
                         ColumnMap<String, Object> map = new ColumnMap<String, Object>();
-                        map.put("TABLE_CAT", null);
+                        map.put("TABLE_CAT", catalogName);
                         map.put("TABLE_SCHEM", schemaName);
                         map.put("TABLE_NAME", table.getName());
                         map.put("NON_UNIQUE", true);
@@ -447,4 +511,19 @@ public class ResultSetFactory {
         }
         return new ForceResultSet(maps);
     }
+
+
+    public String getType(String s) {
+        if (dataTypeMode == DATATYPES_SQL92) {
+            s = ResultSetFactory.getSql92Name(s);
+        } else if (dataTypeMode == DATATYPES_SALESFORCE_UI) {
+            s = ResultSetFactory.getNiceName(s);
+//        } else {
+            // Things look nicer when we map "double" to decimal for api
+//            s =  s.equalsIgnoreCase("double") ? "decimal" : s;
+        }
+
+        return s;
+    }
+
 }

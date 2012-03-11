@@ -4,11 +4,12 @@ import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.stuntbyte.salesforce.misc.LicenceResult;
 import com.stuntbyte.salesforce.misc.LoginHelper;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLDecoder;
 import java.sql.*;
 import java.sql.Statement;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.Executor;
+import java.util.*;
 
 /**
  */
@@ -22,7 +23,6 @@ public class SfConnection implements java.sql.Connection {
     private LoginHelper helper;
     private ResultSetFactory metaDataFactory;
     private Properties info;
-    private LicenceResult licenceResult;
 
     public ResultSetFactory getMetaDataFactory() {
         return metaDataFactory;
@@ -30,9 +30,9 @@ public class SfConnection implements java.sql.Connection {
 
     public SfConnection(String server, String username, String password, Properties info) throws SQLException {
 
-        String key = null;
+        String licenceKey = null;
         if (info.containsKey("licence")) {
-            key = info.getProperty("licence");
+            licenceKey = info.getProperty("licence");
         }
 
         if (password.startsWith("licence(")) {
@@ -40,21 +40,20 @@ public class SfConnection implements java.sql.Connection {
             if (sfdcPos == -1) {
                 throw new RuntimeException("Password starts with licence( but does not contain sfdc(");
             }
-            key = password.substring(8, password.indexOf(")"));
+            licenceKey = password.substring(8, password.indexOf(")"));
             password = password.substring(sfdcPos + 5, password.lastIndexOf(")"));
         }
 
+        server = pushUrlParametersIntoInfo(server, info);
 
         this.server = server;
         this.username = username;
         this.info = info;
-        helper = new LoginHelper(server, username, password, key);
+        helper = new LoginHelper(server, username, password, licenceKey);
 
-        if (key == null) {
+        if (licenceKey == null) {
             throw new SQLException("No licence information found");
         }
-
-        licenceResult = helper.getLicenceResult();
 
         try {
             metaDataFactory = helper.createResultSetFactory(info);
@@ -62,6 +61,40 @@ public class SfConnection implements java.sql.Connection {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String pushUrlParametersIntoInfo(String server, Properties info) throws SQLException {
+        try {
+            URL serverUrl = new URL(server);
+            server = server.replace(serverUrl.getFile(), "");
+
+            Map<String, String> params = extractParameters(serverUrl);
+
+            for (String param : params.keySet()) {
+                info.setProperty(param, params.get(param));
+            }
+
+        } catch (Exception e) {
+            throw new SQLException(e);
+        }
+        return server;
+    }
+
+    private Map<String, String> extractParameters(URL serverUrl) throws UnsupportedEncodingException {
+        Map<String, String> params = new HashMap<String, String>();
+        String query = serverUrl.getQuery();
+        if (query != null) {
+            for (String param : query.split("&")) {
+                String[] pair = param.split("=");
+                String paramName = URLDecoder.decode(pair[0], "UTF-8");
+                String value = "";
+                if (pair.length > 1) {
+                    value = URLDecoder.decode(pair[1], "UTF-8");
+                }
+                params.put(paramName, value);
+            }
+        }
+        return params;
     }
 
     public java.sql.Statement createStatement() throws SQLException {
@@ -122,7 +155,7 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public String getCatalog() throws SQLException {
-        return null;
+        return ResultSetFactory.catalogName;
     }
 
     public void setTransactionIsolation(int level) throws SQLException {

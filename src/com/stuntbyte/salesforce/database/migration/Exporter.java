@@ -49,6 +49,11 @@ public class Exporter {
 //                if (!tableName.endsWith("__c")) {
 //                    tableName += "__s";   // Make sure we don't fail on the GROUP table...
 //                }
+                if (tableName.equalsIgnoreCase("group")) {
+                    tableName = "groups";   // Make sure we don't fail on the GROUP table...
+                }
+
+
                 sb.append("create table " + tableName);
                 sb.append(" (");
 
@@ -62,7 +67,8 @@ public class Exporter {
                 for (Column col : cols) {
                     sb.append(col.getName());
 
-                    Integer jdbcType = ResultSetFactory.lookupJdbcType(col.getType());
+                    Integer jdbcType = rsf.lookupJdbcType(col.getType());
+//                    System.out.println("Check " + col.getTable().getName() + "." + col.getName() + " " + col.getName() + " " + jdbcType + " " + col.getType());
                     String typeName = dialect.getTypeName(jdbcType, col.getLength(), col.getPrecision(), col.getScale());
                     sb.append(" ");
                     sb.append(typeName);

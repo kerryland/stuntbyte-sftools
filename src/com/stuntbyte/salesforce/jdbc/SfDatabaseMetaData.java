@@ -66,7 +66,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public String getDatabaseProductVersion() throws SQLException {
-        return "Winter11y"; //TODO: Pull from API?
+        return "Spring12"; //TODO: Pull from API?
     }
 
     public String getDriverName() throws SQLException {
@@ -516,13 +516,11 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public ResultSet getSchemas() throws SQLException {
-//        return new SfResultSet();
-
         return metaDataFactory.getSchemas(); // TODO - what are schemas?
     }
 
     public ResultSet getCatalogs() throws SQLException {
-        return new SfResultSet();
+        return metaDataFactory.getCatalogs();
     }
 
     public ResultSet getTableTypes() throws SQLException {

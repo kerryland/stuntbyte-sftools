@@ -142,7 +142,7 @@ public class LoginHelper {
 
     public ResultSetFactory createResultSetFactory(Properties info) throws ConnectionException {
         WscService svc = new WscService(getPartnerConnection(), info);
-        return svc.createResultSetFactory();
+        return svc.createResultSetFactory(info);
     }
 
 

@@ -41,13 +41,32 @@ public class WscService {
 
     /**
      * Grab the describe data and return it wrapped in a factory.
+     * @param info
      */
-    public ResultSetFactory createResultSetFactory() throws ConnectionException {
+    public ResultSetFactory createResultSetFactory(Properties info) throws ConnectionException {
 
         // Map a table to a map of columns and their related lookup object(s!)
         Map<String, Map<String, List<String>>> relationshipMap = new HashMap<String, Map<String, List<String>>>();
 
-        ResultSetFactory factory = new ResultSetFactory();
+        int dataTypeMode = ResultSetFactory.DATATYPES_SALESFORCE_API;
+        
+        String dataTypes = info.getProperty("datatypes");
+        if (dataTypes != null) {
+            if (dataTypes.equalsIgnoreCase("SQL92")) {
+                dataTypeMode = ResultSetFactory.DATATYPES_SQL92;
+            } else if (dataTypes.equalsIgnoreCase("UI")) {
+                dataTypeMode = ResultSetFactory.DATATYPES_SALESFORCE_UI;
+            } else if (dataTypes.equalsIgnoreCase("API")) {
+                dataTypeMode = ResultSetFactory.DATATYPES_SALESFORCE_API;
+
+            } else {
+                throw new ConnectionException("Unknown 'datatypes' property of " + dataTypes);
+            }
+
+        }
+        ResultSetFactory factory = new ResultSetFactory(dataTypeMode);
+        
+        
         Map<String, String> childParentReferenceNames = new HashMap<String, String>();
         Map<String, Boolean> childCascadeDeletes = new HashMap<String, Boolean>();
         List<String> typesList = getSObjectTypes();
@@ -112,13 +131,17 @@ public class WscService {
 //                String type = sob.isCreateable() && sob.getUpdateable() &&
 //                        sob.getReplicateable() && sob.getTriggerable() ? "TABLE" : "SYSTEM TABLE";
 
-                String type = "TABLE";
+                String type = sob.getUpdateable() ? "TABLE" : "SYSTEM TABLE";
+
+//                String type = "TABLE";
                 if (sob.isQueryable()) {
                     Table table = new Table(sob.getName(), getRecordTypes(sob.getRecordTypeInfos()), type);
 
                     for (Field field : fields) {
                         if (keep(field)) {
-                            Column col = recordColumn(relationshipMap,
+                            Column col = recordColumn(
+                                    factory,
+                                    relationshipMap,
                                     childParentReferenceNames,
                                     childCascadeDeletes,
                                     typesSet, sob, field);
@@ -147,13 +170,13 @@ public class WscService {
         return factory;
     }
 
-    private Column recordColumn(Map<String, Map<String, List<String>>> relationshipMap,
+    private Column recordColumn(ResultSetFactory factory, Map<String, Map<String, List<String>>> relationshipMap,
                                 Map<String, String> childParentReferenceNames,
                                 Map<String, Boolean> childCascadeDeletes,
                                 Set<String> typesSet,
                                 DescribeSObjectResult sob,
                                 Field field) {
-        Column column = new Column(field.getName(), getType(field));
+        Column column = new Column(field.getName(), factory.getType(field.getType().toString()));
         column.setLabel(field.getLabel());
         column.setLength(getLength(field));
         column.setAutoIncrement(field.getAutoNumber());
@@ -171,7 +194,7 @@ public class WscService {
             String childParentReferenceName = childParentReferenceNames.get(qualified);
             Boolean cascadeDelete = childCascadeDeletes.get(qualified);
             if (cascadeDelete != null && cascadeDelete) {
-                column.setType("masterrecord");
+                column.setType(factory.getType("masterrecord"));
             }
 
             Map<String, List<String>> lookupColumns = relationshipMap.get(sob.getName());
@@ -232,11 +255,6 @@ public class WscService {
         }
 
         return column;
-    }
-
-    private String getType(Field field) {
-        String s = field.getType().toString();
-        return s.equalsIgnoreCase("double") ? "decimal" : s;
     }
 
     private int getLength(Field field) {
