@@ -1394,6 +1394,38 @@ while (rs.next()) {
         assertEquals("Bob", rs.getString("Who.LastName"));
     }
 
+    @Test
+    public void testResultSetFirstLast() throws Exception {
+        Statement stmt = conn.createStatement();
+        ResultSet rs;
+        
+        rs = stmt.executeQuery("SELECT Id, name from User limit 2");
+        assertTrue(rs.isBeforeFirst());
+        assertFalse(rs.isFirst());
+        assertFalse(rs.isLast());
+        assertFalse(rs.isAfterLast());
+        
+        assertTrue(rs.next());
+        assertFalse(rs.isBeforeFirst());
+        assertTrue(rs.isFirst());
+        assertFalse(rs.isLast());
+        assertFalse(rs.isAfterLast());
+
+        assertTrue(rs.next());
+        assertFalse(rs.isBeforeFirst());
+        assertFalse(rs.isFirst());
+        assertTrue(rs.isLast());
+        assertFalse(rs.isAfterLast());
+        
+        assertFalse(rs.next());
+        assertFalse(rs.isBeforeFirst());
+        assertFalse(rs.isFirst());
+        assertFalse(rs.isLast());
+        assertTrue(rs.isAfterLast());
+    }
+
+
+
 
     // "Type" is a bit of a weird column name, because there's an implicit column called
     // "Type" in all results that we want to ignore.

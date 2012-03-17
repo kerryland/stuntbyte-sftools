@@ -132,10 +132,14 @@ public class SfResultSet implements java.sql.ResultSet {
         dateSdf.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
+    private Integer lastRow;
 
     public boolean next() throws SQLException {
         try {
             if ((maxRows > 0) && (rowCount >= maxRows)) {
+                if (lastRow == null) {
+                    lastRow = ptr;
+                }
                 return false;
             }
 
@@ -150,6 +154,9 @@ public class SfResultSet implements java.sql.ResultSet {
                 batchEnd = records.length - 1;
                 ptr = -1;
                 return true;
+            }
+            if (lastRow == null) {
+                lastRow = ptr;
             }
             return false;
 
@@ -765,12 +772,34 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
 
-    // HERE DOWN DON'T NEED IMPLEMENTING -- but should throw some exceptions ----------------------
-
     public Statement getStatement() throws SQLException {
         return statement;
     }
 
+    public boolean isBeforeFirst() throws SQLException {
+        return ptr < 0;
+    }
+
+
+    public boolean isFirst() throws SQLException {
+        return ptr == 0;
+    }
+
+    public boolean isAfterLast() throws SQLException {
+        return lastRow != null && ptr > lastRow;
+    }
+
+    public boolean isLast() throws SQLException {
+        if ((maxRows > 0) && (rowCount+1 >= maxRows)) {
+            return true;
+        }
+        return (!isBeforeFirst() &&  qr.isDone() && ptr == batchEnd);
+    }
+
+
+
+
+    // HERE DOWN DON'T NEED IMPLEMENTING -- but should throw some exceptions ----------------------
 
     public byte getByte(int columnIndex) throws SQLException {
         return 0;
@@ -828,21 +857,7 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
 
-    public boolean isBeforeFirst() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
-    }
 
-    public boolean isAfterLast() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
-    }
-
-    public boolean isFirst() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
-    }
-
-    public boolean isLast() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
-    }
 
     public void beforeFirst() throws SQLException {
         throw new SQLFeatureNotSupportedException();
@@ -877,7 +892,9 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
     public void setFetchDirection(int direction) throws SQLException {
-
+        if (direction != ResultSet.FETCH_FORWARD) {
+            throw new SQLFeatureNotSupportedException();
+        }
     }
 
     public int getFetchDirection() throws SQLException {
