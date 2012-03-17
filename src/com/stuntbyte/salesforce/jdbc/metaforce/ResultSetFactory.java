@@ -414,8 +414,8 @@ public class ResultSetFactory {
                 map.put("KEY_SEQ", counter);
                 map.put("UPDATE_RULE", 0);
                 map.put("DELETE_RULE", 0);
-                map.put("FK_NAME", "FakeFK" + counter);
-                map.put("PK_NAME", "FakePK" + counter);
+                map.put("FK_NAME", "FK" + tableName + counter);
+                map.put("PK_NAME", "PK" + tableName + counter);
                 map.put("DEFERRABILITY", 0);
                 counter++;
                 maps.add(map);
@@ -444,8 +444,8 @@ public class ResultSetFactory {
                     map.put("KEY_SEQ", counter);
                     map.put("UPDATE_RULE", DatabaseMetaData.importedKeyRestrict);
                     map.put("DELETE_RULE", DatabaseMetaData.importedKeySetNull);
-                    map.put("FK_NAME", "FakeFK" + counter);
-                    map.put("PK_NAME", "FakePK" + counter);
+                    map.put("FK_NAME", "FK" + table.getName() + counter);
+                    map.put("PK_NAME", "PK" + table.getName() + counter);
                     map.put("DEFERRABILITY", 0);
                     counter++;
                     maps.add(map);
@@ -470,7 +470,7 @@ public class ResultSetFactory {
                         map.put("TABLE_NAME", table.getName());
                         map.put("COLUMN_NAME", "" + column.getName());
                         map.put("KEY_SEQ", 0);
-                        map.put("PK_NAME", "FakePK" + counter);
+                        map.put("PK_NAME", "PK" + table.getName() + counter);
                         maps.add(map);
                     }
                 }
@@ -495,7 +495,7 @@ public class ResultSetFactory {
                         map.put("TABLE_NAME", table.getName());
                         map.put("NON_UNIQUE", true);
                         map.put("INDEX_QUALIFIER", null);
-                        map.put("INDEX_NAME", "FakeIndex" + counter++);
+                        map.put("INDEX_NAME", "IX" + counter++);
                         map.put("TYPE", DatabaseMetaData.tableIndexOther);
                         map.put("ORDINAL_POSITION", counter);
                         map.put("COLUMN_NAME", "Id");
