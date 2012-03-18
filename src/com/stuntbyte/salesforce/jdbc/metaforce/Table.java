@@ -15,6 +15,8 @@ public class Table {
     private List<Column> columns;
     private Map<String, Column> columnMap = new HashMap<String, Column>();
 
+    private String schema;
+
     public Table(String name, String comments, String type) {
         this.name = name;
         this.comments = comments;
@@ -68,5 +70,17 @@ public class Table {
 
     public Boolean isCustom() {
         return name.toUpperCase().endsWith("__C");
+    }
+
+    public String getSchema() {
+        return schema;
+    }
+
+    public void setSchema(String schema) {
+        this.schema = schema;
+    }
+
+    public void setName(String tableName) {
+        this.name = tableName;
     }
 }

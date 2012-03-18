@@ -136,6 +136,7 @@ public class WscService {
 //                String type = "TABLE";
                 if (sob.isQueryable()) {
                     Table table = new Table(sob.getName(), getRecordTypes(sob.getRecordTypeInfos()), type);
+                    table.setSchema(ResultSetFactory.schemaName);
 
                     for (Field field : fields) {
                         if (keep(field)) {

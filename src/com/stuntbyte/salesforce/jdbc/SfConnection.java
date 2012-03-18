@@ -1,8 +1,11 @@
 package com.stuntbyte.salesforce.jdbc;
 
+import com.stuntbyte.salesforce.core.metadata.MetadataService;
+import com.stuntbyte.salesforce.core.metadata.MetadataServiceImpl;
 import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.stuntbyte.salesforce.misc.LicenceResult;
 import com.stuntbyte.salesforce.misc.LoginHelper;
+import com.stuntbyte.salesforce.misc.Reconnector;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -22,6 +25,7 @@ public class SfConnection implements java.sql.Connection {
 
     private LoginHelper helper;
     private ResultSetFactory metaDataFactory;
+    private MetadataService metadataService;
     private Properties info;
 
     public ResultSetFactory getMetaDataFactory() {
@@ -57,6 +61,7 @@ public class SfConnection implements java.sql.Connection {
 
         try {
             metaDataFactory = helper.createResultSetFactory(info);
+            metadataService = new MetadataServiceImpl(new Reconnector(helper));
             closed = false;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -139,7 +144,7 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public DatabaseMetaData getMetaData() throws SQLException {
-        return new SfDatabaseMetaData(this, metaDataFactory);
+        return new SfDatabaseMetaData(this, metaDataFactory, metadataService);
     }
 
     public void setReadOnly(boolean readOnly) throws SQLException {

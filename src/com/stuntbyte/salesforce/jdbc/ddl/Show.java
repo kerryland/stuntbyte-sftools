@@ -10,6 +10,8 @@ import com.stuntbyte.salesforce.parse.SimpleParser;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -84,7 +86,16 @@ public class Show {
             }
 
         } else {
-            List<Metadata> metadataList = metadataService.getMetadataByType(metadataType);
+            List<Metadata> metadataList;
+            try {
+                metadataList = metadataService.getMetadataByType(metadataType);
+            } catch ()
+            Collections.sort(metadataList, new Comparator<Metadata>() {
+                public int compare(Metadata metadata, Metadata metadata1) {
+                    return metadata.getName().compareTo(metadata1.getName());
+                }
+            });
+            
             for (Metadata metadata : metadataList) {
                 Matcher m = likePattern.matcher(metadata.getSalesforceId().toLowerCase());
                 if (m.matches()) {
@@ -97,6 +108,20 @@ public class Show {
             }
         }
 
+        return new ForceResultSet(maps);
+
+    }
+
+    public ResultSet count() throws Exception {
+        ResultSet results = execute();
+        Integer count = 0;
+        while (results.next()) {
+            count++;
+        }
+        List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
+        ColumnMap<String, Object> row = new ColumnMap<String, Object>();
+        row.put("COUNT", count);
+        maps.add(row);
         return new ForceResultSet(maps);
 
     }

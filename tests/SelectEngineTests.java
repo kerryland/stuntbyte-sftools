@@ -1490,7 +1490,7 @@ while (rs.next()) {
     @Test
     public void testSelectMetaDataTypesNoParameter() throws Exception {
         Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("select * from metadata.types");
+        ResultSet rs = stmt.executeQuery("select * from deployable.types");
 
         Set<String> expectedValues = new HashSet<String>();
         expectedValues.add("ApexClass");
@@ -1509,7 +1509,7 @@ while (rs.next()) {
     @Test
     public void testSelectMetaDataTypesForProfiles() throws Exception {
         Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("select * from metadata.profile");
+        ResultSet rs = stmt.executeQuery("select * from deployable.profile");
 
         Set<String> expectedValues = new HashSet<String>();
         expectedValues.add("Admin");
@@ -1528,7 +1528,7 @@ while (rs.next()) {
     @Test
     public void testSelectMetaDataTypesForProfilesWithWhere() throws Exception {
         Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("select * from metadata.profile where Identifier like 'Adm%'");
+        ResultSet rs = stmt.executeQuery("select * from deployable.profile where Identifier like 'Adm%'");
 
         Set<String> expectedValues = new HashSet<String>();
         expectedValues.add("Admin");

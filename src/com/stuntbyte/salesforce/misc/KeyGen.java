@@ -19,6 +19,9 @@ Darko Bohinc licence is cKuBGhDLCb1-MZw3FtjPUQ 3000-12-31
 Fronde Admin licence is mUv1IP4b5zXQiWf1AYowdQ 3000-12-31
 PERSONAL_DEMO licence is MxjetovtygmPUHNqoPAXGQ 2012-3-31
 Free Limited SQL licence is bsCbe26QJkFi_7H_ICMPuQ 3000-3-31
+
+StuntByte demo: support@stuntbyte.com
+                licence(IQF5LmJWSi0fPF20o8PXyQ)sfdc(p1sswordljSWGksoL9O5gCRZDWthsFEa)
          */
         
         BitSet USER_LICENCE = getPersonalLicenceFeatures();

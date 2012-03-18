@@ -6,6 +6,7 @@ import com.stuntbyte.salesforce.jdbc.SfResultSet;
 import com.stuntbyte.salesforce.jdbc.SfStatement;
 import com.stuntbyte.salesforce.jdbc.ddl.Show;
 import com.stuntbyte.salesforce.jdbc.metaforce.Column;
+import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.stuntbyte.salesforce.jdbc.metaforce.Table;
 import com.stuntbyte.salesforce.misc.Reconnector;
 import com.stuntbyte.salesforce.parse.ParsedColumn;
@@ -47,15 +48,23 @@ public class Select {
 
             table = parsedSelect.getDrivingTable();
 
-            if (table.toLowerCase().startsWith("metadata.")) {
-                return new Show(parsedSelect, metadataService).execute();
-            }
-
             sql = removeQuotedColumns(sql, parsedSelect);
             sql = removeQuotedTableName(sql);
             sql = patchWhereZeroEqualsOne(sql);
             sql = patchCountStar(sql, parsedSelect.getColumns());
             // System.out.println("EXECUTE " + sql);
+
+            if (table.toLowerCase().startsWith(ResultSetFactory.DEPLOYABLE + ".")) {
+
+                if (sql.contains("COUNT(ID)")) {
+                    Show show = new Show(parsedSelect, metadataService);
+                    return show.count();
+                } else {
+                    Show show = new Show(parsedSelect, metadataService);
+                    return show.execute();
+                }
+            }
+
 
             Integer oldBatchSize = 2000;
             if (reconnector.getQueryOptions() != null) {

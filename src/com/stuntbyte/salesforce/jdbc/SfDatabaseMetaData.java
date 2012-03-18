@@ -1,8 +1,7 @@
 package com.stuntbyte.salesforce.jdbc;
 
-import com.stuntbyte.salesforce.jdbc.metaforce.ColumnMap;
-import com.stuntbyte.salesforce.jdbc.metaforce.ForceResultSet;
-import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
+import com.stuntbyte.salesforce.core.metadata.MetadataService;
+import com.stuntbyte.salesforce.jdbc.metaforce.*;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -18,11 +17,23 @@ import java.util.List;
 public class SfDatabaseMetaData implements DatabaseMetaData {
     private SfConnection sfConnection;
     private ResultSetFactory metaDataFactory;
+    private MetadataService metadataService;
+
+    private List<Table> metadataColumns;
 
     public SfDatabaseMetaData(SfConnection sfConnection,
-                              ResultSetFactory metaDataFactory) {
+                              ResultSetFactory metaDataFactory,
+                              MetadataService metadataService) {
         this.sfConnection = sfConnection;
         this.metaDataFactory = metaDataFactory;
+        this.metadataService = metadataService;
+
+        metadataColumns = new ArrayList<Table>();
+        Table metadataColumn = new Table("", "", "");
+        metadataColumn.addColumn(new Column("Identifier", "string"));
+        metadataColumn.addColumn(new Column("Name", "string"));
+        metadataColumn.addColumn(new Column("LastChangedBy", "string"));
+        metadataColumns.add(metadataColumn);
     }
 
     public boolean allProceduresAreCallable() throws SQLException {
@@ -511,8 +522,20 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
                                String tableNamePattern,
                                String[] types) throws SQLException {
 
-        // TODO: We could add support for "metadata" as a type here
-        return metaDataFactory.getTables(tableNamePattern, types);
+        if ((ResultSetFactory.DEPLOYABLE).equals(schemaPattern)) {
+            List<Table> fakeTables = new ArrayList<Table>();
+
+            for (String metaDataType : metadataService.getMetadataTypes()) {
+                Table table = new Table(metaDataType, "", "TABLE");
+                table.setSchema(ResultSetFactory.DEPLOYABLE);
+
+                fakeTables.add(table);
+            }
+
+            return metaDataFactory.createTableResultSet(tableNamePattern, types, fakeTables);
+        } else {
+            return metaDataFactory.getTables(tableNamePattern, types);
+        }
     }
 
     public ResultSet getSchemas() throws SQLException {
@@ -538,7 +561,13 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
                                 String tableNamePattern,
                                 String columnNamePattern) throws SQLException {
 
-        return metaDataFactory.getColumns(tableNamePattern, columnNamePattern);
+        if (ResultSetFactory.DEPLOYABLE.equals(schemaPattern)) {
+            metadataColumns.get(0).setName(tableNamePattern);
+            return metaDataFactory.getColumns(tableNamePattern, columnNamePattern, metadataColumns);
+        } else {
+
+            return metaDataFactory.getColumns(tableNamePattern, columnNamePattern);
+        }
     }
 
     public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException {
@@ -553,9 +582,14 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
         ColumnMap<String, Object> row = new ColumnMap<String, Object>();
         row.put("SCOPE", DatabaseMetaData.bestRowSession);
-        row.put("COLUMN_NAME", "Id");
+        if (ResultSetFactory.DEPLOYABLE.equalsIgnoreCase(schema)) {
+            row.put("COLUMN_NAME", "Identity");
+        } else {
+            row.put("COLUMN_NAME", "Id");
+        }
+
         row.put("DATA_TYPE", Types.VARCHAR);
-        row.put("TYPE_NAME", "id");
+        row.put("TYPE_NAME", metaDataFactory.getType("id"));
         row.put("COLUMN_SIZE", 18);
         row.put("BUFFER_LENGTH", null);
         row.put("DECIMAL_DIGITS", null);
@@ -589,14 +623,23 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
+        if (metaDataFactory.DEPLOYABLE.equals(schema)) {
+            return new SfResultSet();
+        }
         return metaDataFactory.getPrimaryKeys(table);
     }
 
     public ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException {
+        if (metaDataFactory.DEPLOYABLE.equals(schema)) {
+            return new SfResultSet();
+        }
         return metaDataFactory.getImportedKeys(table);
     }
 
     public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
+        if (metaDataFactory.DEPLOYABLE.equals(schema)) {
+            return new SfResultSet();
+        }
         return metaDataFactory.getExportedKeys(table);
     }
 
