@@ -1,6 +1,7 @@
 package com.stuntbyte.salesforce.misc;
 
 import com.sforce.ws.ConnectionException;
+import com.stuntbyte.salesforce.jdbc.LicenceException;
 
 import java.util.Arrays;
 import java.util.Calendar;
@@ -9,42 +10,33 @@ import java.util.Calendar;
  */
 public class LicenceService {
 
-
-    // Tested via LoginHelperTests
+    /**
+     * Check to see if this is a valid JDBC licence
+     *
+     * Tested via LoginHelperTests.
+     */
     public LicenceResult checkLicence(String userFullName, String organizationName, String key) throws Exception {
         userFullName = userFullName.toLowerCase();
         organizationName = organizationName.toLowerCase();
 
         Licence licence = decryptLicence("PERSONAL_DEMO".toLowerCase(), key);
-
-        boolean licenceOk = (licence != null &&
-                licence.isFeatureAvailable(Licence.PERSONAL_USER_LICENCE_BIT) &&
-                licence.isFeatureAvailable(Licence.JDBC_LICENCE_BIT));
-
-
-        if (!licenceOk) {
+        if (licence == null) {
             licence = decryptLicence(userFullName, key);
-
-            licenceOk = (licence != null &&
-                    licence.isFeatureAvailable(Licence.PERSONAL_USER_LICENCE_BIT) &&
-                    licence.isFeatureAvailable(Licence.JDBC_LICENCE_BIT));
-
-            if (!licenceOk) {
-                licence = decryptLicence(organizationName, key);
-
-                licenceOk = (licence != null && !licence.isFeatureAvailable(Licence.PERSONAL_USER_LICENCE_BIT) &&
-                        licence.isFeatureAvailable(Licence.JDBC_LICENCE_BIT));
-
-
-            }
+        }
+        if (licence == null) {
+            licence = decryptLicence(organizationName, key);
         }
 
+//        boolean licenceOk = (licence != null && licence.supportsPersonalLicence() && licence.supportsJdbcFeature());
+
+
         if (licence == null || licence.getExpires().before(Calendar.getInstance())) {
-            throw new ConnectionException("JDBC Licence has expired or is invalid");
+            throw new LicenceException("JDBC Licence has expired or is invalid for " +
+                    userFullName + "/" + organizationName + "/" + key);
         }
 
         LicenceResult result = new LicenceResult();
-        result.setLicenceOk(licenceOk);
+//        result.setLicenceOk(true); // seems redundant
         result.setLicence(licence);
         return result;
     }

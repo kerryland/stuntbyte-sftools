@@ -27,6 +27,7 @@ public class SfConnection implements java.sql.Connection {
     private ResultSetFactory metaDataFactory;
     private MetadataService metadataService;
     private Properties info;
+    private boolean readOnly;
 
     public ResultSetFactory getMetaDataFactory() {
         return metaDataFactory;
@@ -123,7 +124,7 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public boolean getAutoCommit() throws SQLException {
-        return false;
+        return true;
     }
 
     public void commit() throws SQLException {
@@ -148,11 +149,11 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public void setReadOnly(boolean readOnly) throws SQLException {
-
+        this.readOnly = readOnly;
     }
 
     public boolean isReadOnly() throws SQLException {
-        return false;
+        return readOnly;
     }
 
     public void setCatalog(String catalog) throws SQLException {
@@ -180,11 +181,25 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
+        checkProperties(resultSetType, resultSetConcurrency);
         return createStatement();
     }
 
+    private void checkProperties(int resultSetType, int resultSetConcurrency) throws SQLFeatureNotSupportedException {
+        if (resultSetType != ResultSet.TYPE_FORWARD_ONLY) {
+            throw new SQLFeatureNotSupportedException("Only support TYPE_FORWARD_ONLY");
+        }
+
+        // TODO: Support updatable
+        if (resultSetConcurrency != ResultSet.CONCUR_READ_ONLY) {
+            throw new SQLFeatureNotSupportedException("Only support CONCUR_READ_ONLY");
+        }
+    }
+
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        checkProperties(resultSetType, resultSetConcurrency);
+        return prepareStatement(sql);
+
     }
 
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
@@ -224,11 +239,13 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+        checkProperties(resultSetType, resultSetConcurrency);
         return createStatement();
     }
 
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        checkProperties(resultSetType, resultSetConcurrency);
+        return prepareStatement(sql);
     }
 
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {

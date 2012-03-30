@@ -666,11 +666,6 @@ public class Migrator {
 
         File srcSchemaDir = FileUtil.createTempDirectory("Triggers");
 
-//                new File(System.getProperty("java.io.tmpdir"),
-//                "SF-TRIGGERS" + System.currentTimeMillis());
-//        srcSchemaDir.mkdir();
-
-
         File originalFile = downloadBackup(destSalesforce, tableNames, destinationConnector, del, srcSchemaDir);
         File restoreZip = createFileToRestore(srcSchemaDir);
         File unenabledFile = createUnenabledFile(srcSchemaDir);

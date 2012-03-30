@@ -284,7 +284,7 @@ public class Grant {
         final boolean allProfiles = addProfilesToPackage(grant, dl);
 
         File zip = dl.download();
-        System.out.println("DOWNLOADED EXISTING PROFILES TO " + zip.getName());
+//        System.out.println("DOWNLOADED EXISTING PROFILES TO " + zip.getName());
 
         final Deployment dep = new Deployment();
 
@@ -397,7 +397,7 @@ public class Grant {
         public PrepareDownload invoke() throws IOException, SQLException {
 
             sourceSchemaDir = new File(System.getProperty("java.io.tmpdir"),
-                    "SF-SRC" + System.currentTimeMillis());
+                    "SFDC-SRC" + System.currentTimeMillis());
             sourceSchemaDir.mkdir();
             sourceSchemaDir.deleteOnExit();
 

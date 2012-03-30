@@ -25,7 +25,7 @@ public class FileUtil {
 
     public static File createTempDirectory(String namePart) {
         File f = new File(System.getProperty("java.io.tmpdir"),
-                "SF-" + namePart + "-" + System.currentTimeMillis());  // TODO: This must be unique
+                "SFDC-" + namePart + "-" + System.currentTimeMillis());  // TODO: This must be unique
         f.mkdir();
         f.deleteOnExit();
         return f;

@@ -1,6 +1,8 @@
 package com.stuntbyte.salesforce.jdbc.metaforce;
 
 
+import com.stuntbyte.salesforce.misc.Licence;
+
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -231,7 +233,6 @@ public class ResultSetFactory {
             }
         }
 
-
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
         for (Table table : sometables) {
 
@@ -294,20 +295,25 @@ public class ResultSetFactory {
         return new ForceResultSet(maps);
     }
 
-    public ResultSet getSchemas() {
+    public ResultSet getSchemas(Licence licence) {
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
         if (schemaName != null || catalogName != null) {
-            ColumnMap<String, Object> row = new ColumnMap<String, Object>();
-            row.put("TABLE_SCHEM", schemaName);
-            row.put("TABLE_CATALOG", catalogName);
-    //        row.put("IS_DEFAULT", true);// This is a non-standard column that breaks DBVisualizer
-            maps.add(row);
+            ColumnMap<String, Object> row;
+            if (licence.supportsJdbcFeature()) {
+                row = new ColumnMap<String, Object>();
+                row.put("TABLE_SCHEM", schemaName);
+                row.put("TABLE_CATALOG", catalogName);
+                //        row.put("IS_DEFAULT", true);// This is a non-standard column that breaks DBVisualizer
+                maps.add(row);
+            }
 
-            row = new ColumnMap<String, Object>();
-            row.put("TABLE_SCHEM", DEPLOYABLE);
-            row.put("TABLE_CATALOG", catalogName);
-            //        row.put("IS_DEFAULT", true);// This is a non-standard column that breaks DBVisualizer
-            maps.add(row);
+            if (licence.supportsDeploymentFeature()) {
+                row = new ColumnMap<String, Object>();
+                row.put("TABLE_SCHEM", DEPLOYABLE);
+                row.put("TABLE_CATALOG", catalogName);
+                //        row.put("IS_DEFAULT", true);// This is a non-standard column that breaks DBVisualizer
+                maps.add(row);
+            }
         }
         return new ForceResultSet(maps);
     }

@@ -47,7 +47,6 @@ public class DeployCommand {
 
     private SimpleParser al;
     private Reconnector reconnector;
-//    private MetadataConnection metadataConnection;
 
     // There is only one active at a time...
     private static Deployment deployment;
@@ -59,6 +58,9 @@ public class DeployCommand {
     }
 
     public void execute() throws SQLException {
+        if (!reconnector.getLicence().supportsDeploymentFeature()) {
+            throw new SQLException("Your Stunt Byte licence does allow use of the deployment tool.");
+        }
         try {
             String value = al.getValue();
             if (value.equalsIgnoreCase("start")) {

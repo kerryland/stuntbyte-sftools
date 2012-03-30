@@ -36,7 +36,7 @@ public class WscService {
     }
 
     private void log(String message) {
-        System.out.println("ForceMetaDataDriver: " + message);
+//        System.out.println("ForceMetaDataDriver: " + message);
     }
 
     /**

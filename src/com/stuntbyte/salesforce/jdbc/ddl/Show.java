@@ -86,16 +86,13 @@ public class Show {
             }
 
         } else {
-            List<Metadata> metadataList;
-            try {
-                metadataList = metadataService.getMetadataByType(metadataType);
-            } catch ()
+            List<Metadata> metadataList = metadataService.getMetadataByType(metadataType);
             Collections.sort(metadataList, new Comparator<Metadata>() {
                 public int compare(Metadata metadata, Metadata metadata1) {
                     return metadata.getName().compareTo(metadata1.getName());
                 }
             });
-            
+
             for (Metadata metadata : metadataList) {
                 Matcher m = likePattern.matcher(metadata.getSalesforceId().toLowerCase());
                 if (m.matches()) {

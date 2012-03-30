@@ -64,7 +64,7 @@ public class Deployer {
 
     public void deploy(Deployment deployment, DeploymentEventListener listener, Set<DeploymentOptions> deploymentOptions) throws Exception {
         File deploymentFile = File.createTempFile("SFDC", "zip");
-        System.out.println("Deployment file " + deploymentFile.getName());
+        // System.out.println("Deployment file " + deploymentFile.getName());
 
         ZipOutputStream out = new ZipOutputStream(new FileOutputStream(deploymentFile));
 

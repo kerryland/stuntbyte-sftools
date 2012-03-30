@@ -1,5 +1,6 @@
 package com.stuntbyte.salesforce.misc;
 
+import com.stuntbyte.salesforce.jdbc.LicenceException;
 import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.stuntbyte.salesforce.jdbc.metaforce.WscService;
 //import com.sforce.async.AsyncApiException;
@@ -83,13 +84,15 @@ public class LoginHelper {
                         lr.getUserInfo().getOrganizationName(),
                         key);
 
-                if (!licenceResult.getLicenceOk()) {
-                    throw new ConnectionException("JDBC Driver Licence problem for " +
-                            lr.getUserInfo().getUserFullName() + " at " +
-                            lr.getUserInfo().getOrganizationName() + " with " + key);
-                }
+//                if (!licenceResult.getLicenceOk()) {
+//                    throw new ConnectionException("JDBC Driver Licence problem for " +
+//                            lr.getUserInfo().getUserFullName() + " at " +
+//                            lr.getUserInfo().getOrganizationName() + " with " + key);
+//                }
             }
 
+        } catch (LicenceException e) {
+            throw new ConnectionException(e.getMessage());
         } catch (ConnectionException e) {
             throw e;
         } catch (Exception e) {
@@ -179,7 +182,7 @@ public class LoginHelper {
 
 
     private void log(String msg) {
-        System.out.println(msg);
+//        System.out.println(msg);
     }
 
     public LicenceResult getLicenceResult() {

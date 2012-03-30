@@ -152,4 +152,8 @@ public class Reconnector {
     public SoapConnection getApexConnection() throws ConnectionException {
         return lh.getApexConnection();
     }
+
+    public Licence getLicence() {
+        return lh.getLicenceResult().getLicence();
+    }
 }

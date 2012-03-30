@@ -150,12 +150,10 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
         } else {
             setParameter(parameterIndex, null);
         }
-
     }
 
     public void setTime(int parameterIndex, Time x) throws SQLException {
-        // TODO!
-
+        // No such data type is SF
     }
 
 
@@ -175,13 +173,13 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
 
 
     public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
-        // TODO
+        setObject(parameterIndex, x);
     }
 
     public void setObject(int parameterIndex, Object x) throws SQLException {
         // TODO: TEST ALL THESE!
         if (x == null) {
-           setParameter(parameterIndex, null);
+            setParameter(parameterIndex, null);
 
         } else if (x instanceof BigDecimal) {
             setBigDecimal(parameterIndex, (BigDecimal) x);
@@ -216,11 +214,13 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
         } else if (x instanceof Timestamp) {
             setTimestamp(parameterIndex, (Timestamp) x);
 
+        } else {
+            setString(parameterIndex, x.toString());
         }
     }
 
     public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength) throws SQLException {
-
+        setObject(parameterIndex, x);
     }
 
     private void setParameter(int parameterIndex, String x) throws SQLException {
@@ -249,7 +249,7 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
     }
 
     public void clearParameters() throws SQLException {
-
+        paramMap = new HashMap<Integer, Integer>();
     }
 
 
@@ -270,8 +270,7 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
     }
 
     public void addBatch() throws SQLException {
-        // TODO: Handle batched SELECTs?
-//        System.out.println("KJS --> " + assembleSoql());
+        // TODO: Do we need to handle batched SELECTs?
         executeUpdate(assembleSoql(), true);
     }
 
@@ -300,28 +299,49 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
     }
 
     public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {
-
+        setDate(parameterIndex, new Date(getUniversalTime(cal, x)));
     }
 
     public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException {
-
+        // Not possible in SF
     }
 
     public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
-
+        setTimestamp(parameterIndex, new Timestamp(getUniversalTime(cal, x)));
     }
 
-    public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
+    private static long getUniversalTime(Calendar source, java.util.Date x) throws SQLException {
+        if (source == null) {
+            throw new SQLException("Calendar is null");
+        }
+        source = (Calendar) source.clone();
+        Calendar universal = Calendar.getInstance();
+        source.setTime(x);
+        convertTime(source, universal);
+        return universal.getTime().getTime();
+    }
 
+    private static void convertTime(Calendar from, Calendar to) {
+        to.set(Calendar.YEAR, from.get(Calendar.YEAR));
+        to.set(Calendar.MONTH, from.get(Calendar.MONTH));
+        to.set(Calendar.DAY_OF_MONTH, from.get(Calendar.DAY_OF_MONTH));
+        to.set(Calendar.HOUR_OF_DAY, from.get(Calendar.HOUR_OF_DAY));
+        to.set(Calendar.MINUTE, from.get(Calendar.MINUTE));
+        to.set(Calendar.SECOND, from.get(Calendar.SECOND));
+        to.set(Calendar.MILLISECOND, from.get(Calendar.MILLISECOND));
+    }
+
+
+    public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
+        setObject(parameterIndex, null);
     }
 
     public void setURL(int parameterIndex, URL x) throws SQLException {
-
+        setString(parameterIndex, x.toString());
     }
 
     public ParameterMetaData getParameterMetaData() throws SQLException {
         throw new SQLFeatureNotSupportedException();
-//        return null;
     }
 
     public void setRowId(int parameterIndex, RowId x) throws SQLException {

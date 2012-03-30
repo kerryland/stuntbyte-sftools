@@ -8,25 +8,18 @@ import java.util.Calendar;
  */
 public class Licence {
 
-//    static byte USER_LICENCE = 0x01;
-//
-//    static byte ORG_LICENCE = 0x00; // Whatever it needs to be
-//
-//    static byte GOD_LICENCE = 0x03; // Don't care about username or organisation name
-
-
     // Licence type bits
-    public static int JDBC_LICENCE_BIT = 0;
-    public static int DEPLOYMENT_TOOL_LICENCE_BIT = 1;
-    public static int PERSONAL_USER_LICENCE_BIT = 2; // on = personal. off = organisation
-    public static int FREE_LIMITED_LICENCE_BIT = 3;
+    private static int JDBC_LICENCE_BIT = 0;
+    private static int DEPLOYMENT_TOOL_LICENCE_BIT = 1;
+    private static int PERSONAL_USER_LICENCE_BIT = 2; // on = personal. off = organisation
+    private static int FREE_LIMITED_LICENCE_BIT = 3;
 
     private int customerNumber;
     private String name;
-    private byte type = 0;
     private Calendar expires;
     private byte[] storedNameHash;
 
+    private BitSet bits = new BitSet(8);
 
     public Licence(Integer customerNumber, String name, Calendar expiresCalendar) {
         this.customerNumber = customerNumber;
@@ -34,20 +27,45 @@ public class Licence {
         this.expires = expiresCalendar;
     }
 
-    public void setFeatures(BitSet bits) {
-        type = bitsToByte(bits);
+
+    void setJdbcFeature(boolean enable) {
+        bits.set(Licence.JDBC_LICENCE_BIT, enable);
     }
-    
-    public boolean isFeatureAvailable(int licenceTypeBit) {
-        BitSet bits = new BitSet(8);
-        for (int i=0; i< 8; i++) {
-            if ((type &(1<<(i%8))) > 0) {
-                bits.set(i);
-            }
-        }
-        return (bits.get(licenceTypeBit));
+
+    void setDeploymentFeature(boolean enable) {
+        bits.set(Licence.DEPLOYMENT_TOOL_LICENCE_BIT, enable);
     }
-    
+
+    void setPersonalLicence(boolean enable) {
+        bits.set(Licence.PERSONAL_USER_LICENCE_BIT, enable);
+    }
+
+    void setLimitedLicence(boolean enable) {
+        bits.set(Licence.FREE_LIMITED_LICENCE_BIT, enable);
+    }
+
+    public boolean supportsJdbcFeature() {
+        return bits.get(Licence.JDBC_LICENCE_BIT);
+    }
+
+    public boolean supportsDeploymentFeature() {
+        return bits.get(Licence.DEPLOYMENT_TOOL_LICENCE_BIT);
+    }
+
+    public boolean supportsPersonalLicence() {
+        return bits.get(Licence.PERSONAL_USER_LICENCE_BIT);
+    }
+
+    public boolean supportsLimitedLicence() {
+        return bits.get(Licence.FREE_LIMITED_LICENCE_BIT);
+    }
+
+
+
+    public void setExpires(Calendar expires) {
+        this.expires = expires;
+    }
+
 
     private byte bitsToByte(BitSet bits) {
         byte result = 0;
@@ -59,13 +77,6 @@ public class Licence {
         return result;
     }
 
-//    public byte getUserLicence() {
-//
-//    }
-//
-//
-//    private void
-    
     private int calendarToInt(Calendar expiresCalendar) {
         int dateInt = expiresCalendar.get(Calendar.YEAR) * 10000 +
                (expiresCalendar.get(Calendar.MONTH) + 1) * 100 +
@@ -91,13 +102,25 @@ public class Licence {
         ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
         customerNumber = byteBuffer.getInt();
         expires = intToCalendar(byteBuffer.getInt());
-        type = byteBuffer.get();
+        bits = fromByteArray(byteBuffer.get());
+
         storedNameHash = new byte[bytes.length - 9];
 
         byteBuffer.get(storedNameHash);
 
         this.name = name;
     }
+
+    public static BitSet fromByteArray(byte byteX) {
+        BitSet bits = new BitSet();
+        for (int i=0; i< 8; i++) {
+            if ((byteX&(1<<(i%8))) > 0) {
+                bits.set(i);
+            }
+        }
+        return bits;
+    }
+
 
 
     public void generateNameHash() throws Exception {
@@ -116,7 +139,7 @@ public class Licence {
         ByteBuffer byteBuffer = ByteBuffer.allocate(storedNameHash.length + 9);
         byteBuffer = byteBuffer.putInt(customerNumber);  // 4 bytes
         byteBuffer = byteBuffer.putInt(calendarToInt(expires));  // 4 bytes
-        byteBuffer.put(type);               // 1 byte
+        byteBuffer.put(bitsToByte(bits));               // 1 byte
         byteBuffer.put(storedNameHash);
         return byteBuffer.array();
     }
@@ -130,15 +153,15 @@ public class Licence {
         return name;
     }
 
-//    public byte getType() {
-//        return type;
-//    }
-
     public byte[] getStoredNameHash() {
         return storedNameHash;
     }
 
     public Calendar getExpires() {
         return expires;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

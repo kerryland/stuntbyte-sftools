@@ -23,8 +23,23 @@ Free Limited SQL licence is bsCbe26QJkFi_7H_ICMPuQ 3000-3-31
 StuntByte demo: support@stuntbyte.com
                 licence(IQF5LmJWSi0fPF20o8PXyQ)sfdc(p1sswordljSWGksoL9O5gCRZDWthsFEa)
          */
-        
-        BitSet USER_LICENCE = getPersonalLicenceFeatures();
+
+        LicenceSetter USER_LICENCE = new LicenceSetter() {
+            public void setFeatures(Licence licence) {
+                licence.setJdbcFeature(true);
+                licence.setDeploymentFeature(true);
+                licence.setPersonalLicence(true);
+            }
+        };
+
+        LicenceSetter FREE_LIMITED_SQL = new LicenceSetter() {
+            public void setFeatures(Licence licence) {
+                licence.setJdbcFeature(true);
+                licence.setPersonalLicence(true);
+                licence.setLimitedLicence(true);
+            }
+        };
+
         
         checkLicence(998, "Pleb Pleb", "Pleb Pleb", "Fidelma Company", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
         checkLicence(999, "Minion O'Toole", "Minion O'Toole", "Fidelma Company", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
@@ -36,29 +51,28 @@ StuntByte demo: support@stuntbyte.com
 
         checkLicence(1004, "PERSONAL_DEMO", "PERSONAL_DEMO", "PERSONAL_DEMO", USER_LICENCE, 2012, Calendar.MARCH, 31);
 
-        BitSet FREE_LIMITED_SQL = new BitSet(8);
-        FREE_LIMITED_SQL.set(Licence.JDBC_LICENCE_BIT);
-        FREE_LIMITED_SQL.set(Licence.PERSONAL_USER_LICENCE_BIT);
-        FREE_LIMITED_SQL.set(Licence.FREE_LIMITED_LICENCE_BIT);
 
         checkLicence(1005, "PERSONAL_DEMO", "Free Limited SQL", "PERSONAL_DEMO", FREE_LIMITED_SQL, 3000, Calendar.MARCH, 31);
     }
 
+    interface LicenceSetter {
+        void setFeatures(Licence licence);
+    }
 
-    public static String checkLicence(int customerNumber, String licenceName, String username, String orgname, BitSet licenceType,
-                                      int year, int month, int day) throws Exception {
+
+
+    public static String checkLicence(int customerNumber, String licenceName, String username, String orgname,
+                                      LicenceSetter licenceSetter, int year, int month, int day) throws Exception {
 
         Calendar expires = Calendar.getInstance();
         expires.set(year, month, day);
 
         // Create a licence
         Licence licence = new Licence(customerNumber, licenceName, expires);
-        licence.setFeatures(licenceType);
+        licenceSetter.setFeatures(licence);
 
-        Encrypter encrypter = new SyncCrypto(licenceName.toLowerCase());
-
-        String key = encrypter.encrypt(licence.getBytes());
-        key = key.replaceAll("=", "");
+        String key = generateKey(licence);
+        
         System.out.println(username + " licence is " + key + " " + year + "-" + (month + 1) + "-" + day);
 
         LicenceService ls = new LicenceService();
@@ -66,21 +80,23 @@ StuntByte demo: support@stuntbyte.com
         Calendar today = Calendar.getInstance();
 
         if (expires.after(today)) {
-            LicenceResult licenceResult = ls.checkLicence(username, orgname, key);
-            if (!licenceResult.getLicenceOk()) {
-                throw new Exception("Licence failed for " + customerNumber + " " + username);
-            }
+            ls.checkLicence(username, orgname, key);
+//            LicenceResult licenceResult = ls.checkLicence(username, orgname, key);
+//            if (!licenceResult.getLicenceOk()) {
+//                throw new Exception("Licence failed for " + customerNumber + " " + username);
+//            }
         }
         return key;
 
     }
+    public static String generateKey(Licence licence) throws Exception {
+        Encrypter encrypter = new SyncCrypto(licence.getName().toLowerCase());
 
-    public static BitSet getPersonalLicenceFeatures() {
-        BitSet bits = new BitSet(8);
-        bits.set(Licence.JDBC_LICENCE_BIT);
-        bits.set(Licence.DEPLOYMENT_TOOL_LICENCE_BIT);
-        bits.set(Licence.PERSONAL_USER_LICENCE_BIT);
-        return bits;
+        String key = encrypter.encrypt(licence.getBytes());
+        key = key.replaceAll("=", "");
+        return key;
+
     }
+
 
 }

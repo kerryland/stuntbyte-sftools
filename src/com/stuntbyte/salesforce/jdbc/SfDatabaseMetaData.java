@@ -2,6 +2,7 @@ package com.stuntbyte.salesforce.jdbc;
 
 import com.stuntbyte.salesforce.core.metadata.MetadataService;
 import com.stuntbyte.salesforce.jdbc.metaforce.*;
+import com.stuntbyte.salesforce.misc.Licence;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -20,13 +21,15 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     private MetadataService metadataService;
 
     private List<Table> metadataColumns;
+    private Licence licence;
 
     public SfDatabaseMetaData(SfConnection sfConnection,
                               ResultSetFactory metaDataFactory,
-                              MetadataService metadataService) {
+                              MetadataService metadataService) throws SQLException {
         this.sfConnection = sfConnection;
         this.metaDataFactory = metaDataFactory;
         this.metadataService = metadataService;
+        licence = sfConnection.getHelper().getLicenceResult().getLicence();
 
         metadataColumns = new ArrayList<Table>();
         Table metadataColumn = new Table("", "", "");
@@ -522,8 +525,11 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
                                String tableNamePattern,
                                String[] types) throws SQLException {
 
-        if ((ResultSetFactory.DEPLOYABLE).equals(schemaPattern)) {
-            List<Table> fakeTables = new ArrayList<Table>();
+        List<Table> fakeTables = new ArrayList<Table>();
+
+        if ((licence.supportsDeploymentFeature()) &&
+                ((ResultSetFactory.DEPLOYABLE).equals(schemaPattern) || null ==schemaPattern )) {
+//            List<Table> fakeTables = new ArrayList<Table>();
 
             for (String metaDataType : metadataService.getMetadataTypes()) {
                 Table table = new Table(metaDataType, "", "TABLE");
@@ -532,14 +538,23 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
                 fakeTables.add(table);
             }
 
-            return metaDataFactory.createTableResultSet(tableNamePattern, types, fakeTables);
-        } else {
-            return metaDataFactory.getTables(tableNamePattern, types);
+
         }
+
+        if (licence.supportsJdbcFeature() && null == schemaPattern) {
+            fakeTables.addAll(metaDataFactory.getTables());
+        }
+
+        return metaDataFactory.createTableResultSet(tableNamePattern, types, fakeTables);
+
+//        return metaDataFactory.getTables(tableNamePattern, types);
+
+//        return metaDataFactory.createTableResultSet(tableNamePattern, types, new ArrayList<Table>());
+//        return metaDataFactory.getTables("n/a", types);
     }
 
     public ResultSet getSchemas() throws SQLException {
-        return metaDataFactory.getSchemas(); // TODO - what are schemas?
+        return metaDataFactory.getSchemas(licence);
     }
 
     public ResultSet getCatalogs() throws SQLException {
@@ -561,13 +576,17 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
                                 String tableNamePattern,
                                 String columnNamePattern) throws SQLException {
 
-        if (ResultSetFactory.DEPLOYABLE.equals(schemaPattern)) {
+        if ((licence.supportsDeploymentFeature()) &&
+                (ResultSetFactory.DEPLOYABLE).equals(schemaPattern)) {
             metadataColumns.get(0).setName(tableNamePattern);
             return metaDataFactory.getColumns(tableNamePattern, columnNamePattern, metadataColumns);
-        } else {
 
+        } else if (licence.supportsJdbcFeature()) {
             return metaDataFactory.getColumns(tableNamePattern, columnNamePattern);
         }
+
+        // Return nothing
+        return metaDataFactory.getColumns("n/a", "n/a");
     }
 
     public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException {

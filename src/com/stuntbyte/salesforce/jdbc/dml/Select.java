@@ -5,9 +5,7 @@ import com.stuntbyte.salesforce.jdbc.SfConnection;
 import com.stuntbyte.salesforce.jdbc.SfResultSet;
 import com.stuntbyte.salesforce.jdbc.SfStatement;
 import com.stuntbyte.salesforce.jdbc.ddl.Show;
-import com.stuntbyte.salesforce.jdbc.metaforce.Column;
 import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
-import com.stuntbyte.salesforce.jdbc.metaforce.Table;
 import com.stuntbyte.salesforce.misc.Reconnector;
 import com.stuntbyte.salesforce.parse.ParsedColumn;
 import com.stuntbyte.salesforce.parse.ParsedSelect;
@@ -28,6 +26,7 @@ public class Select {
     private MetadataServiceImpl metadataService;
     private Reconnector reconnector;
     private String table;
+    private String schema;
 
     public Select(SfStatement statement, MetadataServiceImpl metadataService, Reconnector reconnector) {
         this.statement = statement;
@@ -37,6 +36,13 @@ public class Select {
 
     public ResultSet execute(String sql) throws SQLException {
         try {
+
+            if ((!reconnector.getLicence().supportsJdbcFeature()) &&
+                    (!reconnector.getLicence().supportsDeploymentFeature())) {
+                throw new SQLException("Licence does not support JDBC");
+            }
+
+
             SimpleParser la = new SimpleParser(sql);
 
             List<ParsedSelect> parsedSelects = la.extractColumnsFromSoql();
@@ -47,14 +53,25 @@ public class Select {
             sql = parsedSelect.getParsedSql();
 
             table = parsedSelect.getDrivingTable();
+            String[] tableSplit = table.split("\\.");
+            if (tableSplit.length > 1) {
+                schema = tableSplit[0];
+                table = tableSplit[1];
+            }
+
+            SfConnection conn = (SfConnection) statement.getConnection();
+            ResultSet rs = conn.getMetaData().getTables(null, schema, table, null);
+            if (!rs.next()) {
+                throw new SQLException("Unknown table " + table + " in schema " + schema);
+            }
 
             sql = removeQuotedColumns(sql, parsedSelect);
             sql = removeQuotedTableName(sql);
             sql = patchWhereZeroEqualsOne(sql);
-            sql = patchCountStar(sql, parsedSelect.getColumns());
+            sql = patchAsterisk(sql, parsedSelect.getColumns());
             // System.out.println("EXECUTE " + sql);
 
-            if (table.toLowerCase().startsWith(ResultSetFactory.DEPLOYABLE + ".")) {
+            if (ResultSetFactory.DEPLOYABLE.equalsIgnoreCase(schema)) {
 
                 if (sql.contains("COUNT(ID)")) {
                     Show show = new Show(parsedSelect, metadataService);
@@ -63,8 +80,12 @@ public class Select {
                     Show show = new Show(parsedSelect, metadataService);
                     return show.execute();
                 }
+
             }
 
+            if (reconnector.getLicence().supportsLimitedLicence()) {
+                statement.setMaxRows(50);
+            }
 
             Integer oldBatchSize = 2000;
             if (reconnector.getQueryOptions() != null) {
@@ -96,7 +117,8 @@ public class Select {
         return replace(sql, " ID = null", " 0 = 1");
     }
 
-    private String patchCountStar(String sql, List<ParsedColumn> columnsInSql) throws SQLException {
+    // Fix count(*) and select *
+    private String patchAsterisk(String sql, List<ParsedColumn> columnsInSql) throws SQLException {
         boolean countDetected = false;
         boolean starDetected = false;
 
@@ -121,17 +143,20 @@ public class Select {
 
         if ((columnsInSql.size() == 1) && (starDetected)) {
             SfConnection conn = (SfConnection) statement.getConnection();
-            Table t = conn.getMetaDataFactory().getTable(table);
-            List<Column> cols = t.getColumns();
+
             StringBuilder sb = new StringBuilder();
             columnsInSql.clear();
-            for (Column col : cols) {
+
+            ResultSet columnsRs = conn.getMetaData().getColumns("", schema, table, null);
+            while (columnsRs.next()) {
+                String col = columnsRs.getString("COLUMN_NAME");
                 if (columnsInSql.size() > 0) {
                     sb.append(",");
                 }
-                sb.append(col.getName());
-                columnsInSql.add(new ParsedColumn(col.getName().toUpperCase()));
+                sb.append(col);
+                columnsInSql.add(new ParsedColumn(col.toUpperCase()));
             }
+            columnsRs.close();
             sql = sql.replace("*", sb.toString());
         }
         return sql;

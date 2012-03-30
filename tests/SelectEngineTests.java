@@ -854,6 +854,7 @@ while (rs.next()) {
     @Test
     public void testUpdateMultipleRowsWithExpression() throws Exception {
         Statement stmt = conn.createStatement();
+        stmt.executeUpdate("delete from account where billingCity = 'MyTestCity'");
         stmt.executeUpdate("insert into Account(name, billingCity) values ('DefNullBillCountry1', 'MyTestCity')");
         stmt.executeUpdate("insert into Account(name, billingCity) values ('DefNullBillCountry2', 'MyTestCity')");
         stmt.executeUpdate("insert into Account(name, billingCity) values ('DefNullBillCountry3', 'MyTestCity')");
@@ -1485,24 +1486,6 @@ while (rs.next()) {
         rs = stmt.executeQuery("select id from aaa__c limit 1");
         assertFalse(rs.next());
 
-    }
-
-    @Test
-    public void testSelectMetaDataTypesNoParameter() throws Exception {
-        Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("select * from deployable.types");
-
-        Set<String> expectedValues = new HashSet<String>();
-        expectedValues.add("ApexClass");
-        expectedValues.add("EmailTemplate");
-        expectedValues.add("Unexpected Value");
-
-        while (rs.next()) {
-            expectedValues.remove(rs.getString("Identifier"));
-        }
-
-        // Should have removed "ApexClass" and "EmailTemplate", but not "Unexpected Value"
-        assertEquals(1, expectedValues.size());
     }
 
 
