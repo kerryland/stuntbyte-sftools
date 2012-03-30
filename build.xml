@@ -92,6 +92,7 @@
             <fileset dir="classes">
                 <include name="**/*"/>
                 <exclude name="**/KeyGen.class"/>
+                <exclude name="**/KeyGen$*.class"/>
             </fileset>
             <zipfileset src="lib/wsc-22.jar">
                 <include name="**/*.class"/>
