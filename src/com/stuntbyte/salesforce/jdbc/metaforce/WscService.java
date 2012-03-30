@@ -27,12 +27,10 @@ import java.util.Set;
  */
 public class WscService {
 
-    private Filter filter;
     private PartnerConnection partnerConnection;
 
-    public WscService(PartnerConnection partnerConnection, Properties info)  {
+    public WscService(PartnerConnection partnerConnection)  {
         this.partnerConnection = partnerConnection;
-        this.filter = new Filter(info);
     }
 
     private void log(String message) {
@@ -128,29 +126,23 @@ public class WscService {
 
                 }
 
-//                String type = sob.isCreateable() && sob.getUpdateable() &&
-//                        sob.getReplicateable() && sob.getTriggerable() ? "TABLE" : "SYSTEM TABLE";
-
                 String type = sob.getUpdateable() ? "TABLE" : "SYSTEM TABLE";
 
-//                String type = "TABLE";
                 if (sob.isQueryable()) {
                     Table table = new Table(sob.getName(), getRecordTypes(sob.getRecordTypeInfos()), type);
                     table.setSchema(ResultSetFactory.schemaName);
 
                     for (Field field : fields) {
-                        if (keep(field)) {
-                            Column col = recordColumn(
-                                    factory,
-                                    relationshipMap,
-                                    childParentReferenceNames,
-                                    childCascadeDeletes,
-                                    typesSet, sob, field);
-                            if (col.getName().equalsIgnoreCase("RecordTypeId")) {
-                                col.setComments(recordTypes.toString());
-                            }
-                            table.addColumn(col);
+                        Column col = recordColumn(
+                                factory,
+                                relationshipMap,
+                                childParentReferenceNames,
+                                childCascadeDeletes,
+                                typesSet, sob, field);
+                        if (col.getName().equalsIgnoreCase("RecordTypeId")) {
+                            col.setComments(recordTypes.toString());
                         }
+                        table.addColumn(col);
                     }
 
                     Collections.sort(table.getColumns(), new Comparator<Column>() {
@@ -343,24 +335,9 @@ public class WscService {
 
         List<String> list = new ArrayList<String>();
         for (DescribeGlobalSObjectResult sob : sobs) {
-            if (keep(sob)) {
-                list.add(sob.getName());
-            }
+            list.add(sob.getName());
         }
         return list;
-    }
-
-    private boolean keep(DescribeGlobalSObjectResult sob) {
-        return true;
-        // Filter tables.
-        // Normally want the User table filtered as all objects are associated with that
-        // so the graphs become a mess and very slow to generate.
-//        return filter.accept(sob);
-    }
-
-    private boolean keep(Field field) {
-        // Keeping all fields
-        return true;
     }
 
 }

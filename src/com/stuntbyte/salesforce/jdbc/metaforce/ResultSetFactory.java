@@ -26,10 +26,6 @@ public class ResultSetFactory {
 
     private int dataTypeMode;
 
-//    public void setDataTypeMode(int dataTypeMode) {
-//        this.dataTypeMode = dataTypeMode;
-//    }
-
     public static String schemaName = null;
     public static String DEPLOYABLE = "deployable";
     public static String catalogName = "";
@@ -374,21 +370,6 @@ public class ResultSetFactory {
 
     static TypeInfo lookupTypeInfo(String forceTypeName) throws SQLException {
         for (TypeInfo entry : TYPE_INFO_DATA) {
-//            if ((dataTypeMode == DATATYPES_SALESFORCE_API) &&
-//                (forceTypeName.equalsIgnoreCase(entry.typeName))) {
-//                return entry;
-//            }
-//
-//            if ((dataTypeMode == DATATYPES_SALESFORCE_UI) &&
-//                    (forceTypeName.equalsIgnoreCase(entry.niceName))) {
-//                return entry;
-//            }
-//
-//            if ((dataTypeMode == DATATYPES_SQL92) &&
-//                    (forceTypeName.equalsIgnoreCase(entry.sql92name))) {
-//                return entry;
-//            }
-//
             if ((forceTypeName.equalsIgnoreCase(entry.typeName)  ||
                 (forceTypeName.equalsIgnoreCase(entry.niceName))) ||
                 (forceTypeName.equalsIgnoreCase(entry.sql92name))) {
@@ -396,7 +377,6 @@ public class ResultSetFactory {
             }
         }
         throw new SQLException("Unable to identify type for '" + forceTypeName + "'");
-//        return null;
     }
 
     public static Integer lookupJdbcType(String forceTypeName) throws SQLException {
