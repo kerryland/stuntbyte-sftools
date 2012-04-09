@@ -83,4 +83,8 @@ public class Table {
     public void setName(String tableName) {
         this.name = tableName;
     }
+
+    public String getCatalog() {
+        return ResultSetFactory.catalogName;
+    }
 }

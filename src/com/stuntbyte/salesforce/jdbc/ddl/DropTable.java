@@ -44,7 +44,7 @@ public class DropTable {
                 al.read("exists");
 
                 try {
-                    metaDataFactory.getTable(tableName);
+                    metaDataFactory.getTable(ResultSetFactory.schemaName, tableName);
                 } catch (SQLException e) {
                     tableName = null;
                 }

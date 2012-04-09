@@ -166,31 +166,48 @@ public class SimpleParser {
             }
         }
 
-        String table = handleTableAlias(parsedSelect, result, token);
+        handleTableAlias(parsedSelect, result, token);
 
         parsedSelect.addToSql(al.unparsedString());
-        parsedSelect.setDrivingTable(table);
         parsedSelect.setColumns(result);
 
         selects.add(parsedSelect);
     }
 
-    private String handleTableAlias(ParsedSelect parsedSelect, List<ParsedColumn> result, LexicalToken token) throws Exception {
+    private void handleTableAlias(ParsedSelect parsedSelect, List<ParsedColumn> result, LexicalToken token) throws Exception {
         SimpleParser la = this;
-        String table;
+        String table = null;
+        String schema = null;
+        String alias = null;
 
         List<ParsedColumn> adjustedColumnList = new ArrayList<ParsedColumn>();
 
         if ((token != null) && (token.getValue().equalsIgnoreCase("from"))) {
             parsedSelect.addToSql(token.getValue());
 
-            table = la.getValue();
+            String maybeSchema = la.getValue();
+
+            if (maybeSchema.contains(".")) {
+                String[] tableSplit = maybeSchema.split("\\.");
+                if (tableSplit.length > 1) {
+                    schema = tableSplit[0].trim();
+                    table = tableSplit[1].trim();
+                }
+            } else {
+                String maybeDot = la.getValue();
+                if (".".equals(maybeDot)) {
+                    schema = maybeSchema;
+                    table = la.getValue();
+                    alias = la.getValue();
+                } else {
+                    table = maybeSchema;
+                    alias = maybeDot;
+                }
+            }
+
             parsedSelect.addToSql(table);
 
-            // TODO: Handle quotes    ?
             if (table != null) {
-                String alias = la.getValue();  // might be WHERE
-
                 if (alias != null) {
                     String prefix = alias.toUpperCase() + ".";
                     for (ParsedColumn column : result) {
@@ -211,14 +228,15 @@ public class SimpleParser {
                     }
                     result.clear();
                     result.addAll(adjustedColumnList);
-                    parsedSelect.addToSql(alias);
+                    parsedSelect.addToSql(alias); // might be alias. might be where
 //                    parsedSelect.setTableAlias(alias);
                 }
             }
         } else {
             throw new SQLException("Missing FROM clause. Found " + token);
         }
-        return table;
+        parsedSelect.setDrivingSchema(schema);
+        parsedSelect.setDrivingTable(table);
     }
 
     private LexicalToken swallowUntilMatchingBracket(ParsedSelect parsedSelect, SimpleParser la,

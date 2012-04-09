@@ -1,6 +1,7 @@
 package com.stuntbyte.salesforce.database.migration;
 
 import com.stuntbyte.salesforce.jdbc.SfConnection;
+import com.stuntbyte.salesforce.jdbc.TableEvent;
 import com.stuntbyte.salesforce.jdbc.metaforce.Column;
 import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.stuntbyte.salesforce.jdbc.metaforce.Table;
@@ -8,11 +9,7 @@ import com.sforce.soap.metadata.MetadataConnection;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.dialect.H2Dialect;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,54 +28,64 @@ public class Exporter {
      * Create a H2 schema based on the provided Salesforce instance
      */
     public List<Table> createLocalSchema(SfConnection sfConnection, Connection localConnection) throws SQLException {
-        ResultSetFactory rsf = sfConnection.getMetaDataFactory();
-        List<Table> tables = rsf.getTables();
+        final ResultSetFactory rsf = sfConnection.getMetaDataFactory();
 
-        Statement stmt = localConnection.createStatement();
+        final Statement stmt = localConnection.createStatement();
         stmt.execute("drop all objects");
 
-        for (Table table : tables) {
-            if (table.getType().equals("TABLE")
-                    || table.getName().equalsIgnoreCase("RecordType")
-                    || table.getName().equalsIgnoreCase("User")
-                    || table.getName().equalsIgnoreCase("UserRole")
-                    ) {
-                StringBuilder sb = new StringBuilder();
+        final List<Table> tables = new ArrayList<Table>();
 
-                String tableName = table.getName();
+        rsf.getTables(ResultSetFactory.schemaName, null, new TableEvent() {
+            public void onTable(Table table) throws SQLException {
+                tables.add(table);
+
+                if (table.getType().equals("TABLE")
+                        || table.getName().equalsIgnoreCase("RecordType")
+                        || table.getName().equalsIgnoreCase("User")
+                        || table.getName().equalsIgnoreCase("UserRole")
+                        ) {
+                    StringBuilder sb = new StringBuilder();
+
+                    String tableName = table.getName();
 //                if (!tableName.endsWith("__c")) {
 //                    tableName += "__s";   // Make sure we don't fail on the GROUP table...
 //                }
-                if (tableName.equalsIgnoreCase("group")) {
-                    tableName = "groups";   // Make sure we don't fail on the GROUP table...
-                }
+                    if (tableName.equalsIgnoreCase("group")) {
+                        tableName = "groups";   // Make sure we don't fail on the GROUP table...
+                    }
 
 
-                sb.append("create table " + tableName);
-                sb.append(" (");
+                    sb.append("create table " + tableName);
+                    sb.append(" (");
 
 //                Dialect dialect = new SalesforceDialect();
-                Dialect dialect = new H2Dialect();
+                    Dialect dialect = new H2Dialect();
 
 //                System.setProperty("h2.identifiersToUpper","false");
 
 
-                List<Column> cols = table.getColumns();
-                for (Column col : cols) {
-                    sb.append(col.getName());
+                    List<Column> cols = table.getColumns();
+                    for (Column col : cols) {
+                        Integer jdbcType = rsf.lookupJdbcType(col.getType());
+                        if (jdbcType != Types.OTHER) {
+                            sb.append(col.getName());
 
-                    Integer jdbcType = rsf.lookupJdbcType(col.getType());
-//                    System.out.println("Check " + col.getTable().getName() + "." + col.getName() + " " + col.getName() + " " + jdbcType + " " + col.getType());
-                    String typeName = dialect.getTypeName(jdbcType, col.getLength(), col.getPrecision(), col.getScale());
-                    sb.append(" ");
-                    sb.append(typeName);
-                    sb.append(",");
+
+                            System.out.println("Check " + col.getTable().getName() + "." + col.getName() + " " + col.getName() + " " + jdbcType + " " + col.getType());
+                            String typeName = dialect.getTypeName(jdbcType, col.getLength(), col.getPrecision(), col.getScale());
+                            sb.append(" ");
+                            sb.append(typeName);
+                            sb.append(",");
+                        }
+                    }
+                    sb.replace(sb.length(), sb.length(), ")");
+
+                    stmt.execute(sb.toString());
                 }
-                sb.replace(sb.length(), sb.length(), ")");
 
-                stmt.execute(sb.toString());
             }
-        }
+        });
+
 
         return tables;
     }

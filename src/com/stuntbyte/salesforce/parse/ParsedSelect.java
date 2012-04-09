@@ -8,6 +8,11 @@ public class ParsedSelect {
     private String drivingTable;
     private String parsedSql="";
     private List<ParsedColumn> columns;
+    private String drivingSchema;
+
+    public String getDrivingSchema() {
+        return drivingSchema;
+    }
 
     public String getDrivingTable() {
         return drivingTable;
@@ -37,4 +42,7 @@ public class ParsedSelect {
         return parsedSql;
     }
 
+    public void setDrivingSchema(String drivingSchema) {
+        this.drivingSchema = drivingSchema;
+    }
 }

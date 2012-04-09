@@ -845,7 +845,7 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
     public SQLWarning getWarnings() throws SQLException {
-        return null;
+        return null; // This is correct
     }
 
     public void clearWarnings() throws SQLException {
@@ -1418,7 +1418,7 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public boolean isWrapperFor(Class<?> iface) throws SQLException {

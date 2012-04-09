@@ -11,8 +11,6 @@ import com.sforce.soap.partner.RecordTypeInfo;
 import com.sforce.ws.ConnectionException;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -40,8 +38,9 @@ public class WscService {
     /**
      * Grab the describe data and return it wrapped in a factory.
      * @param info
+     * @param includeTables
      */
-    public ResultSetFactory createResultSetFactory(Properties info) throws ConnectionException {
+    public ResultSetFactory createResultSetFactory(Properties info, boolean includeTables) throws ConnectionException {
 
         // Map a table to a map of columns and their related lookup object(s!)
         Map<String, Map<String, List<String>>> relationshipMap = new HashMap<String, Map<String, List<String>>>();
@@ -63,8 +62,11 @@ public class WscService {
 
         }
         ResultSetFactory factory = new ResultSetFactory(dataTypeMode);
-        
-        
+
+        if (!includeTables) {
+            return factory;
+        }
+
         Map<String, String> childParentReferenceNames = new HashMap<String, String>();
         Map<String, Boolean> childCascadeDeletes = new HashMap<String, Boolean>();
         List<String> typesList = getSObjectTypes();
@@ -126,7 +128,8 @@ public class WscService {
 
                 }
 
-                String type = sob.getUpdateable() ? "TABLE" : "SYSTEM TABLE";
+//                String type = sob.getUpdateable() ? "TABLE" : "SYSTEM TABLE";
+                String type = "TABLE";
 
                 if (sob.isQueryable()) {
                     Table table = new Table(sob.getName(), getRecordTypes(sob.getRecordTypeInfos()), type);
@@ -145,14 +148,13 @@ public class WscService {
                         table.addColumn(col);
                     }
 
-                    Collections.sort(table.getColumns(), new Comparator<Column>() {
-                        public int compare(Column o1, Column o2) {
-                            String t1 = o1.getName();
-                            String t2 = o2.getName();
-                            return t1.compareTo(t2);
-                        }
-                    });
-
+//                    Collections.sort(table.getColumns(), new Comparator<Column>() {
+//                        public int compare(Column o1, Column o2) {
+//                            String t1 = o1.getName();
+//                            String t2 = o2.getName();
+//                            return t1.compareTo(t2);
+//                        }
+//                    });
 
                     factory.addTable(table);
                 }

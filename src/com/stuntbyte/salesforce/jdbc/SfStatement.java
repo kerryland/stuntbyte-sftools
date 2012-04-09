@@ -247,7 +247,7 @@ public class SfStatement implements java.sql.Statement {
     }
 
     public SQLWarning getWarnings() throws SQLException {
-        return null;
+        return null; // Correct
     }
 
     public void clearWarnings() throws SQLException {

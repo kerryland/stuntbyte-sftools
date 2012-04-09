@@ -97,6 +97,7 @@ public class CreateTable {
                 table.addColumn(new Column("Name", "string", false));
                 //        table.addColumn(new Column("OwnerId", "Text", true)); // TODO: Some custom objects do have this?
                 table.addColumn(new Column("SystemModstamp", "dateTime", true));
+                table.setSchema(ResultSetFactory.schemaName);
 
 //                patchDataTypes(table.getColumns());
 

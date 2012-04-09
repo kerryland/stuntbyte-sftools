@@ -19,7 +19,7 @@ public class SfMetadataResultSetMetadata implements ResultSetMetaData {
     }
 
     public int getColumnCount() throws SQLException {
-        if (maps.size() !=0) {
+        if (maps.size() != 0) {
             return maps.get(0).size();
         }
         return 0;
@@ -55,45 +55,45 @@ public class SfMetadataResultSetMetadata implements ResultSetMetaData {
             throw new SQLException("No data returned");
         }
         ColumnMap<String, Object> colMap = maps.get(0);
-        
-        Object x =  colMap.getValueByIndex(column);
 
-     if (x instanceof BigDecimal) {
-        return "double";
+        Object x = colMap.getValueByIndex(column);
 
-    } else if (x instanceof Boolean) {
-        return "boolean";
+        if (x instanceof BigDecimal) {
+            return "double";
 
-    } else if (x instanceof Date) {
-        return "datetime";
+        } else if (x instanceof Boolean) {
+            return "boolean";
 
-    } else if (x instanceof Double) {
-         return "double";
+        } else if (x instanceof Date) {
+            return "datetime";
 
-    } else if (x instanceof Float) {
-         return "double";
+        } else if (x instanceof Double) {
+            return "double";
 
-    } else if (x instanceof Integer) {
-         return "int";
+        } else if (x instanceof Float) {
+            return "double";
 
-    } else if (x instanceof Long) {
-         return "int";
+        } else if (x instanceof Integer) {
+            return "int";
 
-    } else if (x instanceof Short) {
-        return "int";
+        } else if (x instanceof Long) {
+            return "int";
 
-    } else if (x instanceof String) {
-         return "string";
+        } else if (x instanceof Short) {
+            return "int";
 
-    } else if (x instanceof Time) {
-         return "time";
+        } else if (x instanceof String) {
+            return "string";
 
-    } else if (x instanceof Timestamp) {
-         return "datetime";
+        } else if (x instanceof Time) {
+            return "time";
 
-    }
+        } else if (x instanceof Timestamp) {
+            return "datetime";
 
-    return "string";
+        }
+
+        return "string";
 
     }
 
@@ -129,7 +129,6 @@ public class SfMetadataResultSetMetadata implements ResultSetMetaData {
     }
 
 
-
     public String getSchemaName(int column) throws SQLException {
         return "";
     }
@@ -160,11 +159,22 @@ public class SfMetadataResultSetMetadata implements ResultSetMetaData {
     }
 
     public String getColumnClassName(int column) throws SQLException {
-        return null;
+        if (getColumnCount() == 0) {
+            throw new SQLException("No data returned");
+        }
+        ColumnMap<String, Object> colMap = maps.get(0);
+
+        Object x =  colMap.getValueByIndex(column);
+
+        if (x == null) {
+            return String.class.getName();
+        }
+        
+        return x.getClass().getName();
     }
 
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public boolean isWrapperFor(Class<?> iface) throws SQLException {

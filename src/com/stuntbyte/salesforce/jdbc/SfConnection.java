@@ -2,8 +2,9 @@ package com.stuntbyte.salesforce.jdbc;
 
 import com.stuntbyte.salesforce.core.metadata.MetadataService;
 import com.stuntbyte.salesforce.core.metadata.MetadataServiceImpl;
+import com.stuntbyte.salesforce.jdbc.metaforce.Column;
 import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
-import com.stuntbyte.salesforce.misc.LicenceResult;
+import com.stuntbyte.salesforce.jdbc.metaforce.Table;
 import com.stuntbyte.salesforce.misc.LoginHelper;
 import com.stuntbyte.salesforce.misc.Reconnector;
 
@@ -59,13 +60,30 @@ public class SfConnection implements java.sql.Connection {
         if (licenceKey == null) {
             throw new SQLException("No licence information found");
         }
-
         try {
-            metaDataFactory = helper.createResultSetFactory(info);
+            helper.authenticate();
+
+            metaDataFactory = helper.createResultSetFactory(info, helper.getLicenceResult().getLicence().supportsJdbcFeature());
             metadataService = new MetadataServiceImpl(new Reconnector(helper));
+
+            if (helper.getLicenceResult().getLicence().supportsDeploymentFeature()) {
+                populateWithDeployableTables(metaDataFactory, metadataService);
+            }
             closed = false;
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void populateWithDeployableTables(ResultSetFactory metaDataFactory, MetadataService metadataService) {
+        for (String deployable : metadataService.getMetadataTypes()) {
+            Table table = new Table(deployable, "", "TABLE");
+            table.setSchema(ResultSetFactory.DEPLOYABLE);
+            table.addColumn(new Column("Identifier", metaDataFactory.getType("String")));
+            table.addColumn(new Column("Name", metaDataFactory.getType("String")));
+            table.addColumn(new Column("LastChangedBy", metaDataFactory.getType("String")));
+
+            metaDataFactory.addTable(table);
         }
     }
 
@@ -112,7 +130,7 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public CallableStatement prepareCall(String sql) throws SQLException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public String nativeSQL(String sql) throws SQLException {
@@ -173,7 +191,7 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public SQLWarning getWarnings() throws SQLException {
-        return null;
+        return null; // Null means no warning
     }
 
     public void clearWarnings() throws SQLException {

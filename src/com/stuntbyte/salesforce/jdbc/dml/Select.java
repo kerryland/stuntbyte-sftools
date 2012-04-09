@@ -42,7 +42,6 @@ public class Select {
                 throw new SQLException("Licence does not support JDBC");
             }
 
-
             SimpleParser la = new SimpleParser(sql);
 
             List<ParsedSelect> parsedSelects = la.extractColumnsFromSoql();
@@ -53,23 +52,16 @@ public class Select {
             sql = parsedSelect.getParsedSql();
 
             table = parsedSelect.getDrivingTable();
-            String[] tableSplit = table.split("\\.");
-            if (tableSplit.length > 1) {
-                schema = tableSplit[0];
-                table = tableSplit[1];
-            }
+            schema = parsedSelect.getDrivingSchema();
 
             SfConnection conn = (SfConnection) statement.getConnection();
-            ResultSet rs = conn.getMetaData().getTables(null, schema, table, null);
+            ResultSet rs = conn.getMetaData().getTables(ResultSetFactory.catalogName, schema, table, null);
             if (!rs.next()) {
                 throw new SQLException("Unknown table " + table + " in schema " + schema);
             }
 
-            sql = removeQuotedColumns(sql, parsedSelect);
-            sql = removeQuotedTableName(sql);
             sql = patchWhereZeroEqualsOne(sql);
             sql = patchAsterisk(sql, parsedSelect.getColumns());
-            // System.out.println("EXECUTE " + sql);
 
             if (ResultSetFactory.DEPLOYABLE.equalsIgnoreCase(schema)) {
 
@@ -80,7 +72,6 @@ public class Select {
                     Show show = new Show(parsedSelect, metadataService);
                     return show.execute();
                 }
-
             }
 
             if (reconnector.getLicence().supportsLimitedLicence()) {

@@ -1,6 +1,7 @@
 package com.stuntbyte.salesforce.jdbc.metaforce;
 
 
+import com.stuntbyte.salesforce.jdbc.TableEvent;
 import com.stuntbyte.salesforce.misc.Licence;
 
 import java.sql.DatabaseMetaData;
@@ -26,9 +27,9 @@ public class ResultSetFactory {
 
     private int dataTypeMode;
 
-    public static String schemaName = null;
+    public static String schemaName = "SF";
     public static String DEPLOYABLE = "deployable";
-    public static String catalogName = "";
+    public static String catalogName = null;
 
     public static String getNiceName(String dataType) {
         try {
@@ -85,28 +86,28 @@ public class ResultSetFactory {
         }
     }
 
-                /*
-   AutoNumber
-   Lookup
-   MasterDetail
-   Checkbox
-   Currency
-   Date
-   DateTime
-   Email
-   Number
-   Percent
-   Phone
-   Picklist
-   MultiselectPicklist
-   Text
-   TextArea
-   LongTextArea
-   Url
-   EncryptedText
-   Summary
-   Hierarchy
-                */
+    /*
+AutoNumber
+Lookup
+MasterDetail
+Checkbox
+Currency
+Date
+DateTime
+Email
+Number
+Percent
+Phone
+Picklist
+MultiselectPicklist
+Text
+TextArea
+LongTextArea
+Url
+EncryptedText
+Summary
+Hierarchy
+    */
 
     // LogTextArea
 
@@ -125,13 +126,13 @@ public class ResultSetFactory {
             new TypeInfo("boolean", "Checkbox", "boolean", Types.BOOLEAN, 1, 0, 0, 0),
             new TypeInfo("boolean", "Checkbox", "_boolean", Types.BOOLEAN, 1, 0, 0, 0),
             new TypeInfo("binary", "Byte", "byte", Types.VARBINARY, 10, 0, 0, 10),     // Byte ?
-            new TypeInfo("binary", "Byte","_byte", Types.VARBINARY, 10, 0, 0, 10),    // Byte?
+            new TypeInfo("binary", "Byte", "_byte", Types.VARBINARY, 10, 0, 0, 10),    // Byte?
             new TypeInfo("decimal", "Number", "decimal", Types.DECIMAL, 17, -324, 306, 10),
             new TypeInfo("integer", "Number", "int", Types.INTEGER, 10, 0, 0, 10),
             new TypeInfo("integer", "Number", "_int", Types.INTEGER, 10, 0, 0, 10),
-            new TypeInfo("double precision", "Number", "double", Types.DOUBLE, 17, -324, 306, 10),
-            new TypeInfo("double precision", "Number", "_double", Types.DOUBLE, 17, -324, 306, 10),
-            new TypeInfo("double precision", "Percent", "percent", Types.DOUBLE, 17, -324, 306, 10),
+            new TypeInfo("double", "Number", "double", Types.DOUBLE, 17, -324, 306, 10),
+            new TypeInfo("double", "Number", "_double", Types.DOUBLE, 17, -324, 306, 10),
+            new TypeInfo("double", "Percent", "percent", Types.DOUBLE, 17, -324, 306, 10),
             new TypeInfo("decimal", "Currency", "currency", Types.DOUBLE, 17, -324, 306, 10), // TODO: double for currency seems crazy!
             new TypeInfo("date", "Date", "date", Types.DATE, 10, 0, 0, 0),
             new TypeInfo("time", "Time", "time", Types.TIME, 10, 0, 0, 0),      // Time?
@@ -141,7 +142,7 @@ public class ResultSetFactory {
             new TypeInfo("varchar", "MultiselectPicklist", "multipicklist", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
             new TypeInfo("varchar", "MultiselectPicklist", "combobox", Types.VARCHAR, 0x7fffffff, 0, 0, 0),  // MultiselectPicklist?
 
-           // TODO: How handle autonumber?
+            // TODO: How handle autonumber?
 //            new TypeInfo("varchar", "AutoNumber", "string", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
             new TypeInfo("varchar", "AutoNumber", "autonumber", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
 
@@ -156,41 +157,55 @@ public class ResultSetFactory {
     };
 
 
-    private Map<String, Table> tableMap = new HashMap<String, Table>();
-
     private List<Table> tables = new ArrayList<Table>();
     private int counter;
 
     public void addTable(Table table) {
+        int ordinal = 0;
+        for (Column column : table.getColumns()) {
+            column.setOrdinal(++ordinal);
+        }
+
         tables.add(table);
-        tableMap.put(table.getName().toUpperCase(), table);
     }
 
     public void removeTable(String tableName) throws SQLException {
-        Table table = getTable(tableName);
+        Table table = getTable(ResultSetFactory.schemaName,  tableName);
         tables.remove(table);
-        tableMap.remove(tableName.toUpperCase());
     }
 
     public void removeColumn(String tableName, String columnName) throws SQLException {
-        Table table = getTable(tableName);
+        Table table = getTable(ResultSetFactory.schemaName, tableName);
         table.removeColumn(columnName);
     }
 
 
     public Table getTable(String tableName) throws SQLException {
-        Table result = tableMap.get(tableName.toUpperCase());
-        if (result == null) {
+        return getTable(ResultSetFactory.schemaName, tableName);
+
+    }
+    public Table getTable(String schema, String tableName) throws SQLException {
+
+        final Table[] result = new Table[1];
+        getTables(schema, tableName, new TableEvent() {
+            public void onTable(Table table) throws SQLException {
+                result[0] = table;
+            }
+        });
+        if (result[0] == null) {
             throw new SQLException("Unknown table: " + tableName);
         }
-        return result;
+        return result[0];
     }
 
     private boolean include(String search, String compare) {
+        if (compare == null) {
+            return true;
+        }
         String compareUpper = compare.toUpperCase();
         boolean include = false;
 
-        if (search == null) {
+        if (search == null || search.equals("")) {
             include = true;
         } else if (search.equals("%")) {
             include = true;
@@ -205,6 +220,14 @@ public class ResultSetFactory {
         return include;
     }
 
+    public void getTables(String schemaPattern, String tablePattern, TableEvent tableEvent) throws SQLException {
+        for (Table table : tables) {
+            if (include(schemaPattern, table.getSchema()) && (include(tablePattern, table.getName()))) {
+                tableEvent.onTable(table);
+            }
+        }
+    }
+
 
     public List<Table> getTables() {
         return tables;
@@ -213,13 +236,9 @@ public class ResultSetFactory {
     /**
      * Provide table (object) detail.
      */
-    public ResultSet getTables(String search, String[] types) {
-        return createTableResultSet(search, types, tables);
-    }
-
-    public ResultSet createTableResultSet(String search, String[] types, List<Table> sometables) {
-        if (search != null) {
-            search = search.toUpperCase();
+    public ResultSet createTableResultSet(String schemaPattern, String tableNamePattern, String[] types) {
+        if (tableNamePattern != null) {
+            tableNamePattern = tableNamePattern.toUpperCase();
         }
 
         Set<String> typeSet = new HashSet<String>();
@@ -230,10 +249,10 @@ public class ResultSetFactory {
         }
 
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
-        for (Table table : sometables) {
+        for (Table table : tables) {
 
             if ((types == null) || (typeSet.contains(table.getType().toUpperCase()))) {
-                if (include(search, table.getName())) {
+                if (include(schemaPattern, table.getSchema()) && (include(tableNamePattern, table.getName()))) {
                     ColumnMap<String, Object> map = new ColumnMap<String, Object>();
                     map.put("TABLE_CAT", catalogName);
                     map.put("TABLE_SCHEM", table.getSchema());
@@ -317,18 +336,11 @@ public class ResultSetFactory {
     /**
      * Provide column (field) detail.
      */
-    public ResultSet getColumns(String tableName, String columnPattern) throws SQLException {
+    public ResultSet getColumns(String schemaPattern, String tableName, final String columnPattern) throws SQLException {
+        final List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
 
-        return getColumns(tableName, columnPattern, tableMap.values());
-
-    }
-
-    public ResultSet getColumns(String tableName, String columnPattern, Collection<Table> tables) throws SQLException {
-        List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
-
-        for (Table table : tables) {
-            if (include(tableName, table.getName())) {
-                int ordinal = 1;
+        getTables(schemaPattern, tableName, new TableEvent() {
+            public void onTable(Table table) throws SQLException {
                 for (Column column : table.getColumns()) {
                     if (include(columnPattern, column.getName())) {
                         ColumnMap<String, Object> map = new ColumnMap<String, Object>();
@@ -349,7 +361,7 @@ public class ResultSetFactory {
                         map.put("SQL_DATA_TYPE", null);
                         map.put("SQL_DATETIME_SUB", null);
                         map.put("CHAR_OCTET_LENGTH", 0);
-                        map.put("ORDINAL_POSITION", ordinal++);
+                        map.put("ORDINAL_POSITION", column.getOrdinal());
                         map.put("IS_NULLABLE", column.isNillable() ? "YES" : "NO");
                         map.put("SCOPE_CATLOG", null);
                         map.put("SCOPE_SCHEMA", null);
@@ -363,16 +375,18 @@ public class ResultSetFactory {
                     }
                 }
             }
-        }
+        });
+
         return new ForceResultSet(maps);
+
     }
 
 
     static TypeInfo lookupTypeInfo(String forceTypeName) throws SQLException {
         for (TypeInfo entry : TYPE_INFO_DATA) {
-            if ((forceTypeName.equalsIgnoreCase(entry.typeName)  ||
-                (forceTypeName.equalsIgnoreCase(entry.niceName))) ||
-                (forceTypeName.equalsIgnoreCase(entry.sql92name))) {
+            if ((forceTypeName.equalsIgnoreCase(entry.typeName) ||
+                    (forceTypeName.equalsIgnoreCase(entry.niceName))) ||
+                    (forceTypeName.equalsIgnoreCase(entry.sql92name))) {
                 return entry;
             }
         }
@@ -389,14 +403,13 @@ public class ResultSetFactory {
     }
 
 
-
     /**
      * Provide table (object) relationship information.
      */
-    public ResultSet getImportedKeys(String tableName) throws SQLException {
+    public ResultSet getImportedKeys(String schemaName, String tableName) throws SQLException {
 
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
-        Table table = getTable(tableName);
+        Table table = getTable(schemaName, tableName);
 
         for (Column column : table.getColumns()) {
             if (column.getReferencedTable() != null && column.getReferencedColumn() != null) {
@@ -409,7 +422,7 @@ public class ResultSetFactory {
                 map.put("FKTABLE_SCHEM", table.getSchema());
                 map.put("FKTABLE_NAME", tableName);
                 map.put("FKCOLUMN_NAME", column.getName());
-                map.put("KEY_SEQ", counter);
+                map.put("KEY_SEQ", 1);
                 map.put("UPDATE_RULE", 0);
                 map.put("DELETE_RULE", 0);
                 map.put("FK_NAME", "FK" + tableName + counter);
@@ -467,7 +480,7 @@ public class ResultSetFactory {
                         map.put("TABLE_SCHEM", table.getSchema());
                         map.put("TABLE_NAME", table.getName());
                         map.put("COLUMN_NAME", "" + column.getName());
-                        map.put("KEY_SEQ", 0);
+                        map.put("KEY_SEQ", 1);
                         map.put("PK_NAME", "PK" + table.getName() + counter);
                         maps.add(map);
                     }
@@ -495,7 +508,7 @@ public class ResultSetFactory {
                         map.put("INDEX_QUALIFIER", null);
                         map.put("INDEX_NAME", "IX" + counter++);
                         map.put("TYPE", DatabaseMetaData.tableIndexOther);
-                        map.put("ORDINAL_POSITION", counter);
+                        map.put("ORDINAL_POSITION", column.getOrdinal());
                         map.put("COLUMN_NAME", "Id");
                         map.put("ASC_OR_DESC", "A");
                         map.put("CARDINALITY", 1);

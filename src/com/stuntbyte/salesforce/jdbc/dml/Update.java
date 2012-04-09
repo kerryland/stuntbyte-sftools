@@ -51,7 +51,7 @@ public class Update {
 
         Map<String, ExpressionHolder> values = new HashMap<String, ExpressionHolder>();
 
-        Table table = metaDataFactory.getTable(tableName);
+        Table table = metaDataFactory.getTable(ResultSetFactory.schemaName, tableName);
         List<String> whereChunk = new ArrayList<String>();
 
         while (token != null) {

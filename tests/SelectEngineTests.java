@@ -1,4 +1,5 @@
 import com.stuntbyte.salesforce.jdbc.SfConnection;
+import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.stuntbyte.salesforce.misc.TestHelper;
 import com.stuntbyte.salesforce.misc.TypeHelper;
 import com.sforce.soap.partner.*;
@@ -103,7 +104,7 @@ public class SelectEngineTests {
     public void testSelectStatement() throws Exception {
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery(
-                "select FirstName, LastName, CreatedDate, CreatedBy.name" +
+                "select FirstName, \"LastName\", CreatedDate, CreatedBy.name" +
                         " from Lead where lastName = '" + surname + "'");
         ResultSetMetaData rsmd = rs.getMetaData();
 
@@ -200,7 +201,7 @@ public class SelectEngineTests {
     @Test
     public void testComments() throws Exception {
         Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("----\nselect lastName from Lead where lastName = '" + surname + "' group by lastName");
+        ResultSet rs = stmt.executeQuery("----\nselect lastName from \"SF\".\"Lead\" where lastName = '" + surname + "' group by lastName");
         assertEquals(1, rs.getMetaData().getColumnCount());
         assertTrue(rs.next());
         assertEquals(surname, rs.getString(1));
@@ -209,7 +210,7 @@ public class SelectEngineTests {
     @Test
     public void testCount() throws Exception {
         Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery("select count() from Lead where lastName = '" + surname + "'");
+        ResultSet rs = stmt.executeQuery("select count() from SF.Lead where lastName = '" + surname + "'");
         assertEquals(1, rs.getMetaData().getColumnCount());
         assertTrue(rs.next());
         assertEquals("expr0", rs.getMetaData().getColumnName(1));
@@ -1061,7 +1062,7 @@ while (rs.next()) {
         ResultSetMetaData rsm = rs.getMetaData();
         assertEquals("Name", rsm.getColumnLabel(1));
         assertEquals("Name", rsm.getColumnName(1));
-        assertEquals("", rsm.getCatalogName(1));
+        assertEquals(ResultSetFactory.catalogName, rsm.getCatalogName(1));
         assertEquals("java.lang.String", rsm.getColumnClassName(1));
         assertEquals(80, rsm.getColumnDisplaySize(1));
         assertEquals("string", rsm.getColumnTypeName(1));
@@ -1069,7 +1070,7 @@ while (rs.next()) {
 
         assertEquals("bbb__c", rsm.getColumnLabel(2));
         assertEquals("bbb__c", rsm.getColumnName(2));
-        assertEquals("", rsm.getCatalogName(2));
+        assertEquals(ResultSetFactory.catalogName, rsm.getCatalogName(2));
         assertEquals("java.lang.String", rsm.getColumnClassName(2));
         assertEquals(18, rsm.getColumnDisplaySize(2));
         assertEquals("reference", rsm.getColumnTypeName(2));
@@ -1079,7 +1080,7 @@ while (rs.next()) {
         // long_text_1__c
         assertEquals("long_text_1__c", rsm.getColumnLabel(3));
         assertEquals("long_text_1__c", rsm.getColumnName(3));
-        assertEquals("", rsm.getCatalogName(3));
+        assertEquals(ResultSetFactory.catalogName, rsm.getCatalogName(3));
         assertEquals("java.lang.String", rsm.getColumnClassName(3));
         assertEquals(32000, rsm.getColumnDisplaySize(3));
         assertEquals("textarea", rsm.getColumnTypeName(3));
@@ -1087,7 +1088,7 @@ while (rs.next()) {
 
         assertEquals("checkbox__c", rsm.getColumnLabel(5));
         assertEquals("checkbox__c", rsm.getColumnName(5));
-        assertEquals("", rsm.getCatalogName(5));
+        assertEquals(ResultSetFactory.catalogName, rsm.getCatalogName(5));
         assertEquals("java.lang.Boolean", rsm.getColumnClassName(5));
         assertEquals(5, rsm.getColumnDisplaySize(5));
         assertEquals("boolean", rsm.getColumnTypeName(5));
@@ -1095,7 +1096,7 @@ while (rs.next()) {
 
         assertEquals("currency__c", rsm.getColumnLabel(6));
         assertEquals("currency__c", rsm.getColumnName(6));
-        assertEquals("", rsm.getCatalogName(6));
+        assertEquals(ResultSetFactory.catalogName, rsm.getCatalogName(6));
         assertEquals("java.lang.Double", rsm.getColumnClassName(6));
         assertEquals(14, rsm.getColumnDisplaySize(6));
         assertEquals("currency", rsm.getColumnTypeName(6));
@@ -1105,7 +1106,7 @@ while (rs.next()) {
 
         assertEquals("date__c", rsm.getColumnLabel(7));
         assertEquals("date__c", rsm.getColumnName(7));
-        assertEquals("", rsm.getCatalogName(7));
+        assertEquals(ResultSetFactory.catalogName, rsm.getCatalogName(7));
         assertEquals("java.sql.Date", rsm.getColumnClassName(7));
         assertEquals(10, rsm.getColumnDisplaySize(7));
         assertEquals("date", rsm.getColumnTypeName(7));
@@ -1113,7 +1114,7 @@ while (rs.next()) {
 
         assertEquals("datetime__c", rsm.getColumnLabel(8));
         assertEquals("datetime__c", rsm.getColumnName(8));
-        assertEquals("", rsm.getCatalogName(8));
+        assertEquals(ResultSetFactory.catalogName, rsm.getCatalogName(8));
         assertEquals("java.sql.Timestamp", rsm.getColumnClassName(8));
         assertEquals(15, rsm.getColumnDisplaySize(8));
         assertEquals("datetime", rsm.getColumnTypeName(8));
@@ -1128,7 +1129,7 @@ while (rs.next()) {
 
         assertEquals("picklist__c", rsm.getColumnLabel(13));
         assertEquals("picklist__c", rsm.getColumnName(13));
-        assertEquals("", rsm.getCatalogName(13));
+        assertEquals(ResultSetFactory.catalogName, rsm.getCatalogName(13));
         assertEquals("java.lang.String", rsm.getColumnClassName(13));
         assertEquals(255, rsm.getColumnDisplaySize(13));
         assertEquals("picklist", rsm.getColumnTypeName(13));
@@ -1136,7 +1137,7 @@ while (rs.next()) {
 
         assertEquals("multipicklist__c", rsm.getColumnLabel(14));
         assertEquals("multipicklist__c", rsm.getColumnName(14));
-        assertEquals("", rsm.getCatalogName(14));
+        assertEquals(ResultSetFactory.catalogName, rsm.getCatalogName(14));
         assertEquals("java.lang.String", rsm.getColumnClassName(14));
         assertEquals(4099, rsm.getColumnDisplaySize(14));    // TODO-4099, really?
         assertEquals("multipicklist", rsm.getColumnTypeName(14));

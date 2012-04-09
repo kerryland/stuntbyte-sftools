@@ -127,7 +127,7 @@ public class Insert {
         SObject sObject = new SObject();
         sObject.setType(table);
 
-        Table tableData = metaDataFactory.getTable(table);
+        Table tableData = metaDataFactory.getTable(ResultSetFactory.schemaName, table);
 
         int i = 0;
         List<String> fieldsToNull = new ArrayList<String>();

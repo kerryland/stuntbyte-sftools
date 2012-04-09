@@ -131,6 +131,10 @@ public class LoginHelper {
         return getPartnerConnection();
     }
 
+    public void authenticate() throws ConnectionException {
+        getMetadataConnection();
+    }
+
 
     PartnerConnection getPartnerConnection() throws ConnectionException {
         if (partnerConnection == null) {
@@ -143,9 +147,9 @@ public class LoginHelper {
         return partnerConnection;
     }
 
-    public ResultSetFactory createResultSetFactory(Properties info) throws ConnectionException {
+    public ResultSetFactory createResultSetFactory(Properties info, boolean includeTables) throws ConnectionException {
         WscService svc = new WscService(getPartnerConnection());
-        return svc.createResultSetFactory(info);
+        return svc.createResultSetFactory(info, includeTables);
     }
 
 

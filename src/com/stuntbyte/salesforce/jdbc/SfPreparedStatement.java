@@ -295,7 +295,7 @@ public class SfPreparedStatement extends SfStatement implements PreparedStatemen
     }
 
     public ResultSetMetaData getMetaData() throws SQLException {
-        return null; // Cannot be implemented
+        throw new SQLFeatureNotSupportedException("Cannot be implemented");
     }
 
     public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {

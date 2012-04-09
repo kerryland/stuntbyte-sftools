@@ -31,6 +31,8 @@ public class Column {
     private String defaultPicklistValue;
     private boolean picklistIsSorted;
     private boolean updateable = true;
+    
+    private int ordinal;
 
 
     public Column(String name, String type, Boolean isCalculated) {
@@ -223,5 +225,13 @@ public class Column {
 
     public boolean isUpdateable() {
         return updateable;
+    }
+
+    public void setOrdinal(int ordinal) {
+        this.ordinal = ordinal;
+    }
+
+    public int getOrdinal() {
+        return ordinal;
     }
 }

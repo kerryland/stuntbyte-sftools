@@ -20,7 +20,6 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     private ResultSetFactory metaDataFactory;
     private MetadataService metadataService;
 
-    private List<Table> metadataColumns;
     private Licence licence;
 
     public SfDatabaseMetaData(SfConnection sfConnection,
@@ -30,13 +29,6 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
         this.metaDataFactory = metaDataFactory;
         this.metadataService = metadataService;
         licence = sfConnection.getHelper().getLicenceResult().getLicence();
-
-        metadataColumns = new ArrayList<Table>();
-        Table metadataColumn = new Table("", "", "");
-        metadataColumn.addColumn(new Column("Identifier", "string"));
-        metadataColumn.addColumn(new Column("Name", "string"));
-        metadataColumn.addColumn(new Column("LastChangedBy", "string"));
-        metadataColumns.add(metadataColumn);
     }
 
     public boolean allProceduresAreCallable() throws SQLException {
@@ -289,15 +281,15 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public String getCatalogTerm() throws SQLException {
-        return "";
+        return "CATALOG";
     }
 
     public boolean isCatalogAtStart() throws SQLException {
-        return false;
+        return true;
     }
 
     public String getCatalogSeparator() throws SQLException {
-        return "";
+        return ".";
     }
 
     public boolean supportsSchemasInDataManipulation() throws SQLException {
@@ -525,32 +517,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
                                String tableNamePattern,
                                String[] types) throws SQLException {
 
-        List<Table> fakeTables = new ArrayList<Table>();
-
-        if ((licence.supportsDeploymentFeature()) &&
-                ((ResultSetFactory.DEPLOYABLE).equals(schemaPattern) || null ==schemaPattern )) {
-//            List<Table> fakeTables = new ArrayList<Table>();
-
-            for (String metaDataType : metadataService.getMetadataTypes()) {
-                Table table = new Table(metaDataType, "", "TABLE");
-                table.setSchema(ResultSetFactory.DEPLOYABLE);
-
-                fakeTables.add(table);
-            }
-
-
-        }
-
-        if (licence.supportsJdbcFeature() && null == schemaPattern) {
-            fakeTables.addAll(metaDataFactory.getTables());
-        }
-
-        return metaDataFactory.createTableResultSet(tableNamePattern, types, fakeTables);
-
-//        return metaDataFactory.getTables(tableNamePattern, types);
-
-//        return metaDataFactory.createTableResultSet(tableNamePattern, types, new ArrayList<Table>());
-//        return metaDataFactory.getTables("n/a", types);
+        return metaDataFactory.createTableResultSet(schemaPattern, tableNamePattern, types);
     }
 
     public ResultSet getSchemas() throws SQLException {
@@ -576,17 +543,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
                                 String tableNamePattern,
                                 String columnNamePattern) throws SQLException {
 
-        if ((licence.supportsDeploymentFeature()) &&
-                (ResultSetFactory.DEPLOYABLE).equals(schemaPattern)) {
-            metadataColumns.get(0).setName(tableNamePattern);
-            return metaDataFactory.getColumns(tableNamePattern, columnNamePattern, metadataColumns);
-
-        } else if (licence.supportsJdbcFeature()) {
-            return metaDataFactory.getColumns(tableNamePattern, columnNamePattern);
-        }
-
-        // Return nothing
-        return metaDataFactory.getColumns("n/a", "n/a");
+        return metaDataFactory.getColumns(schemaPattern, tableNamePattern, columnNamePattern);
     }
 
     public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException {
@@ -597,40 +554,56 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
         return new SfResultSet(); // Maybe need to do more
     }
 
-    public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws SQLException {
-        List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
-        ColumnMap<String, Object> row = new ColumnMap<String, Object>();
-        row.put("SCOPE", DatabaseMetaData.bestRowSession);
-        if (ResultSetFactory.DEPLOYABLE.equalsIgnoreCase(schema)) {
-            row.put("COLUMN_NAME", "Identity");
-        } else {
-            row.put("COLUMN_NAME", "Id");
-        }
+    public ResultSet getBestRowIdentifier(String catalog, final String schema, String table, int scope, boolean nullable) throws SQLException {
 
-        row.put("DATA_TYPE", Types.VARCHAR);
-        row.put("TYPE_NAME", metaDataFactory.getType("id"));
-        row.put("COLUMN_SIZE", 18);
-        row.put("BUFFER_LENGTH", null);
-        row.put("DECIMAL_DIGITS", null);
-        row.put("PSEUDO_COLUMN", DatabaseMetaData.bestRowNotPseudo);
-        maps.add(row);
+        final List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
+
+        metaDataFactory.getTables(schema, table, new TableEvent() {
+            public void onTable(Table table) {
+                ColumnMap<String, Object> row = new ColumnMap<String, Object>();
+                if (ResultSetFactory.DEPLOYABLE.equalsIgnoreCase(table.getSchema())) {
+                    row.put("COLUMN_NAME", "Identifier");
+                    row.put("TYPE_NAME", metaDataFactory.getType("String"));
+                } else {
+                    row.put("COLUMN_NAME", "Id");
+                    row.put("TYPE_NAME", metaDataFactory.getType("id"));
+                }
+                row.put("SCOPE", DatabaseMetaData.bestRowSession);
+                row.put("DATA_TYPE", Types.VARCHAR);
+
+                row.put("COLUMN_SIZE", 18);
+                row.put("BUFFER_LENGTH", null);
+                row.put("DECIMAL_DIGITS", null);
+                row.put("PSEUDO_COLUMN", DatabaseMetaData.bestRowNotPseudo);
+                maps.add(row);
+            }
+        });
+
         return new ForceResultSet(maps);
     }
 
     public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException {
-        List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
-        ColumnMap<String, Object> row = new ColumnMap<String, Object>();
-        row.put("SCOPE", null);
-        row.put("COLUMN_NAME", "LastModifiedDAte");
-        row.put("DATA_TYPE", Types.TIMESTAMP);
-        row.put("TYPE_NAME", "datetime");
-        row.put("COLUMN_SIZE", 24);
-        row.put("BUFFER_LENGTH", 24);
-        row.put("DECIMAL_DIGITS", null);
-        row.put("PSEUDO_COLUMN", DatabaseMetaData.bestRowNotPseudo);
-        maps.add(row);
+        final List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
+
+        metaDataFactory.getTables(schema, table, new TableEvent() {
+            public void onTable(Table table) throws SQLException {
+                if (table.getSchema().equals(ResultSetFactory.schemaName)) {
+                    ColumnMap<String, Object> row = new ColumnMap<String, Object>();
+                    row.put("SCOPE", null);
+                    row.put("COLUMN_NAME", "LastModifiedDAte");
+                    row.put("DATA_TYPE", Types.TIMESTAMP);
+                    row.put("TYPE_NAME", "datetime");
+                    row.put("COLUMN_SIZE", 24);
+                    row.put("BUFFER_LENGTH", 24);
+                    row.put("DECIMAL_DIGITS", null);
+                    row.put("PSEUDO_COLUMN", DatabaseMetaData.bestRowNotPseudo);
+                    maps.add(row);
+                }
+            }
+        });
         return new ForceResultSet(maps);
     }
+
 
     public ResultSet getCrossReference(String parentCatalog, String parentSchema, String parentTable, String foreignCatalog, String foreignSchema, String foreignTable) throws SQLException {
         return new SfResultSet(); // TODO?
@@ -642,28 +615,94 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
-        if (metaDataFactory.DEPLOYABLE.equals(schema)) {
-            return new SfResultSet();
-        }
-        return metaDataFactory.getPrimaryKeys(table);
+        final List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
+
+        metaDataFactory.getTables(schema, table, new TableEvent() {
+            public void onTable(Table table) throws SQLException {
+                for (Column column : table.getColumns()) {
+                    if (column.getName().equalsIgnoreCase("Id")) {
+                        ColumnMap<String, Object> map = new ColumnMap<String, Object>();
+                        map.put("TABLE_CAT", table.getCatalog());
+                        map.put("TABLE_SCHEM", table.getSchema());
+                        map.put("TABLE_NAME", table.getName());
+                        map.put("COLUMN_NAME", column.getName());
+                        map.put("KEY_SEQ", 1);
+                        map.put("PK_NAME", "PK" + table.getName() + column.getOrdinal());
+                        maps.add(map);
+                        break;
+                    }
+                }
+            }
+        });
+        return new ForceResultSet(maps);
     }
 
     public ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException {
-        if (metaDataFactory.DEPLOYABLE.equals(schema)) {
-            return new SfResultSet();
-        }
-        return metaDataFactory.getImportedKeys(table);
+        final List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
+
+        metaDataFactory.getTables(schema, table, new TableEvent() {
+            public void onTable(Table table) throws SQLException {
+                for (Column column : table.getColumns()) {
+                    if (column.getReferencedTable() != null && column.getReferencedColumn() != null) {
+                        ColumnMap<String, Object> map = new ColumnMap<String, Object>();
+                        map.put("PKTABLE_CAT", table.getCatalog());
+                        map.put("PKTABLE_SCHEM", table.getSchema());
+                        map.put("PKTABLE_NAME", column.getReferencedTable());
+                        map.put("PKCOLUMN_NAME", column.getReferencedColumn());
+                        map.put("FKTABLE_CAT", table.getCatalog());
+                        map.put("FKTABLE_SCHEM", table.getSchema());
+                        map.put("FKTABLE_NAME", table.getName());
+                        map.put("FKCOLUMN_NAME", column.getName());
+                        map.put("KEY_SEQ", 1);
+                        map.put("UPDATE_RULE", 0);
+                        map.put("DELETE_RULE", 0);
+                        map.put("FK_NAME", "FK" + table.getName() + column.getOrdinal());
+                        map.put("PK_NAME", "PK" + table.getName() + column.getOrdinal());
+                        map.put("DEFERRABILITY", 5);
+                        maps.add(map);
+                    }
+                }
+            }
+        });
+        return new ForceResultSet(maps);
     }
 
-    public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException {
-        if (metaDataFactory.DEPLOYABLE.equals(schema)) {
-            return new SfResultSet();
+    
+    public ResultSet getExportedKeys(String catalog, String schema, String tableName) throws SQLException {
+        final List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
+
+        for (Table table : metaDataFactory.getTables()) {
+            for (Column column : table.getColumns()) {
+                if (tableName.equalsIgnoreCase(column.getReferencedTable())) {
+                    ColumnMap<String, Object> map = new ColumnMap<String, Object>();
+                    map.put("PKTABLE_CAT", table.getCatalog());
+                    map.put("PKTABLE_SCHEM", table.getSchema());
+                    map.put("PKTABLE_NAME", column.getReferencedTable());
+                    map.put("PKCOLUMN_NAME", column.getReferencedColumn());
+
+                    map.put("FKTABLE_CAT", table.getCatalog());
+                    map.put("FKTABLE_SCHEM", table.getSchema());
+                    map.put("FKTABLE_NAME", table.getName());
+                    map.put("FKCOLUMN_NAME", column.getName());
+
+                    map.put("KEY_SEQ", 1);
+                    map.put("UPDATE_RULE", DatabaseMetaData.importedKeyRestrict);
+                    map.put("DELETE_RULE", DatabaseMetaData.importedKeySetNull);
+                    map.put("FK_NAME", "FK" + table.getName() + column.getOrdinal());
+                    map.put("PK_NAME", "PK" + table.getName() + column.getOrdinal());
+                    map.put("DEFERRABILITY", 5);
+                    maps.add(map);
+                }
+            }
         }
-        return metaDataFactory.getExportedKeys(table);
+
+        return new ForceResultSet(maps);
     }
+
 
     public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException {
-        return metaDataFactory.getIndexInfo(table);
+//        return metaDataFactory.getIndexInfo(table);
+        return new SfResultSet();
     }
 
     public boolean supportsResultSetType(int type) throws SQLException {
@@ -811,7 +850,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public ResultSet getFunctionColumns(String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern) throws SQLException {
-        return null;
+        return new SfResultSet();
     }
 
     public ResultSet getPseudoColumns(String s, String s1, String s2, String s3) throws SQLException {

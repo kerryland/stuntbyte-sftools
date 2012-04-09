@@ -259,7 +259,7 @@ public class Grant {
         String field = al.getValue();
 
         String tableName = field.substring(0, field.indexOf("."));
-        Table table = metaDataFactory.getTable(tableName);
+        Table table = metaDataFactory.getTable(ResultSetFactory.schemaName, tableName);
 
         if (field.endsWith(".*")) {
             for (Column col : table.getColumns()) {

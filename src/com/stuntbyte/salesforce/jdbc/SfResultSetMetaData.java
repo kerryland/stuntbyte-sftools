@@ -9,6 +9,7 @@ import com.sforce.soap.partner.sobject.SObject;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,7 +86,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
             if (col.toLowerCase().endsWith("__r")) {
                 lookup = col.substring(0, col.length() - 1) + "c";
             }
-            Table t = rsf.getTable(type);
+            Table t = rsf.getTable(ResultSetFactory.schemaName, type);
             try {
                 column = null;
 
@@ -290,7 +291,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
     }
 
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
