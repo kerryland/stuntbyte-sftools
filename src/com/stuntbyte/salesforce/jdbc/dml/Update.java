@@ -203,7 +203,7 @@ public class Update {
 
 
     private int updateSingleRow(Boolean batchMode, List<SObject> batchSObjects,
-                                String tableName, Map<String, ExpressionHolder> values,
+                                String tableName, Map<String, ExpressionHolder> columnValues,
                                 Table table, String id) throws SQLException, ParseException {
 
         SObject[] sObjects = new SObject[1];
@@ -211,7 +211,7 @@ public class Update {
         sObjects[0].setType(tableName);
         sObjects[0].setId(id);
 
-        storeData(batchMode, batchSObjects, tableName, values, table, sObjects, new HashSet<String>(0));
+        storeData(batchMode, batchSObjects, tableName, columnValues, table, sObjects, new HashSet<String>(0));
         return 1;
     }
 
@@ -257,32 +257,29 @@ public class Update {
     private void storeData(Boolean batchMode,
                            List<SObject> batchSObjects,
                            String tableName,
-                           Map<String, ExpressionHolder> values,
+                           Map<String, ExpressionHolder> columnValues,
                            Table table,
-                           SObject[] selectedObjects,
+                           SObject[] recordsToUpdate,
                            Set<String> referencedColumns) throws SQLException, ParseException {
 
-        SObject[] update = new SObject[selectedObjects.length];
+        SObject[] update = new SObject[recordsToUpdate.length];
 
-        for (int i = 0; i < selectedObjects.length; i++) {
-
+        for (int i = 0; i < recordsToUpdate.length; i++) {
             Map vars = new HashMap();
-
-            String id = selectedObjects[i].getId();
-
             for (String referencedColumn : referencedColumns) {
-                vars.put(referencedColumn.toLowerCase(), selectedObjects[i].getField(referencedColumn));
+                vars.put(referencedColumn.toLowerCase(), recordsToUpdate[i].getField(referencedColumn));
             }
 
             SObject sObject = new SObject();
             sObject.setType(tableName);
-            sObject.setId(id);
+            sObject.setId(recordsToUpdate[i].getId());
+
             List<String> fieldsToNull = new ArrayList<String>();
 
-            for (String key : values.keySet()) {
+            for (String key : columnValues.keySet()) {
                 Integer dataType = ResultSetFactory.lookupJdbcType(table.getColumn(key).getType());
 
-                ExpressionHolder expressionHolder = values.get(key);
+                ExpressionHolder expressionHolder = columnValues.get(key);
                 Object value = MVEL.executeExpression(expressionHolder.compiledExpression, vars);
 
                 if (value == null) {

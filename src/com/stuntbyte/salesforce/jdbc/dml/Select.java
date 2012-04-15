@@ -25,7 +25,7 @@ public class Select {
     private SfStatement statement;
     private MetadataServiceImpl metadataService;
     private Reconnector reconnector;
-    private String table;
+    private String tableName;
     private String schema;
 
     public Select(SfStatement statement, MetadataServiceImpl metadataService, Reconnector reconnector) {
@@ -36,7 +36,6 @@ public class Select {
 
     public ResultSet execute(String sql) throws SQLException {
         try {
-
             if ((!reconnector.getLicence().supportsJdbcFeature()) &&
                     (!reconnector.getLicence().supportsDeploymentFeature())) {
                 throw new SQLException("Licence does not support JDBC");
@@ -51,13 +50,13 @@ public class Select {
             ParsedSelect parsedSelect = parsedSelects.get(parsedSelects.size() - 1);
             sql = parsedSelect.getParsedSql();
 
-            table = parsedSelect.getDrivingTable();
+            tableName = parsedSelect.getDrivingTable();
             schema = parsedSelect.getDrivingSchema();
 
             SfConnection conn = (SfConnection) statement.getConnection();
-            ResultSet rs = conn.getMetaData().getTables(ResultSetFactory.catalogName, schema, table, null);
+            ResultSet rs = conn.getMetaData().getTables(ResultSetFactory.catalogName, schema, tableName, null);
             if (!rs.next()) {
-                throw new SQLException("Unknown table " + table + " in schema " + schema);
+                throw new SQLException("Unknown table " + tableName + " in schema " + schema);
             }
 
             sql = patchWhereZeroEqualsOne(sql);
@@ -87,7 +86,7 @@ public class Select {
                 reconnector.setQueryOptions(statement.getFetchSize());
                 QueryResult qr = reconnector.query(sql);
 
-                return new SfResultSet(statement, reconnector, qr, parsedSelects);
+                return new SfResultSet(tableName, statement, reconnector, qr, parsedSelects);
 
             } finally {
                 reconnector.setQueryOptions(oldBatchSize);
@@ -138,7 +137,7 @@ public class Select {
             StringBuilder sb = new StringBuilder();
             columnsInSql.clear();
 
-            ResultSet columnsRs = conn.getMetaData().getColumns("", schema, table, null);
+            ResultSet columnsRs = conn.getMetaData().getColumns("", schema, tableName, null);
             while (columnsRs.next()) {
                 String col = columnsRs.getString("COLUMN_NAME");
                 if (columnsInSql.size() > 0) {
@@ -153,10 +152,10 @@ public class Select {
         return sql;
     }
 
-    // DBVisualizer likes to put quotes around the table name
+    // DBVisualizer likes to put quotes around the tableName name
     // for no obvious reason. This undoes that, kinda crudely....
     private String removeQuotedTableName(String sql) {
-        return replace(sql, "from " + table, "from \"" + table + "\"");
+        return replace(sql, "from " + tableName, "from \"" + tableName + "\"");
     }
 
     // SQL Workbench likes to put quotes around some column names, like "Type",
@@ -179,5 +178,7 @@ public class Select {
         return sql;
     }
 
-
+    public String getTableName() {
+        return tableName;
+    }
 }

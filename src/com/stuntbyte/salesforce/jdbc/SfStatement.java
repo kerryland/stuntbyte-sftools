@@ -10,7 +10,6 @@ import com.stuntbyte.salesforce.jdbc.metaforce.ColumnMap;
 import com.stuntbyte.salesforce.jdbc.metaforce.ForceResultSet;
 import com.stuntbyte.salesforce.jdbc.metaforce.Table;
 import com.stuntbyte.salesforce.jdbc.sqlforce.LexicalToken;
-import com.stuntbyte.salesforce.misc.Licence;
 import com.stuntbyte.salesforce.misc.LoginHelper;
 import com.stuntbyte.salesforce.misc.Reconnector;
 import com.stuntbyte.salesforce.parse.SimpleParser;

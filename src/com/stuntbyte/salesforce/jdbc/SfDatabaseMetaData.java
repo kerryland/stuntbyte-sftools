@@ -750,7 +750,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public boolean supportsBatchUpdates() throws SQLException {
-        return false;
+        return true;
     }
 
     public ResultSet getUDTs(String catalog, String schemaPattern, String typeNamePattern, int[] types) throws SQLException {
@@ -770,11 +770,11 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public boolean supportsMultipleOpenResults() throws SQLException {
-        return false;
+        return true;
     }
 
     public boolean supportsGetGeneratedKeys() throws SQLException {
-        return false;
+        return true;
     }
 
     public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern) throws SQLException {

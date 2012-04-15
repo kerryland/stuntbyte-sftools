@@ -1,4 +1,5 @@
 import com.stuntbyte.salesforce.jdbc.SfConnection;
+import com.stuntbyte.salesforce.jdbc.SfPreparedStatement;
 import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.stuntbyte.salesforce.misc.TestHelper;
 import com.stuntbyte.salesforce.misc.TypeHelper;
@@ -899,6 +900,44 @@ while (rs.next()) {
             assertEquals("Wibble", rs.getString("FirstName"));
         }
         assertEquals(rowsNamedMike, foundCount);
+    }
+
+
+
+    @Test
+    public void testUpdateRowInsertRowDeleteRow() throws Exception {
+        Statement stmt = conn.createStatement();
+        stmt.executeUpdate("delete from account where billingCity = 'MyTestCity'");
+        stmt.executeUpdate("insert into Account(name, billingCountry, billingCity) values ('n1','DefNullBillCountry1', 'MyTestCity')");
+        stmt.executeUpdate("insert into Account(name, billingCountry, billingCity) values ('n2','DefNullBillCountry2', 'MyTestCity')");
+        stmt.executeUpdate("insert into Account(name, billingCountry, billingCity) values ('n3','DefNullBillCountry3', 'MyTestCity')");
+
+        SfPreparedStatement ps = (SfPreparedStatement) conn.prepareStatement(
+                "select id, name,billingCity, billingCountry from Account where billingCity = 'MyTestCity'");
+        ResultSet rs = ps.executeQuery();
+
+        while (rs.next()) {
+            rs.updateString("billingCountry", rs.getString("billingCountry").toUpperCase());
+            rs.updateRow();
+        }
+
+        rs.moveToInsertRow();
+        rs.updateString("billingCountry", "DEFNULLBILLCOUNTRY4");
+        rs.updateString("billingCity", "MyTestCity");
+        rs.updateString("name", "n4");
+        rs.insertRow();
+        rs.moveToCurrentRow(); // what does this *do*?
+
+        ps = (SfPreparedStatement) conn.prepareStatement("select billingCity, billingCountry from Account where billingCity = 'MyTestCity'");
+        rs = ps.executeQuery();
+        int count = 0;
+        while (rs.next()) {
+            Assert.assertTrue(rs.getString("billingCountry").startsWith("DEFNULLBILLCOUNTRY"));
+            count++;
+        }
+        Assert.assertEquals(4, count);
+
+        stmt.executeUpdate("delete from account where billingCity = 'MyTestCity'");
     }
 
 

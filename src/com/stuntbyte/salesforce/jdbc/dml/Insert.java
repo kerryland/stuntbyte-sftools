@@ -40,7 +40,7 @@ public class Insert {
             if (batchMode) {
                 batchSObjects.add(sObject);
             } else {
-                saveSObjects(new SObject[] {sObject});
+                saveSObjects(new SObject[]{sObject});
             }
         } catch (SQLException e) {
             throw e;
@@ -52,24 +52,29 @@ public class Insert {
     }
 
 
-    public int saveSObjects(SObject[] sObjects) throws ConnectionException, SQLException {
-        SaveResult[] sr = reconnector.create(sObjects);
-        int row = 0;
-        for (SaveResult saveResult : sr) {
-            if (!saveResult.isSuccess()) {
-                com.sforce.soap.partner.Error[] errors = saveResult.getErrors();
-                StringBuilder sb = new StringBuilder();
-                for (Error error : errors) {
-                    sb.append(error.getMessage()).append(". ");
-                }
-                throw new SQLException(sb.toString());
-            } else {
-                generatedId = saveResult.getId();
+    public int saveSObjects(SObject[] sObjects) throws SQLException {
+        try {
+            SaveResult[] sr = reconnector.create(sObjects);
+            int row = 0;
+            for (SaveResult saveResult : sr) {
+                if (!saveResult.isSuccess()) {
+                    com.sforce.soap.partner.Error[] errors = saveResult.getErrors();
+                    StringBuilder sb = new StringBuilder();
+                    for (Error error : errors) {
+                        sb.append(error.getMessage()).append(". ");
+                    }
+                    throw new SQLException(sb.toString());
+                } else {
+                    generatedId = saveResult.getId();
 //                System.out.println("KJS generated " + generatedId + " vs " + sObjects[row].getId());
-                sObjects[row++].setId(generatedId);
+                    sObjects[row++].setId(generatedId);
+                }
             }
+            return sr.length;
+        } catch (ConnectionException e) {
+            throw new SQLException(e);
         }
-        return sr.length;
+
     }
 
     private SObject convertSqlToSobject() throws Exception {
@@ -121,7 +126,7 @@ public class Insert {
         }
 
         if (columns.size() != values.size()) {
-            throw new SQLException("Number of columns does not match number of values: " +  al.getCommandString());
+            throw new SQLException("Number of columns does not match number of values: " + al.getCommandString());
         }
 
         SObject sObject = new SObject();
