@@ -25,6 +25,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
     private List<String> colName = new ArrayList<String>();
     private List<String> colAliases = new ArrayList<String>();
 
+    private boolean isAggregate;
     // For an empty result set
     public SfResultSetMetaData() {
 
@@ -40,7 +41,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
         this.rsf = rsf;
 
         String baseType = record.getType();
-        Boolean isAggregate = baseType.equals("AggregateResult");
+        isAggregate = baseType.equals("AggregateResult");
         if (isAggregate) {
             baseType = drivingTable;
         }
@@ -48,6 +49,9 @@ public class SfResultSetMetaData implements ResultSetMetaData {
         addChildren(baseType, isAggregate, resultFields, resultDataTypes);
     }
 
+    public boolean isAggregate() {
+        return isAggregate;
+    }
 
     private void addChildren(String type, Boolean aggregate, List<String> resultFields, List<ParsedColumn> resultDataTypes)
             throws SQLException {

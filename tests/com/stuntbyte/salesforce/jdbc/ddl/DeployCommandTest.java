@@ -10,11 +10,7 @@ import java.io.File;
 import java.sql.Statement;
 
 /**
- * Created by IntelliJ IDEA.
- * User: kerry
- * Date: 23/06/11
- * Time: 7:34 PM
- * To change this template use File | Settings | File Templates.
+ * Test the deploy tool
  */
 public class DeployCommandTest {
 

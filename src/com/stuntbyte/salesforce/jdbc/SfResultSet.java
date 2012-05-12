@@ -920,7 +920,11 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
     public int getConcurrency() throws SQLException {
-        return ResultSet.CONCUR_READ_ONLY;      // TODO. We support CONCUR_UPDATABLE
+        if (metaData.isAggregate()) {
+            return ResultSet.CONCUR_READ_ONLY;
+        } else {
+            return ResultSet.CONCUR_UPDATABLE;
+        }
     }
 
     public boolean rowUpdated() throws SQLException {
@@ -1108,13 +1112,8 @@ public class SfResultSet implements java.sql.ResultSet {
         int col = findColumn(columnLabel);
 
         updateObject(col, value);
-
     }
 
-
-    // TODO: This is supposed to add the record to the result set
-    // TOOD: "Getter" methods should refer to "insertRow" too
-    // (maybe -- I think there is a db metadata property that should control that
     public void insertRow() throws SQLException {
         SObject updateSObject = createSObject();
 
@@ -1149,8 +1148,10 @@ public class SfResultSet implements java.sql.ResultSet {
     }
 
 
-    private SObject createSObject() {
-        // TODO: Exception unless CONCUR_UPDATABLE
+    private SObject createSObject() throws SQLException {
+        if (getConcurrency() != ResultSet.CONCUR_UPDATABLE) {
+            throw new SQLException("ResultSet is not updateable");
+        }
         SObject updateSObject = new SObject();
         updateSObject.setType(table.getName());
         return updateSObject;
@@ -1178,7 +1179,7 @@ public class SfResultSet implements java.sql.ResultSet {
 
 
     public void refreshRow() throws SQLException {
-        throw new SQLFeatureNotSupportedException(); // TODO: What does this do?
+        throw new SQLFeatureNotSupportedException();
 
     }
 
@@ -1240,11 +1241,11 @@ public class SfResultSet implements java.sql.ResultSet {
 
 
     public URL getURL(int columnIndex) throws SQLException {
-        throw new SQLFeatureNotSupportedException(); // TODO: Couldn't we?
+        throw new SQLFeatureNotSupportedException();
     }
 
     public URL getURL(String columnLabel) throws SQLException {
-        throw new SQLFeatureNotSupportedException(); // TODO: Couldn't we?
+        throw new SQLFeatureNotSupportedException();
     }
 
     public void updateRef(int columnIndex, Ref x) throws SQLException {

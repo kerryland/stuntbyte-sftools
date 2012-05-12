@@ -102,7 +102,9 @@ public class Licence {
         ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
         customerNumber = byteBuffer.getInt();
         expires = intToCalendar(byteBuffer.getInt());
-        bits = fromByteArray(byteBuffer.get());
+
+        byte flags = byteBuffer.get();
+        bits = fromByteArray(flags);
 
         storedNameHash = new byte[bytes.length - 9];
 

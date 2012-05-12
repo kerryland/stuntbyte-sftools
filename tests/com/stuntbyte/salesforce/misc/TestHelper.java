@@ -13,8 +13,8 @@ public class TestHelper {
     public static String loginUrl = "https://login.salesforce.com";
     public static String username = "salesforce@fidelma.com";
     public static String password = "u9SABqa2dQxG0Y3kqWiJQVEwnYtryr1Ja1";
-    public static String licence = "MxjetovtygmPUHNqoPAXGQ"; // Demo licence
-//    public static String licence = "ntpOo9JjXHQ2uOYAlM724w";
+//    public static String licence = "MxjetovtygmPUHNqoPAXGQ"; // Demo licence
+    public static String licence = "ntpOo9JjXHTmYiYIyaG0XQ"; // Kerry uber-licence
 
     public static String plebUsername = "pleb@fidelma.com";
     public static String plebPassword = "utC1bQWQOa6JsT8mp3dTD4O6vpwpOdQIv";

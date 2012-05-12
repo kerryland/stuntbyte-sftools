@@ -21,23 +21,34 @@ public class LicenceTests {
 
     @Test
     public void testFeaturesFromByte() throws Exception {
-        Licence licence = new Licence(1000, "Kerry Sainsbury", Calendar.getInstance());
-        licence.setJdbcFeature(true);
+        Calendar expires = Calendar.getInstance();
+        expires.add(Calendar.YEAR, 1);
+        Licence licence = new Licence(1000, "Kerry Sainsbury", expires);
+        licence.setDeploymentFeature(true);
+        licence.setPersonalLicence(true);
 
         Assert.assertEquals(1000, licence.getCustomerNumber());
         Assert.assertEquals("Kerry Sainsbury", licence.getName());
-        Assert.assertTrue(licence.supportsJdbcFeature());
-        Assert.assertFalse(licence.supportsPersonalLicence());
+        Assert.assertFalse(licence.supportsJdbcFeature());
+        Assert.assertTrue(licence.supportsPersonalLicence());
         licence.generateNameHash();
 
-        byte[] bytes = licence.getBytes();
+        String key = KeyGen.generateKey(licence);
+
+        LicenceService ls = new LicenceService();
+
+        LicenceResult licenceResult = ls.checkLicence("Kerry Sainsbury",
+                "My Co", // Doesn't matter for personal licence
+                key);
+
+        Licence second = licenceResult.getLicence();
 
         // Now reconstitute the licence from bytes
-        Licence second = new Licence(bytes, "Kerry Sainsbury");
         Assert.assertEquals(1000, second.getCustomerNumber());
-        Assert.assertEquals("Kerry Sainsbury", second.getName());
-        Assert.assertTrue(licence.supportsJdbcFeature());
-        Assert.assertFalse(licence.supportsPersonalLicence());
+        Assert.assertEquals("kerry sainsbury", second.getName());
+        Assert.assertFalse(licence.supportsJdbcFeature());
+        Assert.assertTrue(licence.supportsDeploymentFeature());
+        Assert.assertTrue(licence.supportsPersonalLicence());
 
         Assert.assertTrue(Arrays.equals(licence.getStoredNameHash(), second.getStoredNameHash()));
     }

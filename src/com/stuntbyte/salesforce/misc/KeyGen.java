@@ -74,14 +74,16 @@ StuntByte demo: support@stuntbyte.com
 
         String key = generateKey(licence);
         
-        System.out.println(username + " licence is " + key + " " + year + "-" + (month + 1) + "-" + day);
+        System.out.println(customerNumber + " " + username + " licence is " + key + " " + year + "-" + (month + 1) + "-" + day);
+
 
         LicenceService ls = new LicenceService();
 
         Calendar today = Calendar.getInstance();
 
         if (expires.after(today)) {
-            ls.checkLicence(username, orgname, key);
+            LicenceResult licenceResult = ls.checkLicence(username, orgname, key);
+//            System.out.println("Deployable=" + licenceResult.getLicence().supportsDeploymentFeature());
 //            LicenceResult licenceResult = ls.checkLicence(username, orgname, key);
 //            if (!licenceResult.getLicenceOk()) {
 //                throw new Exception("Licence failed for " + customerNumber + " " + username);
