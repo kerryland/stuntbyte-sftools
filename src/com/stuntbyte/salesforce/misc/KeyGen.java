@@ -21,7 +21,7 @@ PERSONAL_DEMO licence is MxjetovtygmPUHNqoPAXGQ 2012-3-31
 Free Limited SQL licence is bsCbe26QJkFi_7H_ICMPuQ 3000-3-31
 
 StuntByte demo: support@stuntbyte.com
-                licence(IQF5LmJWSi0fPF20o8PXyQ)sfdc(p1sswordljSWGksoL9O5gCRZDWthsFEa)
+                licence(0-pblwi-KTAfqhSW8Q9_tg)sfdc(p1sswordljSWGksoL9O5gCRZDWthsFEa)
          */
 
         LicenceSetter USER_LICENCE = new LicenceSetter() {
@@ -53,6 +53,7 @@ StuntByte demo: support@stuntbyte.com
 
 
         checkLicence(1005, "PERSONAL_DEMO", "Free Limited SQL", "PERSONAL_DEMO", FREE_LIMITED_SQL, 3000, Calendar.MARCH, 31);
+        checkLicence(1006, "PERSONAL_DEMO", "StuntByte Demo", "PERSONAL_DEMO", USER_LICENCE, 3000, Calendar.MARCH, 31);
     }
 
     interface LicenceSetter {
