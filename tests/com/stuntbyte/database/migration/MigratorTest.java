@@ -65,7 +65,6 @@ public class MigratorTest {
         info.put("password", TestHelper.password);
 //        info.put("standard", "true");
 //        info.put("includes", "Lead,Account");
-//        info.put("useLabels", "true");
 
         // Get a connection to the database
         SfConnection sourceSalesforce = (SfConnection) DriverManager.getConnection(
@@ -79,7 +78,6 @@ public class MigratorTest {
 //        info.put("password", "u9SABqa2dQxG0Y3kqWiJQVEwnYtryr1Ja1");
 //        info.put("standard", "true");
 //        info.put("includes", "Lead,Account");
-//        info.put("useLabels", "true");
 
         // Get a connection to the database
         Connection h2Conn = DriverManager.getConnection(
@@ -92,7 +90,6 @@ public class MigratorTest {
         info.put("password", "g2Py8oPzUAsZJ1VuDEw71tfV2pwqMJN5O");
 //        info.put("standard", "true");
 //        info.put("includes", "Lead,Account");
-//        info.put("useLabels", "true");
 
         // Get a connection to the database
         SfConnection destSalesforce = (SfConnection) DriverManager.getConnection(

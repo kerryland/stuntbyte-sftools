@@ -20,7 +20,6 @@ import java.util.StringTokenizer;
 public class SfResultSetMetaData implements ResultSetMetaData {
 
     private ResultSetFactory rsf;
-    private boolean useLabels;
 
     private List<Column> cols = new ArrayList<Column>();
     private List<String> colName = new ArrayList<String>();
@@ -36,11 +35,9 @@ public class SfResultSetMetaData implements ResultSetMetaData {
             ResultSetFactory rsf,
             SObject record,
             List<String> resultFields,
-            List<ParsedColumn> resultDataTypes,
-            boolean useLabels) throws SQLException {
+            List<ParsedColumn> resultDataTypes) throws SQLException {
 
         this.rsf = rsf;
-        this.useLabels = useLabels;
 
         String baseType = record.getType();
         Boolean isAggregate = baseType.equals("AggregateResult");
@@ -213,13 +210,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
     }
 
     public String getColumnLabel(int column) throws SQLException {
-//        System.out.println("Label=" + colAliases.get(column - 1));
         return colAliases.get(column - 1);
-//        Column col = getColumn(column);
-//        if ((col != null) && useLabels) {
-//            return col.getLabel();
-//        }
-//        return getColumnName(column) +"X";
     }
 
     public String getColumnName(int column) throws SQLException {

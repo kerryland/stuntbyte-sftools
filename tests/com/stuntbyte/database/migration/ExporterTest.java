@@ -257,7 +257,6 @@ public class ExporterTest {
 //        info.put("password", "u9SABqa2dQxG0Y3kqWiJQVEwnYtryr1Ja1");
 //        info.put("standard", "true");
 //        info.put("includes", "Lead,Account");
-//        info.put("useLabels", "true");
 
         // Get a connection to the database
         Connection conn = DriverManager.getConnection(

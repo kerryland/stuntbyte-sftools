@@ -95,8 +95,6 @@ public class SfResultSet implements java.sql.ResultSet {
 
         this.table = rsf.getTable(tablename);
 
-
-        boolean useLabels = Boolean.parseBoolean(conn.getClientInfo("useLabels"));
         try {
             if (reconnector.getQueryOptions() != null) {
                 batchSize = reconnector.getQueryOptions().getBatchSize();
@@ -126,8 +124,8 @@ public class SfResultSet implements java.sql.ResultSet {
             }
             resultDataTypes = finaliseColumnList(columnsInResult, cols);
 
-            metaData = new SfResultSetMetaData(drivingTable, rsf, records[0], columnsInResult, resultDataTypes,
-                    useLabels);
+            metaData = new SfResultSetMetaData(drivingTable, rsf, records[0], columnsInResult, resultDataTypes
+            );
         } else {
             metaData = new SfResultSetMetaData();
         }

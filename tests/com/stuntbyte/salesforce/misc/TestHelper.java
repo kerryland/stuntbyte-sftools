@@ -58,7 +58,6 @@ public class TestHelper {
         info.put("licence", llicence);
 //        info.put("standard", "true");
 //        info.put("includes", "Lead,Account");
-//        info.put("useLabels", "true");
 
         // Get a connection to the database
         SfConnection sourceSalesforce = (SfConnection) DriverManager.getConnection(
