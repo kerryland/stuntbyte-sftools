@@ -68,6 +68,9 @@ public class DeployCommandTest {
 
         Assert.assertTrue(packageFile.exists());
         Assert.assertTrue(outFile.exists());
+
+        FileUtil.delete(packageFile);
+        FileUtil.delete(outFile);
     }
 
 
@@ -177,6 +180,10 @@ public class DeployCommandTest {
 
             stmt.execute("dep PACKAGE TO '" + packageFile.getAbsolutePath() + "'");
             stmt.execute("dep UPLOAD PACKAGE FROM '" + packageFile.getAbsolutePath() + "' TO '" + outFile.getAbsolutePath() + "'");
+
+            FileUtil.delete(packageFile);
+            FileUtil.delete(outFile);
+
         }
     }
 

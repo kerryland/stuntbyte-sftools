@@ -173,6 +173,7 @@ public class SalesfarceIDE {
             File result = deployer.retrieveZip(retrieveRequest, listener);
             ZipFile zip = new ZipFile(result);
             CrcResults crcResults = pullCrcs(zip, crcs, filenameNoPath);
+            FileUtil.delete(result);
 
             boolean runTests = true;
             boolean uploadCode = true;
@@ -231,6 +232,7 @@ public class SalesfarceIDE {
         result = deployer.retrieveZip(retrieveRequest, listener);
         zip = new ZipFile(result);
         crcResults = pullCrcs(zip, crcs, filenameNoPath);
+        FileUtil.delete(result);
 
         // Store checksum locally
         if (crcResults.serverCrc == null) { // ie: File doesn't exist on server
