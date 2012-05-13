@@ -39,7 +39,6 @@ public class FolderZipper {
         String fileList[] = folder.list();
 
         for (String fileName : fileList) {
-//            System.out.println("FOUND file " + fileName);
             addToZip(root, new File(folder.getAbsolutePath() + "/" + fileName), zip);
         }
     }
@@ -72,6 +71,7 @@ public class FolderZipper {
             while ((len = in.read(buf)) > 0) {
                 zip.write(buf, 0, len);
             }
+            in.close();
         }
     }
 

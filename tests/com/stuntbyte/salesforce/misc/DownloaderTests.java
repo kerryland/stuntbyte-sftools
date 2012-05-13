@@ -20,17 +20,22 @@ public class DownloaderTests {
         String dir = System.getProperty("java.io.tmpdir");
         File crcFile = File.createTempFile("CRC", "x");
 
-        crcFile.deleteOnExit();
+//        crcFile.deleteOnExit();
 
         Reconnector rc = new Reconnector(lh);
         Downloader dl = new Downloader(rc, new File(dir), new Notice(), crcFile);
         dl.addPackage("CustomObject", "Lead");
-        dl.download();
+        File dlDir = dl.download();
+        FileUtil.delete(dlDir);
 
         Properties properties = new Properties();
-        properties.load(new FileReader(crcFile));
+        FileReader fr = new FileReader(crcFile);
+        properties.load(fr);
+        fr.close();
         Assert.assertTrue(properties.getProperty("Lead.object") != null);
         Assert.assertTrue(new File(dir + "/objects/Lead.object").exists());
+
+        FileUtil.delete(crcFile);
     }
 
     private class Notice extends BaseDeploymentEventListener {

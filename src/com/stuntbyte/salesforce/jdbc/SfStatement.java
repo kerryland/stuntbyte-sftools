@@ -187,7 +187,8 @@ public class SfStatement implements java.sql.Statement {
             } else if (token.getValue().equalsIgnoreCase("ROLLBACK")) {
             } else if ((token.getValue().equalsIgnoreCase("DEPLOYMENT")) ||
                     (token.getValue().equalsIgnoreCase("DEP"))) {
-                new DeployCommand(al, reconnector).execute();
+                // DeployCommand needs state, so here's a crappy way to handle it
+                DeployCommand.execute(al, reconnector);
 
             } else {
                 throw new SQLException("Unsupported command " + token.getValue());

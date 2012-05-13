@@ -1,5 +1,6 @@
 package com.stuntbyte.salesforce.deployment;
 
+import com.stuntbyte.salesforce.misc.FileUtil;
 import com.stuntbyte.salesforce.misc.LoginHelper;
 import com.stuntbyte.salesforce.misc.Reconnector;
 import com.sforce.soap.metadata.AsyncRequestState;
@@ -66,7 +67,8 @@ public class Deployer {
         File deploymentFile = File.createTempFile("SFDC", "zip");
         // System.out.println("Deployment file " + deploymentFile.getName());
 
-        ZipOutputStream out = new ZipOutputStream(new FileOutputStream(deploymentFile));
+        FileOutputStream fos = new FileOutputStream(deploymentFile);
+        ZipOutputStream out = new ZipOutputStream(fos);
 
         out.putNextEntry(new ZipEntry("package.xml"));
         out.write(deployment.getPackageXml().getBytes());
@@ -101,9 +103,11 @@ public class Deployer {
         }
 
         out.close();
+        fos.close();
 
         String deploymentId = deployZip(deploymentFile, deploymentOptions);
         checkDeploymentComplete(deploymentId, listener);
+        FileUtil.delete(deploymentFile);
     }
 
 
@@ -157,6 +161,7 @@ public class Deployer {
                             zipEntryName.lastIndexOf(".")));
                 }
             }
+            zf.close();
         }
 
         if (deploymentOptions.contains(DeploymentOptions.UNPACKAGED_TESTS)) {

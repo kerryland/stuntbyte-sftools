@@ -32,8 +32,8 @@ public class FileUtil {
     }
 
 
-  // http://www.salesforce.com/us/developer/docs/api_meta/Content/file_based.htm#component_folders_title
-    public static String determineDirectoryName(String typeName) throws Exception {
+    // http://www.salesforce.com/us/developer/docs/api_meta/Content/file_based.htm#component_folders_title
+    public static String determineDirectoryName(String typeName) {
         if (typeName.equalsIgnoreCase("ActionOverride")) return "objects";
         if (typeName.equalsIgnoreCase("ApexClass")) return "classes";
         if (typeName.equalsIgnoreCase("ArticleType")) return "objects";
@@ -108,4 +108,49 @@ public class FileUtil {
         return suffix;
     }
 
+
+    public static void delete(File file) throws IOException {
+
+        if (file.isDirectory()) {
+
+            //directory is empty, then delete it
+            if (file.list().length == 0) {
+                actuallyDelete(file);
+//                System.out.println("Directory is deleted : "
+//                        + file.getAbsolutePath());
+
+            } else {
+
+                //list all the directory contents
+                String files[] = file.list();
+
+                for (String temp : files) {
+                    //construct the file structure
+                    File fileDelete = new File(file, temp);
+
+                    //recursive delete
+                    delete(fileDelete);
+                }
+
+                //check the directory again, if empty then delete it
+                if (file.list().length == 0) {
+                    actuallyDelete(file);
+//                    System.out.println("Directory is deleted : "
+//                            + file.getAbsolutePath());
+                }
+            }
+
+        } else {
+            //if file, then delete it
+            actuallyDelete(file);
+//            System.out.println("File is deleted : " + file.getAbsolutePath());
+        }
+    }
+
+    private static void actuallyDelete(File file) throws IOException {
+        if (!file.delete()) {
+            throw new IOException("Unable to delete " + file.getAbsolutePath());
+        }
+
+    }
 }

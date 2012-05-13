@@ -121,23 +121,23 @@ public class DatabaseMetadataTest {
     }
 
 
-    @Test
-    public void testCatalogsDatabaseMetaData() throws Exception {
-
-        DatabaseMetaData metadata = conn.getMetaData();
-
-        ResultSet resultSet = metadata.getCatalogs();
-        while (resultSet.next()) {
-            String catalog = resultSet.getString("TABLE_CAT");
-            System.out.println("KJS CT1=" + catalog);
-        }
-
-        resultSet = metadata.getSchemas();
-        while (resultSet.next()) {
-            String catalog = resultSet.getString("TABLE_CATALOG");
-            System.out.println("KJS CT2=" + catalog);
-
-        }
-
-    }
+//    @Test
+//    public void testCatalogsDatabaseMetaData() throws Exception {
+//
+//        DatabaseMetaData metadata = conn.getMetaData();
+//
+//        ResultSet resultSet = metadata.getCatalogs();
+//        while (resultSet.next()) {
+//            String catalog = resultSet.getString("TABLE_CAT");
+//            System.out.println("KJS CT1=" + catalog);
+//        }
+//
+//        resultSet = metadata.getSchemas();
+//        while (resultSet.next()) {
+//            String catalog = resultSet.getString("TABLE_CATALOG");
+//            System.out.println("KJS CT2=" + catalog);
+//
+//        }
+//
+//    }
 }

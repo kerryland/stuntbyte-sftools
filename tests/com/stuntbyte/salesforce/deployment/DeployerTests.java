@@ -67,79 +67,21 @@ public class DeployerTests {
 
     private void checkit(int cnt, String msg, Set<Deployer.DeploymentOptions> deploymentOptions, boolean shouldDeploy) throws Exception {
 
+        LoginHelper lh = new LoginHelper(TestHelper.loginUrl,
+                TestHelper.username, TestHelper.password);
+
+        DeploymentTestHelper dth = new DeploymentTestHelper(lh);
         String source = "public class Wibble {\n" +
                 "   static testMethod void testIt() {\n" +
                 "      System.assertEquals(" + cnt + ", 1000);\n" +
                 "   }\n" +
                 "}";
 
-        deployCode(source, deploymentOptions);
+        dth.deployCode("Wibble", source, deploymentOptions);
 
-        String back = downloadCode();
+        String back = dth.downloadCode("Wibble.cls");
 
         boolean deployed = source.trim().equals(back);
         Assert.assertEquals("Test " + cnt + " expected to deploy code for " + msg, shouldDeploy, deployed);
     }
-
-
-    private DepListen deployCode(String code, Set<Deployer.DeploymentOptions> deploymentOptions) throws Exception {
-        Deployment deployment = new Deployment();
-        deployment.addMember("ApexClass", "Wibble", code,
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n" +
-                        "    <apiVersion>20.0</apiVersion>\n" +
-                        "    <status>Active</status>\n" +
-                        "</ApexClass>");
-
-        LoginHelper lh = new LoginHelper(TestHelper.loginUrl,
-                TestHelper.username, TestHelper.password);
-
-        DepListen depListen = new DepListen();
-
-        Reconnector reconnector = new Reconnector(lh);
-        Deployer deployer = new Deployer(reconnector);
-        deployer.deploy(deployment, depListen, deploymentOptions);
-
-        for (String error : depListen.errors) {
-            System.out.println("ERROR: " + error);
-        }
-        for (String error : depListen.messages) {
-            System.out.println("MESSAGE: " + error);
-        }
-
-        return depListen;
-    }
-
-
-    private String downloadCode() throws Exception {
-        Reconnector reconnector = new Reconnector(new LoginHelper(TestHelper.loginUrl,
-                TestHelper.username,
-                TestHelper.password
-        ));
-
-        File sourceSchemaDir = FileUtil.createTempDirectory("TEST");
-
-        DeploymentEventListener listener = new BaseDeploymentEventListener();
-        Downloader dl = new Downloader(reconnector, sourceSchemaDir, listener, null);
-        dl.addPackage("ApexClass", "Wibble");
-
-        dl.download();
-
-        return FileUtil.loadTextFile(new File(sourceSchemaDir, "classes/Wibble.cls"));
-    }
-
-
-    private class DepListen extends BaseDeploymentEventListener {
-        List<String> errors = new ArrayList<String>();
-        List<String> messages = new ArrayList<String>();
-
-        public void error(String message) throws Exception {
-            errors.add(message);
-        }
-
-        public void message(String message) throws IOException {
-            messages.add(message);
-        }
-    }
-
 }

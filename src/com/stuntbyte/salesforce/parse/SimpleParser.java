@@ -75,6 +75,10 @@ public class SimpleParser {
         return token.getValue();
     }
 
+    public String readLine() {
+        return al.readLine().getValue();
+    }
+
     public List<ParsedSelect> extractColumnsFromSoql() throws Exception {
         List<ParsedSelect> selects = new ArrayList<ParsedSelect>();
         ParsedSelect parsedSelect = new ParsedSelect();

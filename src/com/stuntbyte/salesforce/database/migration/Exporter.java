@@ -71,7 +71,7 @@ public class Exporter {
                             sb.append(col.getName());
 
 
-                            System.out.println("Check " + col.getTable().getName() + "." + col.getName() + " " + col.getName() + " " + jdbcType + " " + col.getType());
+//                            System.out.println("Check " + col.getTable().getName() + "." + col.getName() + " " + col.getName() + " " + jdbcType + " " + col.getType());
                             String typeName = dialect.getTypeName(jdbcType, col.getLength(), col.getPrecision(), col.getScale());
                             sb.append(" ");
                             sb.append(typeName);

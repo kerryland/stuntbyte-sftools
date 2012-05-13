@@ -5,6 +5,7 @@ import com.sforce.soap.metadata.AsyncResult;
 import java.io.IOException;
 
 /**
+ * For objects that are interested in the Deployment process
  */
 public interface DeploymentEventListener {
     void progress(String message) throws IOException;

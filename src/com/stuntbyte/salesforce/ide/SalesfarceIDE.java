@@ -415,7 +415,7 @@ public class SalesfarceIDE {
 
             CompileClassResult[] cr = compileTestResult.getClasses();
             for (CompileClassResult compileClassResult : cr) {
-                String failname = findFile(src, compileClassResult.getName(), filename);
+                String failname = findSourceFile(src, compileClassResult.getName(), filename);
                 if (compileClassResult.getProblem() != null) {
 
                     err(failname, compileClassResult.getLine(),
@@ -435,7 +435,7 @@ public class SalesfarceIDE {
 
             CompileTriggerResult[] tr = compileTestResult.getTriggers();
             for (CompileTriggerResult compileClassResult : tr) {
-                String failname = findFile(src, compileClassResult.getName(), filename);
+                String failname = findSourceFile(src, compileClassResult.getName(), filename);
                 if (compileClassResult.getProblem() != null) {
 
                     err(failname, compileClassResult.getLine(),
@@ -473,7 +473,7 @@ public class SalesfarceIDE {
                     if (nm.matches()) {
                         Matcher m = linePat.matcher(stack);
 
-                        String failname = findFile(src, nm.group(1), filename);
+                        String failname = findSourceFile(src, nm.group(1), filename);
                         String method = "";
                         if (nm.groupCount() > 1) {
                             method = nm.group(2);
@@ -617,7 +617,7 @@ public class SalesfarceIDE {
         output(err);
     }
 
-    private String findFile(String src, final String searchname, String compileFile) {
+    private String findSourceFile(String src, final String searchname, String compileFile) {
         File[] files = findDiskFile(src, "classes", searchname);
 
         if (files.length == 0) {

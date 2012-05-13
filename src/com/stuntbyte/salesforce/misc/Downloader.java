@@ -43,10 +43,10 @@ public class Downloader {
 
     /**
      *
-     * @param reconnector
-     * @param srcDir    -- optional
-     * @param listener
-     * @param crcFile   -- optional
+     * @param reconnector  Salesforce connection object
+     * @param srcDir       Where do we put the downloaded files. Optional
+     * @param listener     Who wants to know about the download progress
+     * @param crcFile      Where do we write crc values for the downloaded files. Optional
      * @throws IOException
      */
     public Downloader(Reconnector reconnector,
@@ -59,7 +59,9 @@ public class Downloader {
         this.crcFile = crcFile;
 
         if ((crcFile != null) && (crcFile.exists())) {
-            crcs.load(new FileReader(crcFile));
+            FileReader fr = new FileReader(crcFile);
+            crcs.load(fr);
+            fr.close();
         }
     }
 
@@ -106,7 +108,9 @@ public class Downloader {
             unzipFile(srcDir, zipFile);
             if (crcFile != null) {
                 updateCrcs(crcs, zipFile);
-                crcs.store(new FileWriter(crcFile), "Generated file");
+                FileWriter fw = new FileWriter(crcFile);
+                crcs.store(fw, "Generated file");
+                fw.close();
             }
         }
         return zipFile;
@@ -122,6 +126,7 @@ public class Downloader {
                 crcs.setProperty(f.getName(), String.valueOf(zipEntry.getCrc()));
             }
         }
+        zip.close();
     }
 
 
@@ -197,14 +202,22 @@ public class Downloader {
 //        System.out.println("Writing results to zip file");
         ByteArrayInputStream bais = new ByteArrayInputStream(result.getZipFile());
         FileOutputStream os = new FileOutputStream(resultsFile);
+        FileChannel dest = null;
+        ReadableByteChannel src = null;
         try {
-            ReadableByteChannel src = Channels.newChannel(bais);
-            FileChannel dest = os.getChannel();
+            src = Channels.newChannel(bais);
+            dest = os.getChannel();
             copy(src, dest);
 
             listener.message("Results written to " + resultsFile.getAbsolutePath());
         } finally {
             os.close();
+            if (dest != null) {
+                dest.close();
+            }
+            if (src != null) {
+                src.close();
+            }
         }
 
         return resultsFile;
@@ -212,23 +225,28 @@ public class Downloader {
 
 
     public void unzipFile(File srcDir, File zipFile) throws Exception {
-        BufferedOutputStream out = null;
-        ZipInputStream in = new ZipInputStream(new BufferedInputStream(new FileInputStream(zipFile)));
+
+        FileInputStream zis = new FileInputStream(zipFile);
+        ZipInputStream in = new ZipInputStream(new BufferedInputStream(zis));
         ZipEntry entry;
         while ((entry = in.getNextEntry()) != null) {
             int count;
             byte data[] = new byte[1000];
             File outputFile = new File(srcDir, entry.getName());
-//            outputFile.createNewFile();
             outputFile.getParentFile().mkdirs();
-            out = new BufferedOutputStream(new
-                    FileOutputStream(outputFile), 1000);
+
+            FileOutputStream fos = new FileOutputStream(outputFile);
+            BufferedOutputStream out = new BufferedOutputStream(fos, 1000);
             while ((count = in.read(data, 0, 1000)) != -1) {
                 out.write(data, 0, count);
             }
             out.flush();
             out.close();
+            fos.close();
+
         }
+        in.close();
+        zis.close();
     }
 
     /**

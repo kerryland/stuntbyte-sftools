@@ -3,21 +3,12 @@ package com.stuntbyte.salesforce.jdbc.ddl;
 import com.stuntbyte.salesforce.misc.BaseDeploymentEventListener;
 
 /**
- * Created by IntelliJ IDEA.
- * User: kerry
- * Date: 25/09/11
- * Time: 2:05 PM
- * To change this template use File | Settings | File Templates.
+ * Listen for deployments
  */
 public class DdlDeploymentListener extends BaseDeploymentEventListener {
 
     public StringBuilder errors;
     public StringBuilder messages;
-
-    public DdlDeploymentListener() {
-        errors = new StringBuilder();
-        messages = new StringBuilder();
-    }
 
     public DdlDeploymentListener(StringBuilder errors, StringBuilder messages) {
         this.errors = errors;

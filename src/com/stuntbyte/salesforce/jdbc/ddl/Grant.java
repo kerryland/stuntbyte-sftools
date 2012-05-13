@@ -6,6 +6,7 @@ import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.stuntbyte.salesforce.jdbc.metaforce.Table;
 import com.stuntbyte.salesforce.deployment.Deployment;
 import com.stuntbyte.salesforce.misc.Downloader;
+import com.stuntbyte.salesforce.misc.FileUtil;
 import com.stuntbyte.salesforce.misc.LoginHelper;
 import com.stuntbyte.salesforce.misc.Reconnector;
 import com.stuntbyte.salesforce.parse.SimpleParser;
@@ -129,7 +130,8 @@ public class Grant {
 
         final boolean allProfiles = addProfilesToPackage(grant, dl);
 
-        dl.download();
+        File downZip = dl.download();
+        FileUtil.delete(downZip);
 
         final Deployment dep = new Deployment();
 
@@ -283,7 +285,8 @@ public class Grant {
 
         final boolean allProfiles = addProfilesToPackage(grant, dl);
 
-        File zip = dl.download();
+        File downZip = dl.download();
+        FileUtil.delete(downZip);
 //        System.out.println("DOWNLOADED EXISTING PROFILES TO " + zip.getName());
 
         final Deployment dep = new Deployment();

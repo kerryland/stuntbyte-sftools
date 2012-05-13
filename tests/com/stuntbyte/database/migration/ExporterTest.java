@@ -92,8 +92,6 @@ public class ExporterTest {
         psfdc.setTimestamp(2, new Timestamp(cal.getTimeInMillis()));
         psfdc.addBatch();
 
-        System.out.println("Stored " + cal.getTimeInMillis());
-
         psfdc.setString(1, "Wibbles");
         cal.set(2010, Calendar.FEBRUARY, 15, 17, 0);
         psfdc.setTimestamp(2, new Timestamp(cal.getTimeInMillis()));
