@@ -385,7 +385,7 @@ public class Deployer {
             FileChannel dest = os.getChannel();
             copy(src, dest);
 
-            listener.message("Results written to " + resultsFile.getAbsolutePath());
+//            listener.message("Results written to " + resultsFile.getAbsolutePath());
         } finally {
             os.close();
         }

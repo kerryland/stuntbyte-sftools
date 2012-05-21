@@ -25,13 +25,7 @@ import com.sforce.soap.metadata.PackageTypeMembers;
 import com.sforce.soap.metadata.RetrieveRequest;
 import com.sforce.ws.ConnectionException;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.io.StringReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -67,137 +61,194 @@ public class SalesfarceIDE {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            usage();
-            System.exit(1);
-        }
+            usage("");
 
-        String argument = "";
-        String filename = args[0];
-        if (args[0].startsWith("-")) {
-            argument = args[0];
-            if (args.length > 1) {
-                filename = args[1];
+        } else {
+
+            String projectFile = args[0];
+
+            System.out.println("ProjectFile: " + projectFile);
+
+            for (int i = 0; i < args.length; i++) {
+                String arg = args[i];
+                System.out.println("ARG " + i + " is [" + arg + "]");
+            }
+            
+            if (!new File(projectFile).exists()) {
+                System.err.println("Project file does not exist: " + projectFile) ;
+                usage("");
+
+            } else {
+                String tagsFile = args[1];
+                String command = args[2];
+                String filename = null;
+                if (args.length == 4) {
+                    filename = args[3];
+                }
+
+                SalesfarceIDE ide = new SalesfarceIDE();
+
+                ide.doIt(projectFile, tagsFile, filename, command);
             }
         }
-        SalesfarceIDE ide = new SalesfarceIDE();
-
-        ide.doIt(filename, argument);
     }
 
-    private static void usage() {
-        String msg =
-                "ARGS:\n" +
-                        "\n" +
-                        "    <filename>           == upload and compile/test file\n" +
-                        "    -downloadall         == download 'everything'\n" +
-                        "    -download <filename> == download just this file\n" +
-                        "    -force    <filename> == force upload, regardless of crc\n" +
-                        "    -runtests            == run all tests for downloaded code";
+    private static void usage(String arg) {
+        String msg = "Unknown argument [" + arg + "]. Supported arguments:\n" +
+                        "<project-file> <tag-file> -compile  <filename> == upload and compile/test file\n" +
+                        "                          -force    <filename> == upload and compile/test file, regardless of crc failure\n" +
+                        "                          -downloadall         == download 'everything'\n" +
+                        "                          -download <filename> == download just this file\n" +
+                        "                          -delete <filename>   == delete this file\n" +
+                        "                          -runtests            == run all tests for downloaded code\n" +
+                        "                          -tag                 == regenerate tags";
         System.err.println(msg);
     }
 
 
-    private Properties loadConfig() throws Exception {
+    private Properties loadConfig(String projectFile) throws Exception {
         Properties prop = new Properties();
-        prop.load(new FileReader("build.properties"));
-        prop.load(new FileReader("local.build.properties"));
+        prop.load(new FileReader(projectFile));
         String server = prop.getProperty("sf.serverurl");
         String username = prop.getProperty("sf.username");
         String password = prop.getProperty("sf.password");
 
         loginHelper = new LoginHelper(server, username, password);
 
-//        metaDataConnection = loginHelper.getMetadataConnection();
         reconnector = new Reconnector(loginHelper);
         deployer = new Deployer(reconnector);
 
         return prop;
     }
 
-    private void doIt(String filename, String arg) throws Exception {
-        Properties prop = loadConfig();
-        String srcDirectory = prop.getProperty("src.dir");
-        String debugFile = prop.getProperty("debug.file");
-        String crcFileName = prop.getProperty("crc.file");
+
+    private void doIt(String projectFile, String tagsFile, String filename, String command) throws Exception {
+        Properties prop = loadConfig(projectFile);
+        String projectDir = new File(projectFile).getParent();
+        String srcDirectory = determineFilename(prop, projectDir, "src.dir", "force");
+        System.out.println("Source dir is " + srcDirectory);
+        new File(srcDirectory).mkdirs();
         
+        String debugFile = determineFilename(prop, srcDirectory, "debug.file", "debug.log");
+
+        String crcFileName = prop.getProperty("crc.file");
+        if (crcFileName == null || crcFileName.trim().length() == 0) {
+            crcFileName = "crc";
+        }
+        String ctags = prop.getProperty("ctags");
+
+        System.out.println("CRC file is at " + crcFileName);
+
         File crcFile = new File(crcFileName);
         if (!crcFile.exists()) {
             crcFile.createNewFile();
         }
 
-        String filenameNoPath = new File(filename).getName();
+
+
 //        File messageLogFile = File.createTempFile("vim", "log");
 //        messageLogFile.deleteOnExit();
 
 //        messageLog = new PrintWriter(messageLogFile);
 
+
+        System.out.println("WeeeeX " + command);
         try {
-            if (arg.equals("-download")) {
+            if (command.equals("-download")) {
                 downloadFile(srcDirectory, filename, crcFile);
-                return;
-            }
-            if (arg.equals("-downloadall")) {
+
+            } else if (command.equals("-downloadall")) {
                 downloadFiles(srcDirectory, crcFile);
-                return;
-            }
 
-//            if (arg.equals("-diff")) {
-//                doDiff();
-//                return;
-//            }
-
-            if (arg.equals("-runtests")) {
+            } else  if (command.equals("-runtests")) {
                 runTests(srcDirectory + "/classes");
-                return;
+
+            } else if (command.equals("-tag")) {
+                generateTags(srcDirectory, ctags, tagsFile);
+
+            } else if (command.equals("-compile") || command.equals("-force")) {
+                String filenameNoPath = new File(filename).getName();
+
+                doCompile(filename, command, prop, srcDirectory, debugFile, crcFile, filenameNoPath);
+
+            } else {
+                usage(command);
             }
 
-            // Download latest for checksum
-            PackageTypeMembers mems = new PackageTypeMembers();
-            String typeName = determineApexType(filename);
+        } finally {
+//            messageLog.close();
+        }
+    }
 
-            mems.setName(typeName);
-            String noSuffix = getNoSuffix(filename);
-            mems.setMembers(new String[]{noSuffix});
+    private String determineFilename(Properties prop, String srcDirectory, String propertyName, String defaultFilename) throws IOException {
+        String debugFile = prop.getProperty(propertyName);
+        System.out.println("Raw file=" + debugFile);
+        if (debugFile == null || debugFile.trim().length() == 0) {
+            File debugAsFile = new File(srcDirectory, defaultFilename);
+            debugFile = debugAsFile.getAbsolutePath();
+        }
+        return debugFile;
+    }
 
-            Package p = new Package();
-            p.setTypes(new PackageTypeMembers[]{mems});
-            RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
+    private void doCompile(String filename, String arg, Properties prop, String srcDirectory, String debugFile, File crcFile, String filenameNoPath) throws Exception {
+        if (filename.equals("")) {
+            throw new NullPointerException("Filename is undefined. arg is " + arg);
+        }
+        // Download latest for checksum
+        PackageTypeMembers mems = new PackageTypeMembers();
+        String typeName = determineApexType(filename);
 
-            Properties crcs = new Properties();
-            crcs.load(new FileReader(crcFile));
+        mems.setName(typeName);
+        String noSuffix = getNoSuffix(filename);
+        mems.setMembers(new String[]{noSuffix});
+
+        Package p = new Package();
+        p.setTypes(new PackageTypeMembers[]{mems});
+        RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
+
+        Properties crcs = new Properties();
+        crcs.load(new FileReader(crcFile));
 
 //        System.out.println("DOWNLOADING " + typeName + " - " + mems.getMembers()[0]);
 
 
-            // TODO: Use downloader.retrieveZip instead
-            File result = deployer.retrieveZip(retrieveRequest, listener);
-            ZipFile zip = new ZipFile(result);
-            CrcResults crcResults = pullCrcs(zip, crcs, filenameNoPath);
-            FileUtil.delete(result);
+        // TODO: Use downloader.retrieveZip instead
+        File result = deployer.retrieveZip(retrieveRequest, listener);
+        ZipFile zip = new ZipFile(result);
+        CrcResults crcResults = pullCrcs(zip, crcs, filenameNoPath);
+        FileUtil.delete(result);
 
-            boolean runTests = true;
-            boolean uploadCode = true;
+        boolean runTests = true;
+        boolean uploadCode = true;
 
-            if ((crcResults.serverCrc != null) && (crcResults.localCrc != null) &&
-                    (!crcResults.serverCrc.equals(crcResults.localCrc))) {
-                if (arg.equals("-force")) {
-                    output("Saving even though checksums mismatch");
-                    runTests = false;
+        if ((crcResults.serverCrc != null) && (crcResults.localCrc != null) &&
+                (!crcResults.serverCrc.equals(crcResults.localCrc))) {
+            if (arg.equals("-force")) {
+                output("Saving even though checksums mismatch");
+                runTests = false;
 
-                } else {
-                    err(filename, -1, -1, "E", "Code NOT saved due to checksum issue. Use -download to get latest or -force to force upload");
-                    uploadCode = false;
-                }
+            } else {
+                err(filename, -1, -1, "E", "Code NOT saved due to checksum issue. Use -download to get latest or -force to force upload");
+                uploadCode = false;
             }
+        }
 
-            if (uploadCode) {
-                uploadCode(filename, prop, srcDirectory, debugFile, filenameNoPath, crcs, retrieveRequest, runTests);
-                crcs.store(new FileWriter(crcFile), "Automatically generated for " + crcResults.crcKey);
-            }
+        if (uploadCode) {
+            uploadCode(filename, prop, srcDirectory, debugFile, filenameNoPath, crcs, retrieveRequest, runTests);
+            crcs.store(new FileWriter(crcFile), "Automatically generated for " + crcResults.crcKey);
+        }
+    }
 
-//        System.out.println("STORED CRC OF " + crcResults.serverCrc);
-        } finally {
-//            messageLog.close();
+    private void generateTags(String srcDirectory, String ctags, String tagsFile) throws Exception {
+        Runtime r = Runtime.getRuntime();
+        String cmd = ctags + " -f " + tagsFile + " " + srcDirectory ;
+        Process p = r.exec(cmd);
+        p.waitFor();
+        BufferedReader b = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+        String line = "";
+
+        while ((line = b.readLine()) != null) {
+            System.out.println(line);
         }
     }
 

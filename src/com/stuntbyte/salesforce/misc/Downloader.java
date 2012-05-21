@@ -104,6 +104,8 @@ public class Downloader {
         File zipFile = retrieveZip(retrieveRequest, listener);
         // Find our file and rewrite the local one
 
+        System.out.println("zipfile=" + zipFile);
+
         if (srcDir != null) {
             unzipFile(srcDir, zipFile);
             if (crcFile != null) {
@@ -209,7 +211,7 @@ public class Downloader {
             dest = os.getChannel();
             copy(src, dest);
 
-            listener.message("Results written to " + resultsFile.getAbsolutePath());
+//            listener.message("Results written to " + resultsFile.getAbsolutePath());
         } finally {
             os.close();
             if (dest != null) {
@@ -233,6 +235,7 @@ public class Downloader {
             int count;
             byte data[] = new byte[1000];
             File outputFile = new File(srcDir, entry.getName());
+            System.out.println("Unzip " + entry.getName() + " to " + srcDir.getAbsolutePath());
             outputFile.getParentFile().mkdirs();
 
             FileOutputStream fos = new FileOutputStream(outputFile);

@@ -44,6 +44,78 @@ HOW: (ie: INSTALLATION INSTRUCTIONS)
 ----
 Via a combination of the VIM editor, CTAGS, and Salesforce's "Apex" API.
 
+sudo apt-get install exuberant-ctags
+
+edit ide.properties
+
+1. set $STUNTBYTE_JAR
+2. set $STUNTBYTE_PROJ (defines the project you want to work with)
+3. vim -S vimrc        (TODO: Rename!)
+
+
+
+
+
+Sublime:
+--------
+
+https://github.com/SublimeText/CTags
+
+cd  ~/.config/sublime-text-2/Packages/
+git clone https://github.com/SublimeText/CTags CTags
+
+ctrl-alt ]
+ctrl-alt [
+
+http://blog.stuartherbert.com/php/2012/02/28/setting-up-sublime-text-2-for-php-development/
+http://www.rockettheme.com/magazine/1319-using-sublime-text-2-for-development
+http://docs.sublimetext.info/en/latest/reference/build_systems.html
+
+{
+	"cmd": [
+      "java",
+      "-cp",
+      "/media/Local_Disk/work/kerry-dev/farce-ide/stuntbyte-sfdc-1.3.jar",
+      "com.stuntbyte.salesforce.ide.SalesfarceIDE",
+      "$file"],
+
+	"file_regex": "^(...*?)>([0-9]*):?([0-9]*)(.*)",
+    // "working_dir": "/media/Local_Disk/work/kerry-dev/farce-ide/editors"
+	 "working_dir": "${project_path:${folder}}"
+	// "selector": [ "source.cls", "source.trigger " ],
+
+	// "working_Dir" : "$project_path"
+
+}
+
+[
+{
+"keys": ["ctrl+alt+x"],
+            "command": "set_setting",
+            "args":
+            {
+                "setting": "color_scheme",
+                "value": "Packages/Color Scheme - Default/Amy.tmTheme"
+            }
+
+}
+]
+
+
+F7 compiles
+
+{
+	"build_systems":
+	[
+		{
+			"name": "my build",
+			"cmd": ["java", "-cp", "classes:/media/Local_Disk/work/kerry-dev/farce-ide/stuntbyte-sfdc-1.3.jar:.", "com.stuntbyte.salesforce.ide.SalesfarceIDE", "$file"],
+			"file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)"
+		}
+	]
+
+}
+
 
 COMPILATION:
 
@@ -71,6 +143,9 @@ COMPILATION:
 5. JUNIT: https://github.com/KentBeck/junit/downloads
 
 6. H2: http://www.h2database.com/html/download.html
+
+
+
 
   
 

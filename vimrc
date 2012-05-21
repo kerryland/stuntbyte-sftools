@@ -1,3 +1,4 @@
+
 " Generic vim options that I like
 set nocompatible
 set hls
@@ -8,8 +9,8 @@ set tabstop=4
 set shiftwidth=4
 set ignorecase
 set smartcase
-set laststatus=2
-set shortmess+=T
+"set laststatus=2
+"set shortmess+=T
 syntax on
 
 " Add local "vimfiles" directory for file type detection
@@ -22,9 +23,17 @@ else
    let delim=':'
 endif
 
+" Define tag file location
+" let tagfile = fnamemodify($STUNTBYTE_PROJ, ":p:h") . '/tags'
+let tagfile = $STUNTBYTE_PROJ . '.tags'
+execute ":set tags=" . tagfile
+
+
 " Setup :mak command. It likes spaces to be escaped:
-let runIde='java\ -cp\ classes' . delim . 'c:/apps/sql-workbench/drivers/sfdc-kjs-driver-2.jar' . delim . '.\ com.fidelma.salesforce.ide.SalesfarceIDE\ '
-execute ":set makeprg=" . runIde . "%"
+let runIde='java\ -cp\ ' . delim . $STUNTBYTE_JAR . '\ com.stuntbyte.salesforce.ide.SalesfarceIDE\ ' . $STUNTBYTE_PROJ . '\ ' . '\ ' . tagfile . '\ '
+let compile = runIde . '-compile\ '
+execute ":set makeprg=" . compile . "%"
+
 
 " Define the error format we use
 set errorformat=%f>%l:%c:%t:%n:%m
@@ -33,9 +42,9 @@ set errorformat=%f>%l:%c:%t:%n:%m
 let runIde=substitute(runIde, "\\", "", "g")
 
 
-" Setup more-or-less friendly UTF-8 fields fonts
+" Setup more-or-less friendly UTF-8 fields fonts on Windows
 " (there are still issues with more exotic characters though)
-set guifont=courier_new:h10
+"set guifont=courier_new:h10
 set enc=utf-8
 
 " Try to make .page files use HTML syntax for highlighting
@@ -85,4 +94,4 @@ map <F12> :%s,static /\*testMethod\*/ void,static testMethod void,<CR> " Enable 
 execute "map ,d :!" . runIde . " -download %<CR>"
 execute "map ,da :!" . runIde . " -downloadall<CR>"
 execute "map ,uf :!" . runIde . " -force %<CR>"
-execute "map ,tag :!ant tag<CR>"
+execute "map ,tag :!" . runIde . " -tag<CR>"

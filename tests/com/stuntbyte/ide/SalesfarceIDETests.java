@@ -26,8 +26,9 @@ public class SalesfarceIDETests {
     @BeforeClass
     public static void oneTimeSetUp() throws Exception {
         Properties prop = new Properties();
-        prop.load(new FileReader("build.properties"));
-        prop.load(new FileReader("local.build.properties"));
+//        prop.load(new FileReader("build.properties"));
+//        prop.load(new FileReader("local.build.properties"));
+        prop.load(new FileReader("ide.properties"));
 
         srcDirectory = prop.getProperty("src.dir");
 
@@ -65,7 +66,7 @@ public class SalesfarceIDETests {
 
         // Upload the class
         System.out.println("Trying to upload");
-        SalesfarceIDE.main(new String[] {"-force", fileName});
+        SalesfarceIDE.main(new String[] {"ide.properties", "tags", "-force", fileName});
         System.out.println("Trying to upload... done");
 
         // Edit a class
@@ -77,13 +78,13 @@ public class SalesfarceIDETests {
         writeCode(simpleClass, fileName);
 
         // Upload a class
-        SalesfarceIDE.main(new String[]{fileName});
+        SalesfarceIDE.main(new String[]{"ide.properties", "tags", "-compile", fileName});
 
         // Delete the file locally
         Assert.assertTrue(new File(fileName).delete());
 
         // See if we can download it
-        SalesfarceIDE.main(new String[] {"-download", fileName});
+        SalesfarceIDE.main(new String[] {"ide.properties", "tags", "-download", fileName});
         Assert.assertTrue(new File(fileName).exists());
 
 
@@ -126,22 +127,25 @@ public class SalesfarceIDETests {
     private void testPage(String fileName) throws Exception {
         String simplePage;
 
-        // Upload the class
-        SalesfarceIDE.main(new String[]{fileName});
+        // First download it
+        SalesfarceIDE.main(new String[] {"ide.properties", "tags", "-download", fileName});
+        Assert.assertTrue(new File(fileName).exists());
 
         // Edit a class
         simplePage = "<apex:page>CHANGED</apex:page>";
         writeCode(simplePage, fileName);
 
         // Upload a class
-        SalesfarceIDE.main(new String[] {fileName});
+        SalesfarceIDE.main(new String[] {"ide.properties", "tags",  "-compile", fileName});
 
         // Delete the file locally
         Assert.assertTrue(new File(fileName).delete());
 
-        // See if we can download it
-        SalesfarceIDE.main(new String[] {"-download", fileName});
+        // See if we can download it after deleting it from the file system
+        SalesfarceIDE.main(new String[] {"ide.properties", "tags", "-download", fileName});
         Assert.assertTrue(new File(fileName).exists());
+
+        // TODO: Look at the content! File existing is a nice start, but really not enough
 
 
         // Change a class -- and delete CRC file
