@@ -1,0 +1,12 @@
+[
+
+        { "caption": "-" },
+	    {"caption": "Salesforce Download", "command": "salesforce", 
+	    	"args": {"cmd": "-download","file": "x" }},
+	    {"caption": "Salesforce Compile/Test", "command": "salesforce", 
+	    	"args": {"cmd" : "-compile","file": "x" }} ,
+ 	    {"caption": "Salesforce Force Upload", "command": "salesforce", 
+	    	"args": {"cmd" : "-force","file": "x" }} ,
+    	{ "caption": "-" }
+
+]

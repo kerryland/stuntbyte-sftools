@@ -133,7 +133,7 @@ public class SalesfarceIDE {
 
         String crcFileName = prop.getProperty("crc.file");
         if (crcFileName == null || crcFileName.trim().length() == 0) {
-            crcFileName = "crc";
+            crcFileName = "crcFileUF";
         }
         String ctags = prop.getProperty("ctags");
 
@@ -182,7 +182,6 @@ public class SalesfarceIDE {
 
     private String determineFilename(Properties prop, String srcDirectory, String propertyName, String defaultFilename) throws IOException {
         String debugFile = prop.getProperty(propertyName);
-        System.out.println("Raw file=" + debugFile);
         if (debugFile == null || debugFile.trim().length() == 0) {
             File debugAsFile = new File(srcDirectory, defaultFilename);
             debugFile = debugAsFile.getAbsolutePath();

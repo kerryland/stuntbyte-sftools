@@ -1,0 +1,16 @@
+[
+{
+	"id": "project",
+	"children":
+	[
+        { "caption": "-" },
+	    {"caption": "Salesforce Retag", "command": "salesforce", 
+	    	"args": {"cmd": "-tag","file": "x" }},
+	    {"caption": "Salesforce Download All", "command": "salesforce", 
+	    	"args": {"cmd" : "-downloadall","file": "x" }},
+	    {"caption": "Salesforce Test All", "command": "salesforce", 
+	    	"args": {"cmd" : "-runtests","file": "x" }} 
+
+	]
+}
+]

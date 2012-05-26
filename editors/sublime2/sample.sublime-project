@@ -1,0 +1,12 @@
+{
+	"folders":
+	[
+		{
+			"path": "force",
+            "file_exclude_patterns": ["*-meta.xml"]
+		}
+	], 
+ 
+ 
+	"stuntbyte_proj" : "/media/Local_Disk/work/kerry-dev/farce-ide/editors/ide.properties"
+}
