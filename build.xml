@@ -161,10 +161,13 @@
 
             <!---keep class * implements java.sql.**-->
 
-            -keep class com.sforce.soap.**
+            -keep class com.sforce.** { *; }
             -keep public enum * { *; }
 
             -keep class * implements java.sql.Driver
+            -keep class com.stuntbyte.salesforce.ide.SalesfarceIDE {
+                public static void main(java.lang.String[]);
+            }
 
             -injars      ${outputfile}
             -outjars     pro-${outputfile}

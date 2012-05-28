@@ -15,7 +15,7 @@ public class DeploymentTests {
     @Test
     public void testDeployment() throws Exception {
 
-        Deployment deployment = new Deployment();
+        Deployment deployment = new Deployment(22d);
         deployment.addMember("ApexClass", "Wibble", "class Wibble {}", null);
         deployment.addMember("ApexClass", "Wobble", "class Wobble {}", null);
         deployment.dropMember("ApexClass", "DeadMeat");

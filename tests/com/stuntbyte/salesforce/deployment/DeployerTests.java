@@ -68,7 +68,7 @@ public class DeployerTests {
     private void checkit(int cnt, String msg, Set<Deployer.DeploymentOptions> deploymentOptions, boolean shouldDeploy) throws Exception {
 
         LoginHelper lh = new LoginHelper(TestHelper.loginUrl,
-                TestHelper.username, TestHelper.password);
+                TestHelper.username, TestHelper.password, 22d);
 
         DeploymentTestHelper dth = new DeploymentTestHelper(lh);
         String source = "public class Wibble {\n" +

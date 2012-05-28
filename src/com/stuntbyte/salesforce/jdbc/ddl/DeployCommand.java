@@ -520,7 +520,7 @@ public class DeployCommand {
 
 
     private void doStart() throws Exception {
-        deployment = new Deployment();
+        deployment = new Deployment(reconnector.getSfVersion());
     }
 
 

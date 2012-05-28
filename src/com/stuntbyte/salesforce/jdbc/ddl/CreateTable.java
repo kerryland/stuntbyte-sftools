@@ -63,7 +63,7 @@ public class CreateTable {
         try {
             final StringBuilder deployError = new StringBuilder();
             Deployer deployer = new Deployer(reconnector);
-            Deployment deployment = new Deployment();
+            Deployment deployment = new Deployment(reconnector.getSfVersion());
 
             for (Table table : tables) {
                 String xml = createMetadataXml(table);

@@ -67,13 +67,6 @@ public class SalesfarceIDE {
 
             String projectFile = args[0];
 
-            System.out.println("ProjectFile: " + projectFile);
-
-            for (int i = 0; i < args.length; i++) {
-                String arg = args[i];
-                System.out.println("ARG " + i + " is [" + arg + "]");
-            }
-            
             if (!new File(projectFile).exists()) {
                 System.err.println("Project file does not exist: " + projectFile) ;
                 usage("");
@@ -112,8 +105,13 @@ public class SalesfarceIDE {
         String server = prop.getProperty("sf.serverurl");
         String username = prop.getProperty("sf.username");
         String password = prop.getProperty("sf.password");
+        String sfVersionStr = prop.getProperty("api.version");
+        Double sfVersion = 22d;
+        if (sfVersionStr != null) {
+            sfVersion = Double.valueOf(sfVersionStr);
+        }
 
-        loginHelper = new LoginHelper(server, username, password);
+        loginHelper = new LoginHelper(server, username, password, sfVersion);
 
         reconnector = new Reconnector(loginHelper);
         deployer = new Deployer(reconnector);
@@ -126,33 +124,26 @@ public class SalesfarceIDE {
         Properties prop = loadConfig(projectFile);
         String projectDir = new File(projectFile).getParent();
         String srcDirectory = determineFilename(prop, projectDir, "src.dir", "force");
-        System.out.println("Source dir is " + srcDirectory);
         new File(srcDirectory).mkdirs();
         
         String debugFile = determineFilename(prop, srcDirectory, "debug.file", "debug.log");
 
         String crcFileName = prop.getProperty("crc.file");
         if (crcFileName == null || crcFileName.trim().length() == 0) {
-            crcFileName = "crcFileUF";
+            crcFileName = determineFilename(prop, srcDirectory, "crc.file", "crcFile");
         }
         String ctags = prop.getProperty("ctags");
-
-        System.out.println("CRC file is at " + crcFileName);
 
         File crcFile = new File(crcFileName);
         if (!crcFile.exists()) {
             crcFile.createNewFile();
         }
 
-
-
 //        File messageLogFile = File.createTempFile("vim", "log");
 //        messageLogFile.deleteOnExit();
 
 //        messageLog = new PrintWriter(messageLogFile);
 
-
-        System.out.println("WeeeeX " + command);
         try {
             if (command.equals("-download")) {
                 downloadFile(srcDirectory, filename, crcFile);
@@ -449,11 +440,12 @@ public class SalesfarceIDE {
             }
         }
 
-
         LogInfo[] lis = new LogInfo[logInfos.size()];
         logInfos.toArray(lis);
 
-        connection.setDebuggingHeader(lis, LogType.valueOf("None"));
+
+//        connection.setDebuggingHeader(lis, LogType.valueOf("None"));
+        connection.setDebuggingHeader(lis, LogType.Detail);
 
         CompileAndTestResult compileTestResult = connection.compileAndTest(request);
 

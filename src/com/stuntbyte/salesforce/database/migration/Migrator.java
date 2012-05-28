@@ -157,9 +157,12 @@ public class Migrator {
 
 
 // Decide what to remove
-        Deployment undeploy = new Deployment();
+
 //        MetadataConnection metadataConnection = targetInstance.getHelper().getMetadataConnection();
         Reconnector reconnector = new Reconnector(targetInstance.getHelper());
+
+        Deployment undeploy = new Deployment(reconnector.getSfVersion());
+
 
         List<ListMetadataQuery> queryList = new ArrayList<ListMetadataQuery>();
         for (String m : metaDataToDelete) {
@@ -203,7 +206,7 @@ public class Migrator {
 
         FileProperties[] props = metadataConnection.listMetadata(
                 queries,
-                LoginHelper.SFDC_VERSION);
+                metadataConnection.getSfVersion());
 
         for (FileProperties prop : props) {
             undeploy.addMember(prop.getType(), prop.getFullName(), null, null);

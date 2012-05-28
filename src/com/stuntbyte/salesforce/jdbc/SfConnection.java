@@ -55,7 +55,7 @@ public class SfConnection implements java.sql.Connection {
         this.server = server;
         this.username = username;
         this.info = info;
-        helper = new LoginHelper(server, username, password, licenceKey);
+        helper = new LoginHelper(server, username, password, licenceKey, 22d);  // TODO: Put version info "info"
 
         if (licenceKey == null) {
             throw new SQLException("No licence information found");

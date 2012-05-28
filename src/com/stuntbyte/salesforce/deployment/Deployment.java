@@ -29,12 +29,17 @@ import java.util.TreeSet;
  */
 public class Deployment {
 
+    private double sfVersion;
 
     private Map<String, Set<String>> typesToDeploy = new HashMap<String, Set<String>>();
     private Map<String, Set<String>> typesToDrop = new HashMap<String, Set<String>>();
     private List<DeploymentResource> deploymentResources = new ArrayList<DeploymentResource>();
 //    private boolean assembled;
 
+
+    public Deployment(double sfVersion) {
+        this.sfVersion = sfVersion;
+    }
 
     // Does NOT store the member in the package.xml. Useful when working with CustomFields
     public void addDeploymentResource(String typeName, String member, String code, String metaData) throws Exception {
@@ -104,7 +109,7 @@ public class Deployment {
 
             addTextElement(doc, typesNode, "name", typeName);
         }
-        addTextElement(doc, packge, "version", "" + LoginHelper.WSDL_VERSION);
+        addTextElement(doc, packge, "version", "" + sfVersion);
 
         StringWriter sw = new StringWriter();
         StreamResult result = new StreamResult(sw);

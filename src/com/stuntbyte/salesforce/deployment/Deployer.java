@@ -53,7 +53,7 @@ public class Deployer {
         filename = new File(filename).getName();
         String nonSuffixedFilename = filename.substring(0, filename.lastIndexOf("."));
 
-        Deployment deployment = new Deployment();
+        Deployment deployment = new Deployment(reconnector.getSfVersion());
         deployment.addMember(nonCodeType, nonSuffixedFilename, code, metaData);
 
         deploy(deployment, listener);
@@ -168,7 +168,7 @@ public class Deployer {
             ListMetadataQuery mdq = new ListMetadataQuery();
             mdq.setType("ApexClass");
 
-            FileProperties[] codeFiles = reconnector.listMetadata(new ListMetadataQuery[]{mdq}, LoginHelper.SFDC_VERSION);
+            FileProperties[] codeFiles = reconnector.listMetadata(new ListMetadataQuery[]{mdq}, reconnector.getSfVersion());
             for (FileProperties fileProperties : codeFiles) {
                 testFiles.add(fileProperties.getFullName());
             }

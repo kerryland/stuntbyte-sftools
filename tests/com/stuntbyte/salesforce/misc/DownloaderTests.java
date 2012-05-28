@@ -15,7 +15,7 @@ public class DownloaderTests {
     public void testDownload() throws Exception {
 
         LoginHelper lh = new LoginHelper(TestHelper.loginUrl,
-                TestHelper.username, TestHelper.password, TestHelper.licence);
+                TestHelper.username, TestHelper.password, TestHelper.licence, 22d);
 
         String dir = System.getProperty("java.io.tmpdir");
         File crcFile = File.createTempFile("CRC", "x");

@@ -133,7 +133,7 @@ public class Grant {
         File downZip = dl.download();
         FileUtil.delete(downZip);
 
-        final Deployment dep = new Deployment();
+        final Deployment dep = new Deployment(reconnector.getSfVersion());
 
         foreachProfile(sourceSchemaDir, new ProfileProcessor() {
             public void processProfileXml(Document doc, File profileFile) throws Exception {
@@ -289,7 +289,7 @@ public class Grant {
         FileUtil.delete(downZip);
 //        System.out.println("DOWNLOADED EXISTING PROFILES TO " + zip.getName());
 
-        final Deployment dep = new Deployment();
+        final Deployment dep = new Deployment(reconnector.getSfVersion());
 
         foreachProfile(sourceSchemaDir, new ProfileProcessor() {
             public void processProfileXml(Document doc, File profileFile) throws Exception {
@@ -370,7 +370,7 @@ public class Grant {
             ListMetadataQuery lmdq = new ListMetadataQuery();
             lmdq.setType("Profile");
 
-            FileProperties[] metadata = reconnector.listMetadata(new ListMetadataQuery[]{lmdq}, LoginHelper.WSDL_VERSION);
+            FileProperties[] metadata = reconnector.listMetadata(new ListMetadataQuery[]{lmdq}, reconnector.getSfVersion());
             for (int i = 0; i < metadata.length; i++) {
                 FileProperties fileProperties = metadata[i];
                 profileNames.add(fileProperties.getFullName());

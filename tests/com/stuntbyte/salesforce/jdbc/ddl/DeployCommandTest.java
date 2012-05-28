@@ -78,7 +78,7 @@ public class DeployCommandTest {
     public void testReplacements() throws Exception {
 
         LoginHelper lh = new LoginHelper(TestHelper.loginUrl,
-                TestHelper.username, TestHelper.password);
+                TestHelper.username, TestHelper.password, 22d);
 
         DeploymentTestHelper dth = new DeploymentTestHelper(lh);
 

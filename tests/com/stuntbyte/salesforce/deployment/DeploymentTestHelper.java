@@ -24,7 +24,7 @@ public class DeploymentTestHelper {
     }
 
     public DepListen deployCode(String className, String code, Set<Deployer.DeploymentOptions> deploymentOptions) throws Exception {
-        Deployment deployment = new Deployment();
+        Deployment deployment = new Deployment(22d);
         deployment.addMember("ApexClass", className, code,
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                         "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n" +
@@ -53,7 +53,7 @@ public class DeploymentTestHelper {
     }
 
     public void dropCode(String className) throws Exception {
-        Deployment deployment = new Deployment();
+        Deployment deployment = new Deployment(22d);
         deployment.dropMember("ApexClass", className);
 
         deploy(new HashSet<Deployer.DeploymentOptions>(), deployment);

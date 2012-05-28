@@ -125,7 +125,7 @@ public class MetadataServiceImpl implements MetadataService {
                     queries[0] = mq;
                     FileProperties[] props;
                     try {
-                        props = reconnector.listMetadata(queries, LoginHelper.SFDC_VERSION);
+                        props = reconnector.listMetadata(queries, reconnector.getSfVersion());
 
                         for (FileProperties prop : props) {
                             String name;

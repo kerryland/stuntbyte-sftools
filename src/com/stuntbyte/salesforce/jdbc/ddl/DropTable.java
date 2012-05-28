@@ -60,7 +60,7 @@ public class DropTable {
         Deployer deployer = new Deployer(reconnector);
         final StringBuilder deployError = new StringBuilder();
 
-        Deployment deployment = new Deployment();
+        Deployment deployment = new Deployment(reconnector.getSfVersion());
 
         try {
             for (String tableName : tablesToDrop) {

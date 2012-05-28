@@ -31,7 +31,7 @@ public class DropColumn {
 
 
     public void createMetadataXml(String tableName, String columnName) throws Exception {
-        Deployment deployment = new Deployment();
+        Deployment deployment = new Deployment(reconnector.getSfVersion());
         deployment.dropMember("CustomField", tableName + "." + columnName);
 
         Deployer deployer = new Deployer(reconnector);

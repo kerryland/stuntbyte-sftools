@@ -29,21 +29,23 @@ public class LoginHelper {
 
     private boolean trace = false;
 
-    public static final double SFDC_VERSION = 22D;
-    public static final double WSDL_VERSION = 22D;
+//    public static final double SFDC_VERSION = 22D;
+//    public static final double WSDL_VERSION = 22D;
+    private double sfVersion;
 
     private MetadataConnection metadataConnection;
     private PartnerConnection partnerConnection;
 
-    public LoginHelper(String server, String username, String password) {
-        this(server, username, password, null);
+    public LoginHelper(String server, String username, String password, double sfVersion) {
+        this(server, username, password, null, sfVersion);
     }
 
-    public LoginHelper(String server, String username, String password, String key) {
+    public LoginHelper(String server, String username, String password, String key, double sfVersion) {
         this.server = server;
         this.username = username;
         this.password = password;
         this.key = key;
+        this.sfVersion = sfVersion;
     }
 
     public void reconnect() {
@@ -63,9 +65,9 @@ public class LoginHelper {
         if (!serverEndpoint.contains("/services/Soap/u/")) {
             if (!serverEndpoint.endsWith("/"))
                 serverEndpoint = (new StringBuilder()).append(serverEndpoint).append("/").toString();
-            serverEndpoint = (new StringBuilder()).append(serverEndpoint).append("services/Soap/u/").append(WSDL_VERSION).toString();
-        } else if (!serverEndpoint.endsWith(String.valueOf(WSDL_VERSION)))
-            throw new RuntimeException("Server URL should point to API Version: " + WSDL_VERSION);
+            serverEndpoint = (new StringBuilder()).append(serverEndpoint).append("services/Soap/u/").append(getSfVersion()).toString();
+        } else if (!serverEndpoint.endsWith(String.valueOf(getSfVersion())))
+            throw new RuntimeException("Server URL should point to API Version: " + getSfVersion());
         cc.setAuthEndpoint(serverEndpoint);
         cc.setServiceEndpoint(serverEndpoint);
 
@@ -109,7 +111,7 @@ public class LoginHelper {
         String endpoint = lResult.getServerUrl();
         int baseUrl = endpoint.indexOf("/services/Soap/u");
         String serviceUrl = endpoint.substring(0, baseUrl);
-        cc.setServiceEndpoint((new StringBuilder()).append(serviceUrl).append("/services/Soap/s/").append(WSDL_VERSION).toString());
+        cc.setServiceEndpoint((new StringBuilder()).append(serviceUrl).append("/services/Soap/s/").append(getSfVersion()).toString());
         SoapConnection soapConnection = com.sforce.soap.apex.Connector.newConnection(cc);
         return soapConnection;
     }
@@ -191,5 +193,9 @@ public class LoginHelper {
 
     public LicenceResult getLicenceResult() {
         return licenceResult;
+    }
+
+    public double getSfVersion() {
+        return sfVersion;
     }
 }
