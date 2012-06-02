@@ -3,10 +3,11 @@
 	[
 		{
 			"path": "force",
-            "file_exclude_patterns": ["*-meta.xml"]
+			"file_exclude_patterns": ["*-meta.xml"]
 		}
-	], 
- 
- 
-	"stuntbyte_proj" : "/media/Local_Disk/work/kerry-dev/farce-ide/editors/ide.properties"
+	],
+	"settings":
+	{
+			"ide.properties": "/tmp/projects/ide.properties"
+	}
 }

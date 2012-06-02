@@ -51,8 +51,6 @@ import java.util.zip.ZipFile;
 public class SalesfarceIDE {
 
 
-    private double apiversion = 20d; // TODO:
-
     private LoginHelper loginHelper;
     private Deployer deployer;
     private SimpleListener listener = new SimpleListener();
@@ -611,7 +609,7 @@ public class SalesfarceIDE {
 
     private RetrieveRequest prepareRequest(boolean isSinglePackage, String packageNames[], Package componentManifest) {
         RetrieveRequest retrieveRequest = new RetrieveRequest();
-        retrieveRequest.setApiVersion(apiversion);
+        retrieveRequest.setApiVersion(loginHelper.getSfVersion());
         retrieveRequest.setSinglePackage(isSinglePackage);
         if (packageNames != null && packageNames.length > 0)
             retrieveRequest.setPackageNames(packageNames);

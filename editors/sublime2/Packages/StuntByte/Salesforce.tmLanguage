@@ -8,11 +8,14 @@
 		<string>trigger</string>
 	</array>
 
-	<key>name</key>
-	<string>Salesforce</string>
 
 	<key>include</key>
 	<string>java.source</string>
 
+	<key>name</key>
+	<string>Salesforce</string>
+
+        <key>scopeName</key>
+        <string>source.salesforce</string>
 </dict>
 </plist>
