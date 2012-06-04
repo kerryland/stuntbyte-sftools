@@ -26,6 +26,7 @@
 
 
     <target name="test" depends="compile" description="Run unit tests">
+        <mkdir dir="tmp/classes"/>
         <javac srcdir="tests"
                destdir="tmp/classes"
                debug="on">

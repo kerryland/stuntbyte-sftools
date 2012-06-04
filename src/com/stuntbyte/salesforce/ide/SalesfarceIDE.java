@@ -119,11 +119,13 @@ public class SalesfarceIDE {
 
 
     private void doIt(String projectFile, String tagsFile, String filename, String command) throws Exception {
+        System.out.println("Executing " + command);
         Properties prop = loadConfig(projectFile);
         String projectDir = new File(projectFile).getParent();
         String srcDirectory = determineFilename(prop, projectDir, "src.dir", "force");
-        new File(srcDirectory).mkdirs();
-        
+        File srcDirFile = new File(srcDirectory);
+        srcDirFile.mkdirs();
+
         String debugFile = determineFilename(prop, srcDirectory, "debug.file", "debug.log");
 
         String crcFileName = prop.getProperty("crc.file");
@@ -141,6 +143,8 @@ public class SalesfarceIDE {
 //        messageLogFile.deleteOnExit();
 
 //        messageLog = new PrintWriter(messageLogFile);
+
+//        System.out.println(command + " with tagfile " + tagsFile);
 
         try {
             if (command.equals("-download")) {

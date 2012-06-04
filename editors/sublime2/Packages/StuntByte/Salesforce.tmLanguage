@@ -2,20 +2,30 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>name</key>
+	<string>Salesforce</string>
+
+	<key>scopeName</key>
+	<string>source.salesforce</string>
+
 	<key>fileTypes</key>
 	<array>
 		<string>cls</string>
 		<string>trigger</string>
 	</array>
 
+    <key>patterns</key>
+    <array>
+			<dict>
+        	<key>include</key>
+         	<string>source.java</string>
+	      	</dict>
+    </array>
 
-	<key>include</key>
-	<string>java.source</string>
 
-	<key>name</key>
-	<string>Salesforce</string>
+	<key>uuid</key>
+	<string>c128b040-ade9-11e1-afa6-0800200c9a66</string>
 
-        <key>scopeName</key>
-        <string>source.salesforce</string>
 </dict>
+
 </plist>

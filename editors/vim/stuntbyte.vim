@@ -11,7 +11,7 @@ else
 endif
 
 " Setup :mak command. It likes spaces to be escaped:
-let runIde='java\ -cp\ classes' . delim . 'stuntbyte-sfdc-1.3.jar\ com.stuntbyte.salesforce.ide.SalesfarceIDE\ ide.properties\ tags\ '
+let runIde='java\ -cp\ classes' . delim . 'stuntbyte-sfdc-1.4.jar\ com.stuntbyte.salesforce.ide.SalesfarceIDE\ ide.properties\ tags\ '
 let mak=runIde . '-compile\ '
 execute ":set makeprg=" . mak . "%"
 
