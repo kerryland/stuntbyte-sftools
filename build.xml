@@ -13,15 +13,8 @@
     <property environment="env"/>
 
 
-    <target name="edit" depends="tag" description="Edit your code">
-        <exec executable="${vim}">
-
-            <!--<arg line='-c "set enc=utf-8" -c "set makeprg=ant\ farcemake\ -Dsrcfile=%" -c "set errorformat=%f>%l:%c:%t:%n:%m"'/>-->
-
-            <!-- <arg line='-c "set enc=utf-8" -c "set makeprg=java\ -cp\ lib/ant-salesforce.jar;classes\ com.stuntbytete.salesforce.ide.SalesfarceIDE\ %" -c "set errorformat=%f>%l:%c:%t:%n:%m"'/> -->
-            <arg line='-u vimrc README.TXT'/>
-
-        </exec>
+    <target name="package" depends="proguard" description="Package up files">
+	 <zip destfile="editors.zip" basedir="editors" />	
     </target>
 
 
@@ -123,7 +116,7 @@
 
 
 
-    <target name="proguard" description="Opfuscates Code">
+    <target name="proguard" depends="compile" description="Opfuscates Code">
 
         <proguard>
             -libraryjars ${java.home}/lib/rt.jar
@@ -187,73 +180,5 @@
 
     </target>
 
-    <!--<target name="farcemake" description="Compile (and perhaps test) Apex code">-->
-    <!--<java classname="com.stuntbytete.salesforce.ide.SalesfarceIDE">-->
-    <!--<arg value="${srcfile}"/>-->
-    <!--
-        <classpath>
-            <pathelement location="dist/test.jar"/>
-            <pathelement path="${java.class.path}"/>
-        </classpath>
-    -->
-    <!--</java>-->
-    <!---->
-    <!--</target>-->
-
-
-    <!-- Retrieve an unpackaged set of metadata from your org -->
-    <!-- The file unpackaged/package.xml lists what is to be retrieved -->
-    <target name="download" description="Download your Apex code and Triggers">
-        <mkdir dir="${src.dir}"/>
-        <!--Retrieve the contents into another directory-->
-        <sf:retrieve username="${sf.username}"
-                     password="${sf.password}"
-                     serverurl="${sf.serverurl}"
-                     retrieveTarget="${src.dir}"
-                     unpackaged="${src.dir}/package.xml"/>
-    </target>
-
-    <target name="bulkRetrieve">
-        <sf:bulkRetrieve username="${sf.username}"
-                         password="${sf.password}"
-                         serverurl="${sf.serverurl}"
-                         metadataType="CustomObject"
-                         retrieveTarget="${src.dir}"/>
-
-        <sf:bulkRetrieve username="${sf.username}"
-                         password="${sf.password}"
-                         serverurl="${sf.serverurl}"
-                         metadataType="ApexClass"
-                         retrieveTarget="${src.dir}"/>
-
-        <sf:bulkRetrieve username="${sf.username}"
-                         password="${sf.password}"
-                         serverurl="${sf.serverurl}"
-                         metadataType="ApexTrigger"
-                         retrieveTarget="${src.dir}"/>
-
-        <sf:bulkRetrieve username="${sf.username}"
-                         password="${sf.password}"
-                         serverurl="${sf.serverurl}"
-                         metadataType="ApexPage"
-                         retrieveTarget="${src.dir}"/>
-
-        <sf:bulkRetrieve username="${sf.username}"
-                         password="${sf.password}"
-                         serverurl="${sf.serverurl}"
-                         metadataType="ApexComponent"
-                         retrieveTarget="${src.dir}"/>
-
-    </target>
-
-
-    <target name="tag" description="Parse your code and create tag file">
-        <exec executable="${ctags}">
-            <arg value="--extra=+f"/>
-            <arg value="--langmap=java:.cls.trigger"/>
-            <arg value="--recurse=yes"/>
-            <arg value="${src.dir}"/>
-        </exec>
-    </target>
 
 </project>
