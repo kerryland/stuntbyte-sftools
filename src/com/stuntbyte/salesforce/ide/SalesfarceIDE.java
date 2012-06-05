@@ -202,13 +202,8 @@ public class SalesfarceIDE {
         crcs.load(new FileReader(crcFile));
 
 //        System.out.println("DOWNLOADING " + typeName + " - " + mems.getMembers()[0]);
+        CrcResults crcResults = recalcCrcs(filenameNoPath, retrieveRequest, crcs);
 
-
-        // TODO: Use downloader.retrieveZip instead
-        File result = deployer.retrieveZip(retrieveRequest, listener);
-        ZipFile zip = new ZipFile(result);
-        CrcResults crcResults = pullCrcs(zip, crcs, filenameNoPath);
-        FileUtil.delete(result);
 
         boolean runTests = true;
         boolean uploadCode = true;
@@ -229,6 +224,16 @@ public class SalesfarceIDE {
             uploadCode(filename, prop, srcDirectory, debugFile, filenameNoPath, crcs, retrieveRequest, runTests);
             crcs.store(new FileWriter(crcFile), "Automatically generated for " + crcResults.crcKey);
         }
+    }
+
+    private CrcResults recalcCrcs(String filenameNoPath, RetrieveRequest retrieveRequest, Properties crcs) throws Exception {
+        // TODO: Use downloader.retrieveZip instead
+        File result = deployer.retrieveZip(retrieveRequest, listener);
+        ZipFile zip = new ZipFile(result);
+        CrcResults crcResults = pullCrcs(zip, crcs, filenameNoPath);
+        zip.close();
+        FileUtil.delete(result);
+        return crcResults;
     }
 
     private void generateTags(String srcDirectory, String ctags, String tagsFile) throws Exception {
@@ -272,10 +277,14 @@ public class SalesfarceIDE {
 
         // Get latest CRCs
         // TODO: Use downloader.retrieveZip instead
-        result = deployer.retrieveZip(retrieveRequest, listener);
-        zip = new ZipFile(result);
-        crcResults = pullCrcs(zip, crcs, filenameNoPath);
-        FileUtil.delete(result);
+
+        crcResults = recalcCrcs(filenameNoPath, retrieveRequest, crcs);
+
+//        result = deployer.retrieveZip(retrieveRequest, listener);
+//        zip = new ZipFile(result);
+//        crcResults = pullCrcs(zip, crcs, filenameNoPath);
+//        zip.close();
+//        FileUtil.delete(result);
 
         // Store checksum locally
         if (crcResults.serverCrc == null) { // ie: File doesn't exist on server
@@ -569,7 +578,6 @@ public class SalesfarceIDE {
 
     public void downloadFiles(String srcDir, File crcFile) throws Exception {
         crcFile.createNewFile();
-//        Properties crcs = new Properties();
 
         String[] metadataTypes = new String[]{
                 "ApexClass",
@@ -581,33 +589,9 @@ public class SalesfarceIDE {
 
         for (String metadataType : metadataTypes) {
             downloader.addPackage(metadataType, "*");
-
-//            List<String> files = new ArrayList<String>();
-//            files.add("*");
-//            Package p = createPackage(metadataType, files);
-//            RetrieveRequest retrieveRequest = prepareRequest(true, null, p);
-//
-//            File result = deployer.retrieveZip(retrieveRequest, listener);
-//            updateCrcs(crcs, result);
-//            deployer.unzipFile(srcDir, result);
         }
 
         downloader.download();
-
-//        crcs.store(new FileWriter(crcFile), "Generated file");
-
-    }
-
-    private void updateCrcs(Properties crcs, File result) throws IOException {
-        ZipFile zip = new ZipFile(result);
-        Enumeration ents = zip.entries();
-        while (ents.hasMoreElements()) {
-            ZipEntry zipEntry = (ZipEntry) ents.nextElement();
-            if (!zipEntry.getName().endsWith("-meta.xml")) {
-                File f = new File(zipEntry.getName());
-                crcs.setProperty(f.getName(), String.valueOf(zipEntry.getCrc()));
-            }
-        }
     }
 
 
