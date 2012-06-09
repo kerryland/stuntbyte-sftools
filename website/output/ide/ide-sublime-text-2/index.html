@@ -1,0 +1,117 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+  <meta name="robots" content="index, follow" />
+
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-28301451-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="sfdc, salesforce, apex code, triggers, jdbc, ide, deployment" />
+    <title>Stuntbyte - Sublime Text 2</title>
+    <link rel="stylesheet" type="text/css" href="/style.css" media="screen">
+    <meta name="generator" content="nanoc 3.3.7">
+  </head>
+  <body>
+    <div id="main">
+    <h1>Sublime Text 2</h1>
+      <p>Installation and setup is a little clunky in Sublime Text 2. Hopefully this can be improved as the editor matures. We really need an api call to allow us access to the current project file (hint, hint).</p>
+<p>This installation includes a number of "snippets", so you can quickly construct common blocks of code, but these snippets have simply been quickly copied from the Sublime's Java support, and include no Salesforce-specific features. If anybody is keen on extending these, we'd be happy to update the package!</p>
+<p>We have begun the process of making this code available on Github as part of https://github.com/SublimeText</p>
+<div style="color: #000000; font-family: arial; line-height: normal; font-size: small;">
+<div>
+<ul>
+<li>Install <a href="http://www.java.com/">Java</a> and ensure it's on your path.</li>
+<li>Install <a href="http://ctags.sourceforge.net/">Exuberant ctags</a> and ensure it's on your path. <span style="background-color: #f8f8f8; color: #333333; font-family: 'Bitstream Vera Sans Mono', Courier, monospace; font-size: 12px; line-height: 19px; white-space: nowrap;">(sudo apt-get install ctags)</span>
+</li>
+<li>Install <a href="http://www.sublimetext.com/2">Sublime Text 2</a>
+</li>
+<li>Start Sublime Text 2</li>
+<li>Select menu item "Preferences : Settings - User" and add a setting that defines the location of the StuntByte all-purpose "jdbc" jar file you downloaded from the <a href="/download">download page</a>. Save the change. eg:</li>
+</ul>
+</div>
+</div>
+<div style="color: #000000; font-family: arial; line-height: normal; font-size: small;">
+<div style="padding-left: 60px;"> "stuntbyte_jar": "/apps/stuntbyte/stuntbyte-sfdc-1.4.jar"</div>
+</div>
+<div style="color: #000000; font-family: arial; line-height: normal; font-size: small;">
+<ul>
+<li>Download the Stunt Byte "<a href="media/editors.zip">editors.zip</a>" and unzip it.</li>
+<li>Put the Packages directory (/sublime2/Packages in editors.zip) under</li>
+<ul>
+<li>~/.config/sublime-text-2 (Linux) or</li>
+<li>"%APPDATA%/Sublime Text 2" (Windows) or</li>
+<li>"~/Library/Application Support/Sublime Text 2" (Mac OS)</li>
+</ul>
+<li>Install ctags support into Sublime Text, per instructions at  <a href="https://github.com/SublimeText/CTags">https://github.com/SublimeText/CTags</a>. eg:</li>
+</ul>
+</div>
+<div style="color: #000000; font-family: arial; line-height: normal; font-size: small;">
+<div style="padding-left: 60px;">cd  ~/.config/sublime-text-2/Packages/  (Linux)</div>
+<div style="padding-left: 60px;">cd "%APPDATA%/Sublime Text 2/Packages" (Windows)</div>
+<div style="padding-left: 60px;">cd "~/Library/Application Support/Sublime Text 2/Packages" (Mac OS)</div>
+<div style="padding-left: 60px;">git clone <a href="https://github.com/SublimeText/CTags" target="_blank">https://github.com/SublimeText/CTags</a> CTags (or <a href="https://github.com/SublimeText/CTags/zipball/master">download the zip</a>)</div>
+</div>
+<div style="color: #000000; font-family: arial; line-height: normal; font-size: small;">
+<ul>
+<li>Copy sample.sublime-project and ide.properties (from /sublime in editors.zip) into another folder, eg "/tmp/projects"</li>
+<li>Edit sample.sublime-project and point "ide.properties" at the file, using an absolute pathname. eg: /tmp/projects/ide.properties</li>
+<li>Edit ide.properties and define the sf host, username and password (ie: security token + password) for your development environment.</li>
+<li>Open the sample project file in Sublime, using the Projects menu.</li>
+<li>Download Salesforce code, using the Projects Menu: Salesforce Download All.</li>
+<li>Refresh the folder view, using the Projects Menu: Refresh Folders.</li>
+<li>Generate tags: from Projects Menu: Salesforce Retag. You must be viewing an Apex class or Trigger for this to work correctly.</li>
+<li>Navigate classes with CTRL-P (and start typing)</li>
+<li>Navigate symbols within a class with CTRL-R</li>
+<li>Drill into methods or classes with CTRL-ALT-]</li>
+<li>Pop back with CTRL-ALT-[</li>
+<li>Compile a class with F7. If the class name ends in "Test" or "Tests" then we also execute the tests. If errors occur, navigate to offending lines by clicking on the error message.</li>
+<li>View the automatically generated debug.log file to see details of the test run </li>
+</ul>
+</div>
+</br>
+      Follow <a href="http://twitter.com/stuntbyte">Stuntbyte</a> on Twitter
+    </div>
+    <div id="sidebar">
+      <h2>Main</h2>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/download">Download</a></li>
+        <li><a href="/contact">Contact</a></li>
+        <li><a href="/community">Community</a></li>
+      </ul>
+      <h2>JDBC Driver</h2>
+      <ul>
+        <li><a href="/jdbc-driver">Introduction</a></li>
+        <li><a href="/jdbc-driver/jdbc-configuration">Configuration</a></li>
+        <li><a href="/jdbc-driver/jdbc-sql-syntax">SELECT, UPDATE etc</a></li>
+        <li><a href="/jdbc-driver/jdbc-sql-ddl-syntax">CREATE TABLE etc</a></li>
+        <li><a href="/jdbc-driver/grant-permissions">GRANT Permissions</a></li>
+        <li><a href="/jdbc-driver/limitations">Limitations</a></li>
+      </ul>
+      <h2>Deployment Tool</h2>
+      <ul>
+        <li><a href="/deployment-tool">Introduction</a></li>
+        <li><a href="/deployment-tool/deployment-usage">Usage</a></li>
+      </ul>
+      <h2>Text Editor/IDE</h2>
+      <ul>
+        <li><a href="/ide">Introduction</a></li>
+        <li><a href="/ide/ide-sublime-text-2">Sublime Text 2</a></li>
+        <li><a href="/ide/ide-vim">VIM</a></li>
+        <li><a href="/ide/ide-command-line">Command Line</a></li>
+      </ul>
+    </div>
+  </body>
+   
+</html>

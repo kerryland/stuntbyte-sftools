@@ -1,0 +1,27 @@
+--- 
+title: Command Line
+---
+
+<p>Behind the scenes, the "IDE" is actually a command line Java application that pushes Salesforce code to and from a Salesforce server. You should be able to wire it up to editors other than Sublime Text 2 and VIM, as long as the editor understands ctags, and allows a hook in to a "build system" that generates "AztecC.Err" error messages.</p>
+<p>If you run it from a command line you can see the supported arguments and parameters.</p>
+<p>java -cp stuntbyte-sfdc-1.4.jar com.stuntbyte.salesforce.ide.SalesfarceIDE</p>
+<p>Supported arguments:</p>
+<ul>
+<li><strong>-compile</strong>. upload and compile/test file </li>
+<li><strong>-force</strong>. upload and compile/test file, regardless of crc failure</li>
+<li><strong>-downloadall</strong>. download 'everything'</li>
+<li><strong>-download</strong>. download just this file</li>
+<li><strong>-delete</strong>. delete this file </li>
+<li><strong>-runtests</strong>. run all tests for downloaded code </li>
+<li><strong>-tag</strong>. regenerate tags</li>
+</ul>
+<p>It writes error messages to stdout in the "AztecC.Err" format, "%f&gt;%l:%c:%t:%n:%m" which contains literal "&gt;" and ":" characters, as well as:</p>
+<ul>
+<li>%f file name of the error</li>
+<li>%l line number of the error</li>
+<li>%c column number of the error</li>
+<li>%t error type (E)rror, or (W)arning</li>
+<li>%n error number. Always "0"</li>
+<li>%m error message.</li>
+</ul> 
+

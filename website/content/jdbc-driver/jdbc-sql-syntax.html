@@ -1,0 +1,87 @@
+--- 
+title: JDBC SQL DML Syntax
+---
+<p>Here are the SQL DML commands we currently support:</p>
+<h2>UPDATE</h2>
+<p>A normal SQL UPDATE statement, including support for expressions that refer to other columns:</p>
+
+<pre><code class="language-sql">
+UPDATE Lead 
+   SET firstName = firstname + ' ' + lastname, 
+       NumberOfEmployees=NumberOfEmployees*2*annualRevenue
+ WHERE annualRevenue > 0
+</code></pre>
+
+<p></p>
+<h2>INSERT</h2>
+<pre><code class="language-sql">
+<p>A normal SQL INSERT statement:</p>
+INSERT INTO Account(name, billingCity)
+VALUES ('Mr Jones', 'Super City')
+</code></pre>
+
+<p></p>
+<h2>DELETE</h2>
+<p>A normal SQL DELETE statement:</p>
+<pre><code class="language-sql">
+DELETE FROM account
+WHERE billingCity = 'Super City'
+</code></pre>
+
+<p></p>
+<h2>SELECT</h2>
+<p>SELECT behaves as per Salesforce <a href="http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_select.htm">SOQL</a>, with the following enhancements:</p>
+<ul>
+<li>Support for "SELECT *". This is almost priceless!</li>
+<li>Support for column aliases via "as"</li>
+</ul>
+<pre><code class="language-sql">
+SELECT FirstName as fn, LastName as ln, CreatedBy.name as cn
+FROM Lead
+</code></pre>
+<ul>
+<li>Support for "count(*)", as well as Salesforce-native "count()" and "count(id)".</li>
+<li>Patches illegal SOQL to valid SQL, ie: "WHERE ID = null" to "WHERE 0 = 1". </li>
+</ul>
+
+<h2>SELECT non-features</h2>
+<p>We haven't rewritten the Salesforce SQL engine, and still inherit the other Salesforce-supplied SOQL SELECT limitations, including no support for normal SQL joins.</p>
+<p>We also don't support SOQL's nested SELECT functionality, because it doesn't really fit into the relational model. eg:</p>
+<pre><code class="language-sql">
+SELECT Account.Name, Type,
+(SELECT b.LastName FROM Account.Contacts b)
+FROM Account
+</code></pre>
+
+<p></p>
+<h2>Data Type Literals</h2>
+<p>When using string literals in commands please adhere to the following formats:</p>
+<table border="1">
+<tbody>
+<tr><th>DataType</th><th>Format</th><th>Example</th></tr>
+<tr>
+<td>DateTime</td>
+<td>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</td>
+<td>2010-10-21T23:15:00.000Z</td>
+</tr>
+<tr>
+<td>Date</td>
+<td>yyyy-MM-dd</td>
+<td>2012-12-31</td>
+</tr>
+<tr>
+<td>MultiPickList</td>
+<td>semi-colon-delimited values</td>
+<td>Red;Blue;Green</td>
+</tr>
+</tbody>
+</table>
+
+<p></p>
+<h2>General Limitations</h2>
+<p>UPDATE, DELETE and SELECT all depend on the SOQL WHERE clause, so they inherit the limitations provided by Salesforce. In particular you cannot write a WHERE clause that compares one column to another, eg:</p>
+<pre><code class="language-sql">
+SELECT * FROM Lead
+WHERE LastActivityDate = ConvertedDate
+</code></pre>
+

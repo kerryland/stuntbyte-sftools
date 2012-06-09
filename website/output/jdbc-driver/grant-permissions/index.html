@@ -1,0 +1,97 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+  <meta name="robots" content="index, follow" />
+
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-28301451-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="sfdc, salesforce, apex code, triggers, jdbc, ide, deployment" />
+    <title>Stuntbyte - Grant Permissions</title>
+    <link rel="stylesheet" type="text/css" href="/style.css" media="screen">
+    <meta name="generator" content="nanoc 3.3.7">
+  </head>
+  <body>
+    <div id="main">
+    <h1>Grant Permissions</h1>
+      <p>The JDBC driver can set profile permissions, although these currently cannot be embedded within the deployment script and must be run directly against the destination environment. It does save a lot of pointing and clicking.</p>
+<p>But first, a disclaimer:</p>
+<p style="padding-left: 30px;">WARNING: DO NOT RUN THESE COMMANDS AGAINST A PRODUCTION INSTANCE OF SALESFORCE IF YOU HAVE MANY APEX UNIT TESTS.</p>
+<p>This is because each GRANT or REVOKE command is currently an independent "deployment" from Salesforce's perspective, so if run against a Production instance then ALL TESTS will be run for EACH command. If you have a lot of Apex unit tests this may end up taking a very, very, long time. One day this functionality will be rolled into the Deployment Tool, if there is sufficient demand.</p>
+<p>Permissions can be granted, or revoked at an object level:</p>
+
+<pre><code class="language-sql"><table class="CodeRay"><tr>
+<td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre><a href="#n1" name="n1">1</a>
+<a href="#n2" name="n2">2</a>
+<a href="#n3" name="n3">3</a>
+<a href="#n4" name="n4">4</a>
+<a href="#n5" name="n5">5</a>
+</pre></td>
+  <td class="code"><pre><span class="class">GRANT</span> OBJECT [<span class="class">create</span>],[<span class="class">update</span>],[<span class="class">delete</span>],[<span class="directive">read</span>]
+ <span class="keyword">ON</span> &lt;object&gt; <span class="keyword">TO</span> [&lt;Profile Name&gt; | * ]
+ 
+ REVOKE OBJECT [<span class="class">create</span>],[<span class="class">update</span>],[<span class="class">delete</span>],[<span class="directive">read</span>] 
+ <span class="keyword">ON</span> &lt;object&gt; <span class="keyword">FROM</span> [&lt;Profile Name&gt; | * ]</pre></td>
+</tr></table></code></pre>
+or at field level:
+
+<pre><code class="language-sql"><table class="CodeRay"><tr>
+<td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre><a href="#n1" name="n1">1</a>
+<a href="#n2" name="n2">2</a>
+<a href="#n3" name="n3">3</a>
+<a href="#n4" name="n4">4</a>
+</pre></td>
+  <td class="code"><pre><span class="class">GRANT</span> FIELD [ VISIBLE], [EDITABLE]
+ <span class="keyword">ON</span> &lt;object&gt;.[&lt;field&gt;|*] <span class="keyword">TO</span> [&lt;Profile Name&gt; | * ]
+
+REVOKE FIELD VISIBLE <span class="keyword">ON</span> &lt;object&gt;.[&lt;field&gt;|*] <span class="keyword">FROM</span> [&lt;Profile Name&gt; | * ]</pre></td>
+</tr></table></code></pre>
+
+<p>WARNING: The GRANT and REVOKE commands are likely to fail with a profile of "*" as it will probably attempt to modify a readonly profile, and so fail.</p>
+</br>
+      Follow <a href="http://twitter.com/stuntbyte">Stuntbyte</a> on Twitter
+    </div>
+    <div id="sidebar">
+      <h2>Main</h2>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/download">Download</a></li>
+        <li><a href="/contact">Contact</a></li>
+        <li><a href="/community">Community</a></li>
+      </ul>
+      <h2>JDBC Driver</h2>
+      <ul>
+        <li><a href="/jdbc-driver">Introduction</a></li>
+        <li><a href="/jdbc-driver/jdbc-configuration">Configuration</a></li>
+        <li><a href="/jdbc-driver/jdbc-sql-syntax">SELECT, UPDATE etc</a></li>
+        <li><a href="/jdbc-driver/jdbc-sql-ddl-syntax">CREATE TABLE etc</a></li>
+        <li><a href="/jdbc-driver/grant-permissions">GRANT Permissions</a></li>
+        <li><a href="/jdbc-driver/limitations">Limitations</a></li>
+      </ul>
+      <h2>Deployment Tool</h2>
+      <ul>
+        <li><a href="/deployment-tool">Introduction</a></li>
+        <li><a href="/deployment-tool/deployment-usage">Usage</a></li>
+      </ul>
+      <h2>Text Editor/IDE</h2>
+      <ul>
+        <li><a href="/ide">Introduction</a></li>
+        <li><a href="/ide/ide-sublime-text-2">Sublime Text 2</a></li>
+        <li><a href="/ide/ide-vim">VIM</a></li>
+        <li><a href="/ide/ide-command-line">Command Line</a></li>
+      </ul>
+    </div>
+  </body>
+   
+</html>
