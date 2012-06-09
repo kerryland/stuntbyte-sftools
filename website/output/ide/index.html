@@ -1,0 +1,77 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+  <meta name="robots" content="index, follow" />
+
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-28301451-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="keywords" content="sfdc, salesforce, apex code, triggers, jdbc, ide, deployment" />
+    <title>Stuntbyte - IDE</title>
+    <link rel="stylesheet" type="text/css" href="/style.css" media="screen">
+    <meta name="generator" content="nanoc 3.3.7">
+  </head>
+  <body>
+    <div id="main">
+    <h1>IDE</h1>
+      <p>The StuntByte "IDE" allows developers to use quality editors like Sublime Text 2 and VIM when developing Apex Code. This is useful because Salesforce's "Force.com IDE" is currently quite limited. </p>
+<p>Here's what Sublime Text 2 looks like:</p>
+<p><img src="/images/stuntbyte/sublime2.png" border="0" alt="Sublime Text 2" title="Sublime Text 2"></p>
+<p>These Editors:</p>
+<ul>
+<li>Support compilation, error reporting, and, unlike "Force.com IDE", easy access to the line of code that caused an error -- simply click on the error message and go to the right line, in the right file!</li>
+<li>Make the debug log easy to access and search. No more fiddly copy and pasting.</li>
+<li>Have easy code navigation. Drill down into classes and method calls, and pop back up again.</li>
+<li>Include limited auto-completion.</li>
+<li>Are fast!</li>
+<li>Are nicely extensible. </li>
+</ul><h2>Limitations</h2>
+<p>The biggest limitation right now is the lack of support for creation of new files from within the editor. In practice this isn't a big deal, and if people shout we'll be happy to add it :-)</p>
+<p>The other "limitation" is that file deletion isn't integrated into the editors. You'll just be deleting the file from the local file system. Given the lack of version control in Salesforce, this is currently considered to be a good thing, and we have deliberately not wired it up. Our "backend" does support file deletion, so if you are brave you are welcome to add it.</p>
+</br>
+      Follow <a href="http://twitter.com/stuntbyte">Stuntbyte</a> on Twitter
+    </div>
+    <div id="sidebar">
+      <h2>Main</h2>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/download">Download</a></li>
+        <li><a href="/contact">Contact</a></li>
+        <li><a href="/community">Community</a></li>
+      </ul>
+      <h2>JDBC Driver</h2>
+      <ul>
+        <li><a href="/jdbc-driver">Introduction</a></li>
+        <li><a href="/jdbc-driver/jdbc-configuration">Configuration</a></li>
+        <li><a href="/jdbc-driver/jdbc-sql-syntax">SELECT, UPDATE etc</a></li>
+        <li><a href="/jdbc-driver/jdbc-sql-ddl-syntax">CREATE TABLE etc</a></li>
+        <li><a href="/jdbc-driver/grant-permissions">GRANT Permissions</a></li>
+        <li><a href="/jdbc-driver/limitations">Limitations</a></li>
+      </ul>
+      <h2>Deployment Tool</h2>
+      <ul>
+        <li><a href="/deployment-tool">Introduction</a></li>
+        <li><a href="/deployment-tool/deployment-usage">Usage</a></li>
+      </ul>
+      <h2>Text Editor/IDE</h2>
+      <ul>
+        <li><a href="/ide">Introduction</a></li>
+        <li><a href="/ide/ide-sublime-text-2">Sublime Text 2</a></li>
+        <li><a href="/ide/ide-vim">VIM</a></li>
+        <li><a href="/ide/ide-command-line">Command Line</a></li>
+      </ul>
+    </div>
+  </body>
+   
+</html>

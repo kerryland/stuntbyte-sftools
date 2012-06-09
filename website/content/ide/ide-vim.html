@@ -1,0 +1,68 @@
+--- 
+title: VIM INSTALLATION
+---
+<ul style="color: #000000; font-family: arial; line-height: normal; font-size: small;">
+<li>Install <a href="http://www.java.com/">Java</a> and ensure it's on your path.</li>
+<li>Install <a href="http://ctags.sourceforge.net/">Exuberant ctags</a> and ensure it's on your path. <span style="background-color: #f8f8f8; color: #333333; font-family: 'Bitstream Vera Sans Mono', Courier, monospace; font-size: 12px; line-height: 19px; white-space: nowrap;">(sudo apt-get install ctags)</span></li>
+<li>Install <a href="http://www.vim.org/">VIM</a></li>
+<li>Download the StuntByte all-purpose "jdbc" jar file from the <a href="download.html">download page</a>.</li>
+<li>Download the Stunt Byte "<a href="media/editors.zip">editors.zip</a>" and unzip it.</li>
+<li>Edit "stuntbyte.vim" (from /vim in editors.zip) and ensure that the "runIde" line refers to the location of the stuntbyte jar file on your system.</li>
+<li>Edit ide.properties (from /vim in editors.zip) and define the sf host, username and password  (ie: security token + password) for your development environment.</li>
+<li>Start the "ide" using: vim -S stuntbyte.vim</li>
+<li>Download all source code using ",da" in edit mode</li>
+<li>Tag the source code using ",tag" in edit mode</li>
+<li>Navigate source using standard tag commands, eg: :tag &lt;classname&gt; and CTRL-] (You really should read :help tags)</li>
+<li>Compile a class with F7. If the class name ends in "Test" or "Tests" then we also execute the tests. If errors occur, navigate to offending lines by clicking on the error message.</li>
+<li>Use F3 to view the automatically generated debug.log file, and see details of the test run</li>
+</ul>
+<p>The full list of supported commands is as follows:   </p>
+<table>
+<tbody>
+<tr>
+<td>F2</td>
+<td>'Drill down' to the current token, splitting the window on the way</td>
+</tr>
+<tr>
+<td>F4</td>
+<td>Make the debug log easier to read</td>
+</tr>
+<tr>
+<td>F7</td>
+<td>Save the current file to Salesforce. Runs tests if it's a test class</td>
+</tr>
+<tr>
+<td>F9</td>
+<td>Disable a test method (must be on the 'testMethod' declaration)</td>
+</tr>
+<tr>
+<td>F10</td>
+<td>Enable a test method (must be on the 'testMethod' declaration)</td>
+</tr>
+<tr>
+<td>F11</td>
+<td>Disable all test methods</td>
+</tr>
+<tr>
+<td>F12</td>
+<td>Enable all test methods</td>
+</tr>
+<tr>
+<td>,d</td>
+<td>Download the latest version of the currently edited file</td>
+</tr>
+<tr>
+<td>,da</td>
+<td>Download the latest version of all files</td>
+</tr>
+<tr>
+<td>,uf</td>
+<td>Force a save (upload) of the current file, even though it is out of sync with the version on the server</td>
+</tr>
+<tr>
+<td>,tag</td>
+<td>Retag the source</td>
+</tr>
+</tbody>
+</table>
+
