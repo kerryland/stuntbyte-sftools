@@ -156,7 +156,7 @@
             <!---keep class * implements java.sql.**-->
 
             -keep class com.sforce.** { *; }
-            -keep public enum * { *; }
+            <!---keep public enum * { *; }-->
 
             -keep class * implements java.sql.Driver
             -keep class com.stuntbyte.salesforce.ide.SalesfarceIDE {
