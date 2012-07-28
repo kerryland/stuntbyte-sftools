@@ -63,7 +63,7 @@ a:hover {
 }
 
 #sidebar {
-  position: fixed;
+  position: relative;
 
   top: 40px;
   left: 20px;
