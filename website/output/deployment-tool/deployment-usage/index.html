@@ -25,7 +25,8 @@
   <body>
     <div id="main">
     <h1>Deployment Tool Usage</h1>
-      <h2>Step 1. Install it.</h2>
+      <p>Here's how to make use of the deployment tool</p>
+<h2>Step 1. Install it.</h2>
 <p>Currently the deployment tool is embedded within the JDBC driver. You have to <a href="/jdbc-driver/jdbc-configuration">install that first</a>. We've added some new commands to the JDBC driver.</p>
 <h2>Step 2. Write a script to create a deployment file</h2>
 <p>There are only a few commands. Here's an example script that illustrates most of them:</p>
@@ -105,7 +106,7 @@ eg:<br><pre><code class="language-sql"><table class="CodeRay"><tr>
 <p>If you need to "tweak" the code prior to deployment, you can edit the zip file using something like <a href="http://www.ghisler.com/">Total Commander</a>, or unzip, edit, and rezip file, or you can explore the "patch" commands, as described in the next section.</p>
 
 <h1>Patching (Advanced Feature)</h1>
-<p>Salesforce development can sometimes force the use of hard-coded values, such as object ids, in places like Workflow. These object ids will need to be different in every environment you deploy to, and relying on humans to remember to manually change such values is tedious and unreliable. Stunt Byte's "patching" facility gives you a clean way to handle this issue.</p>
+<p>Salesforce development can sometimes force the use of hard-coded values, such as object ids, in places like Workflow. These object ids will need to be different in every environment you deploy to, and relying on humans to remember to manually change such values is tedious and unreliable. Stuntbyte's "patching" facility gives you a clean way to handle this issue.</p>
 <h2>Patch Definition</h2>
 <p>In the code below we define some "patch variables" that represent the values that are required in various deployment environments. eg: what a "special user" id in dev, uat and prod. These names are completely arbitrary.</p>
 
@@ -176,8 +177,7 @@ dep upload...</pre></td>
   <td class="code"><pre><span class="class">SELECT</span> Identifier <span class="keyword">from</span> deployable.CustomTab</pre></td>
 </tr></table></code></pre>
 <p>NOTE: The "deployable" schema tables are internal to the JDBC driver and don't make use of the Salesforce query engine, consequently the only supported WHERE clause is "WHERE Identifier LIKE", and the LIKE expression isn't exhaustive :-)</p>
-</br>
-      Follow <a href="http://twitter.com/stuntbyte">Stuntbyte</a> on Twitter
+<br/>
     </div>
     <div id="sidebar">
       <h2>Main</h2>
@@ -208,6 +208,10 @@ dep upload...</pre></td>
         <li><a href="/ide/ide-vim">VIM</a></li>
         <li><a href="/ide/ide-command-line">Command Line</a></li>
       </ul>
+      <br/>
+      <br/>
+      &copy; <a href="/contact">stuntbyte</a> 2012
+      </p> 
     </div>
   </body>
    

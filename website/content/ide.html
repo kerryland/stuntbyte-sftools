@@ -1,7 +1,7 @@
 --- 
 title: IDE
 ---
-<p>The StuntByte "IDE" allows developers to use quality editors like Sublime Text 2 and VIM when developing Apex Code. This is useful because Salesforce's "Force.com IDE" is currently quite limited. </p>
+<p>The Stuntbyte "IDE" allows developers to use quality editors like Sublime Text 2 and VIM when developing Apex Code. This is useful because Salesforce's "Force.com IDE" is currently quite limited. </p>
 <p>Here's what Sublime Text 2 looks like:</p>
 <p><img src="/images/stuntbyte/sublime2.png" border="0" alt="Sublime Text 2" title="Sublime Text 2" /></p>
 <p>These Editors:</p>
@@ -14,6 +14,19 @@ title: IDE
 <li>Are nicely extensible. </li>
 </ul>
 <h2>Limitations</h2>
-<p>The biggest limitation right now is the lack of support for creation of new files from within the editor. In practice this isn't a big deal, and if people shout we'll be happy to add it :-)</p>
-<p>The other "limitation" is that file deletion isn't integrated into the editors. You'll just be deleting the file from the local file system. Given the lack of version control in Salesforce, this is currently considered to be a good thing, and we have deliberately not wired it up. Our "backend" does support file deletion, so if you are brave you are welcome to add it.</p>
+<p>The 'IDE' extensions don't do everything:</p>
+<ol>
+<li>
+There is no support for creation of new files from within the editor. In practice this isn't a big deal, and if people shout we'll be happy to add it :-)
+</li>
+<li>
+File deletion isn't integrated into the editors. You'll just be deleting the file from the local file system. Given the lack of version control in Salesforce, this is currently considered to be a good thing, and we have deliberately not wired it up. Our "backend" does support file deletion, so if you are brave you are welcome to add it.
+</li>
+<li>
+Controlling debugging levels 
+<a href="http://www.salesforce.com/us/developer/docs/apexcode/Content/sforce_api_header_debuggingheader.htm">
+via the API</a> simply doesn't seem to work. If anybody from Salesforce can help, we'd be glad to hear from you!
+</li>
+</ol>
+
 
