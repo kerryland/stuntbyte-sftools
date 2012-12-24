@@ -19,6 +19,7 @@ Darko Bohinc licence is cKuBGhDLCb1-MZw3FtjPUQ 3000-12-31
 Fronde Admin licence is mUv1IP4b5zXQiWf1AYowdQ 3000-12-31
 PERSONAL_DEMO licence is MxjetovtygmPUHNqoPAXGQ 2012-10-31
 Free Limited SQL licence is bsCbe26QJkFi_7H_ICMPuQ 3000-3-31
+1007 Bo Coughlin licence is vicQYgA0knMKPNdLVgY6Vg 3000-12-31
 
 StuntByte demo: support@stuntbyte.com
                 licence(0-pblwi-KTAfqhSW8Q9_tg)sfdc(p1sswordncOKWYdk3eBVADueynFLfcCp)
@@ -54,6 +55,8 @@ StuntByte demo: support@stuntbyte.com
 
         checkLicence(1005, "PERSONAL_DEMO", "Free Limited SQL", "PERSONAL_DEMO", FREE_LIMITED_SQL, 3000, Calendar.MARCH, 31);
         checkLicence(1006, "PERSONAL_DEMO", "StuntByte Demo", "PERSONAL_DEMO", USER_LICENCE, 3000, Calendar.MARCH, 31);
+
+        checkLicence(1007, "Heather Coughlin", "Bo Coughlin", "Heather Coughlin", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
     }
 
     interface LicenceSetter {
