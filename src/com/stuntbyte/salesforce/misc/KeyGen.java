@@ -14,12 +14,13 @@ public class KeyGen {
 Minion O'Toole licence is 3qj6e8qaLfzdhSQlPeQkDQ 3000-12-31
 Kerry Sainsbury licence is 8Y5Ez6AiYm2mTV6devuA5A 2010-12-31
 Kerry Sainsbury licence is ntpOo9JjXHTmYiYIyaG0XQ 3000-12-31
-Jukka Hakala licence is sPZB0H-rlfIKPNlKogqeew 2013-12-31
+Jukka Hakala licence for user Jukka Hakala is yRP5n3YnO9I6UyTEm0W7_A 3000-12-31
 Darko Bohinc licence is cKuBGhDLCb1-MZw3FtjPUQ 3000-12-31
 Fronde Admin licence is mUv1IP4b5zXQiWf1AYowdQ 3000-12-31
 PERSONAL_DEMO licence is MxjetovtygmPUHNqoPAXGQ 2012-10-31
+PERSONAL_DEMO licence is PVPSZ3MvLhI2bxoZKhuqrQ 2013-03-31
 Free Limited SQL licence is bsCbe26QJkFi_7H_ICMPuQ 3000-3-31
-1007 Bo Coughlin licence is vicQYgA0knMKPNdLVgY6Vg 3000-12-31
+1007 Bo Coughlin licence is gzr9OIltkZ_JMrzD3wx7uQ 3000-12-31
 
 StuntByte demo: support@stuntbyte.com
                 licence(0-pblwi-KTAfqhSW8Q9_tg)sfdc(p1sswordncOKWYdk3eBVADueynFLfcCp)
@@ -46,11 +47,11 @@ StuntByte demo: support@stuntbyte.com
         checkLicence(999, "Minion O'Toole", "Minion O'Toole", "Fidelma Company", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
         checkLicence(999, "Kerry Sainsbury", "Kerry Sainsbury", "Fidelma Company", USER_LICENCE, 2010, Calendar.DECEMBER, 31);
         checkLicence(1000, "Kerry Sainsbury", "Kerry Sainsbury", "Fidelma Company", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
-        checkLicence(1001, "Jukka Hakala", "Jukka Hakala", "Jukka Company", USER_LICENCE, 2013, Calendar.DECEMBER, 31);
+        checkLicence(1001, "Jukka Hakala", "Jukka Hakala", "Jukka Hakala", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
         checkLicence(1002, "Darko Bohinc", "Darko Bohinc", "Darko Bohinc", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
         checkLicence(1003, "Fronde Admin", "Fronde Admin", "Fronde Admin", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
 
-        checkLicence(1004, "PERSONAL_DEMO", "PERSONAL_DEMO", "PERSONAL_DEMO", USER_LICENCE, 2012, Calendar.OCTOBER, 31);
+        checkLicence(1004, "PERSONAL_DEMO", "PERSONAL_DEMO", "PERSONAL_DEMO", USER_LICENCE, 2013, Calendar.MARCH, 31);
 
 
         checkLicence(1005, "PERSONAL_DEMO", "Free Limited SQL", "PERSONAL_DEMO", FREE_LIMITED_SQL, 3000, Calendar.MARCH, 31);
@@ -65,19 +66,21 @@ StuntByte demo: support@stuntbyte.com
 
 
 
-    public static String checkLicence(int customerNumber, String licenceName, String username, String orgname,
+    public static String checkLicence(int customerNumber,
+                                      String licenceName,
+                                      String username, String orgname,
                                       LicenceSetter licenceSetter, int year, int month, int day) throws Exception {
 
         Calendar expires = Calendar.getInstance();
         expires.set(year, month, day);
 
         // Create a licence
-        Licence licence = new Licence(customerNumber, licenceName, expires);
+        Licence licence = new Licence(customerNumber, username, expires);
         licenceSetter.setFeatures(licence);
 
         String key = generateKey(licence);
         
-        System.out.println(customerNumber + " " + username + " licence is " + key + " " + year + "-" + (month + 1) + "-" + day);
+        System.out.println(customerNumber + " " + licenceName + " licence for user " + username + " is " + key + " " + year + "-" + (month + 1) + "-" + day);
 
 
         LicenceService ls = new LicenceService();
