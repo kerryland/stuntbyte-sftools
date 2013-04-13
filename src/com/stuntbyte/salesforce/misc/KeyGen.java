@@ -26,13 +26,22 @@ StuntByte demo: support@stuntbyte.com
                 licence(0-pblwi-KTAfqhSW8Q9_tg)sfdc(p1sswordncOKWYdk3eBVADueynFLfcCp)
          */
 
-        LicenceSetter USER_LICENCE = new LicenceSetter() {
+        LicenceSetter USER_JDBC_AND_DEPLOY = new LicenceSetter() {
             public void setFeatures(Licence licence) {
                 licence.setJdbcFeature(true);
                 licence.setDeploymentFeature(true);
                 licence.setPersonalLicence(true);
             }
         };
+
+        LicenceSetter USER_JDBC_ONLY = new LicenceSetter() {
+            public void setFeatures(Licence licence) {
+                licence.setJdbcFeature(true);
+                licence.setDeploymentFeature(false);
+                licence.setPersonalLicence(true);
+            }
+        };
+
 
         LicenceSetter FREE_LIMITED_SQL = new LicenceSetter() {
             public void setFeatures(Licence licence) {
@@ -43,21 +52,23 @@ StuntByte demo: support@stuntbyte.com
         };
 
         
-        checkLicence(998, "Pleb Pleb", "Pleb Pleb", "Fidelma Company", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
-        checkLicence(999, "Minion O'Toole", "Minion O'Toole", "Fidelma Company", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
-        checkLicence(999, "Kerry Sainsbury", "Kerry Sainsbury", "Fidelma Company", USER_LICENCE, 2010, Calendar.DECEMBER, 31);
-        checkLicence(1000, "Kerry Sainsbury", "Kerry Sainsbury", "Fidelma Company", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
-        checkLicence(1001, "Jukka Hakala", "Jukka Hakala", "Jukka Hakala", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
-        checkLicence(1002, "Darko Bohinc", "Darko Bohinc", "Darko Bohinc", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
-        checkLicence(1003, "Fronde Admin", "Fronde Admin", "Fronde Admin", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
+        checkLicence(998, "Pleb Pleb", "Pleb Pleb", "Fidelma Company", USER_JDBC_AND_DEPLOY, 3000, Calendar.DECEMBER, 31);
+        checkLicence(999, "Minion O'Toole", "Minion O'Toole", "Fidelma Company", USER_JDBC_AND_DEPLOY, 3000, Calendar.DECEMBER, 31);
+        checkLicence(999, "Kerry Sainsbury", "Kerry Sainsbury", "Fidelma Company", USER_JDBC_AND_DEPLOY, 2010, Calendar.DECEMBER, 31);
+        checkLicence(1000, "Kerry Sainsbury", "Kerry Sainsbury", "Fidelma Company", USER_JDBC_AND_DEPLOY, 3000, Calendar.DECEMBER, 31);
+        checkLicence(1001, "Jukka Hakala", "Jukka Hakala", "Jukka Hakala", USER_JDBC_AND_DEPLOY, 3000, Calendar.DECEMBER, 31);
+        checkLicence(1002, "Darko Bohinc", "Darko Bohinc", "Darko Bohinc", USER_JDBC_AND_DEPLOY, 3000, Calendar.DECEMBER, 31);
+        checkLicence(1003, "Fronde Admin", "Fronde Admin", "Fronde Admin", USER_JDBC_AND_DEPLOY, 3000, Calendar.DECEMBER, 31);
 
-        checkLicence(1004, "PERSONAL_DEMO", "PERSONAL_DEMO", "PERSONAL_DEMO", USER_LICENCE, 2013, Calendar.MARCH, 31);
+        checkLicence(1004, "PERSONAL_DEMO", "PERSONAL_DEMO", "PERSONAL_DEMO", USER_JDBC_AND_DEPLOY, 2013, Calendar.MARCH, 31);
 
 
         checkLicence(1005, "PERSONAL_DEMO", "Free Limited SQL", "PERSONAL_DEMO", FREE_LIMITED_SQL, 3000, Calendar.MARCH, 31);
-        checkLicence(1006, "PERSONAL_DEMO", "StuntByte Demo", "PERSONAL_DEMO", USER_LICENCE, 3000, Calendar.MARCH, 31);
+        checkLicence(1006, "PERSONAL_DEMO", "StuntByte Demo", "PERSONAL_DEMO", USER_JDBC_AND_DEPLOY, 3000, Calendar.MARCH, 31);
 
-        checkLicence(1007, "Heather Coughlin", "Bo Coughlin", "Heather Coughlin", USER_LICENCE, 3000, Calendar.DECEMBER, 31);
+        checkLicence(1007, "Heather Coughlin", "Bo Coughlin", "Heather Coughlin", USER_JDBC_AND_DEPLOY, 3000, Calendar.DECEMBER, 31);
+
+        checkLicence(1008, "Jeffrey Huth", "Admin GreatVines", "n/a", USER_JDBC_ONLY, 3000, Calendar.DECEMBER, 31);
     }
 
     interface LicenceSetter {
