@@ -26,7 +26,6 @@ public class TestHelper {
     public static String hackLicence= "3qj6e8qaLfxP72hE5M2noA";
 
 
-
     public static SfConnection getTestConnection() throws SQLException {
         return connect(loginUrl, username, password, licence, new Properties());
     }

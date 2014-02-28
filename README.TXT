@@ -150,4 +150,4 @@ COMPILATION:
   
 
 
-mvn install:install-file -Dfile=c:/apps/sql-workbench/drivers/sfdc-kjs-driver-2.jar -DgroupId=com.stuntbyte -DartifactId=farce-base -Dversion=1.1 -Dpackaging=jar -DgeneratePom=true
+mvn install:install-file -Dfile=stuntbyte-sfdc-1.4.jar -DgroupId=com.stuntbyte -DartifactId=farce-base -Dversion=1.4 -Dpackaging=jar -DgeneratePom=true

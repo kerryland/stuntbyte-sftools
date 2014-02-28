@@ -14,6 +14,7 @@ import java.net.URLDecoder;
 import java.sql.*;
 import java.sql.Statement;
 import java.util.*;
+import java.util.concurrent.Executor;
 
 /**
  */
@@ -324,6 +325,26 @@ public class SfConnection implements java.sql.Connection {
 
     public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
         throw new SQLFeatureNotSupportedException();
+    }
+
+    public void setSchema(String schema) throws SQLException {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public String getSchema() throws SQLException {
+        return "";  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void abort(Executor executor) throws SQLException {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public int getNetworkTimeout() throws SQLException {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     /*

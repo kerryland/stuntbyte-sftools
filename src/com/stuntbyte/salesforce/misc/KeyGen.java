@@ -1,6 +1,5 @@
 package com.stuntbyte.salesforce.misc;
 
-import java.util.BitSet;
 import java.util.Calendar;
 
 /**
@@ -21,6 +20,8 @@ PERSONAL_DEMO licence is MxjetovtygmPUHNqoPAXGQ 2012-10-31
 PERSONAL_DEMO licence is PVPSZ3MvLhI2bxoZKhuqrQ 2013-03-31
 Free Limited SQL licence is bsCbe26QJkFi_7H_ICMPuQ 3000-3-31
 1007 Bo Coughlin licence is gzr9OIltkZ_JMrzD3wx7uQ 3000-12-31
+1008 Jeffrey Huth licence for user Admin GreatVines is iszEGJuov_x4mQRTpE18rg 3000-12-31
+1009 Interactive Investor Plc licence for user  is 1wPf8PSWNF0VyMGyN32vKg 3000-12-31
 
 StuntByte demo: support@stuntbyte.com
                 licence(0-pblwi-KTAfqhSW8Q9_tg)sfdc(p1sswordncOKWYdk3eBVADueynFLfcCp)
@@ -51,7 +52,17 @@ StuntByte demo: support@stuntbyte.com
             }
         };
 
-        
+
+        LicenceSetter CORPORATE_JDBC_DEPLOY = new LicenceSetter() {
+            public void setFeatures(Licence licence) {
+                licence.setJdbcFeature(true);
+                licence.setDeploymentFeature(true);
+                licence.setPersonalLicence(false);
+                licence.setLimitedLicence(false);
+            }
+        };
+
+
         checkLicence(998, "Pleb Pleb", "Pleb Pleb", "Fidelma Company", USER_JDBC_AND_DEPLOY, 3000, Calendar.DECEMBER, 31);
         checkLicence(999, "Minion O'Toole", "Minion O'Toole", "Fidelma Company", USER_JDBC_AND_DEPLOY, 3000, Calendar.DECEMBER, 31);
         checkLicence(999, "Kerry Sainsbury", "Kerry Sainsbury", "Fidelma Company", USER_JDBC_AND_DEPLOY, 2010, Calendar.DECEMBER, 31);
@@ -60,15 +71,18 @@ StuntByte demo: support@stuntbyte.com
         checkLicence(1002, "Darko Bohinc", "Darko Bohinc", "Darko Bohinc", USER_JDBC_AND_DEPLOY, 3000, Calendar.DECEMBER, 31);
         checkLicence(1003, "Fronde Admin", "Fronde Admin", "Fronde Admin", USER_JDBC_AND_DEPLOY, 3000, Calendar.DECEMBER, 31);
 
-        checkLicence(1004, "PERSONAL_DEMO", "PERSONAL_DEMO", "PERSONAL_DEMO", USER_JDBC_AND_DEPLOY, 2013, Calendar.MARCH, 31);
+        // The real demo licence:
+        checkLicence(1004, "PERSONAL_DEMO", "PERSONAL_DEMO", "PERSONAL_DEMO", USER_JDBC_AND_DEPLOY, 2014, Calendar.MARCH, 31);
 
-
+        // Lobotomised demo (vs website alleged bsCbe26QJkFi_7H_ICMPuQ )
         checkLicence(1005, "PERSONAL_DEMO", "Free Limited SQL", "PERSONAL_DEMO", FREE_LIMITED_SQL, 3000, Calendar.MARCH, 31);
-        checkLicence(1006, "PERSONAL_DEMO", "StuntByte Demo", "PERSONAL_DEMO", USER_JDBC_AND_DEPLOY, 3000, Calendar.MARCH, 31);
+//        checkLicence(1006, "PERSONAL_DEMO", "StuntByte Demo", "PERSONAL_DEMO", USER_JDBC_AND_DEPLOY, 3000, Calendar.MARCH, 31);
 
         checkLicence(1007, "Heather Coughlin", "Bo Coughlin", "Heather Coughlin", USER_JDBC_AND_DEPLOY, 3000, Calendar.DECEMBER, 31);
-
         checkLicence(1008, "Jeffrey Huth", "Admin GreatVines", "n/a", USER_JDBC_ONLY, 3000, Calendar.DECEMBER, 31);
+
+        checkLicence(1009, "Interactive Investor Plc", "", "Interactive Investor Plc", CORPORATE_JDBC_DEPLOY, 3000, Calendar.DECEMBER, 31);
+        checkLicence(1010, "Interactive Investor", "", "Interactive Investor", CORPORATE_JDBC_DEPLOY, 3000, Calendar.DECEMBER, 31);
     }
 
     interface LicenceSetter {
@@ -79,14 +93,22 @@ StuntByte demo: support@stuntbyte.com
 
     public static String checkLicence(int customerNumber,
                                       String licenceName,
-                                      String username, String orgname,
+                                      String username,
+                                      String orgname,
                                       LicenceSetter licenceSetter, int year, int month, int day) throws Exception {
 
         Calendar expires = Calendar.getInstance();
         expires.set(year, month, day);
 
         // Create a licence
-        Licence licence = new Licence(customerNumber, username, expires);
+        Licence licence;
+
+        if (username.equals("")) {
+            licence = new Licence(customerNumber, orgname, expires);
+        } else {
+            licence = new Licence(customerNumber, username, expires);
+        }
+
         licenceSetter.setFeatures(licence);
 
         String key = generateKey(licence);
