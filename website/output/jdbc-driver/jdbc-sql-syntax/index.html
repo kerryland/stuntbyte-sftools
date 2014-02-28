@@ -29,7 +29,7 @@
 <h2>UPDATE</h2>
 <p>A normal SQL UPDATE statement, including support for expressions that refer to other columns:</p>
 
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre><a href="#n1" name="n1">1</a>
 <a href="#n2" name="n2">2</a>
 <a href="#n3" name="n3">3</a>
@@ -39,11 +39,11 @@
    <span class="class">SET</span> firstName = firstname + <span class="string"><span class="delimiter">'</span><span class="content"> </span><span class="delimiter">'</span></span> + lastname, 
        NumberOfEmployees=NumberOfEmployees*<span class="integer">2</span>*annualRevenue
  <span class="keyword">WHERE</span> annualRevenue &gt; <span class="integer">0</span></pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 
 <p></p>
 <h2>INSERT</h2>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre><a href="#n1" name="n1">1</a>
 <a href="#n2" name="n2">2</a>
 <a href="#n3" name="n3">3</a>
@@ -51,18 +51,18 @@
   <td class="code"><pre>A normal SQL <span class="class">INSERT</span> statement:
 <span class="class">INSERT</span> <span class="class">INTO</span> Account(name, billingCity)
 <span class="keyword">VALUES</span> (<span class="string"><span class="delimiter">'</span><span class="content">Mr Jones</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">Super City</span><span class="delimiter">'</span></span>)</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 
 <p></p>
 <h2>DELETE</h2>
 <p>A normal SQL DELETE statement:</p>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre><a href="#n1" name="n1">1</a>
 <a href="#n2" name="n2">2</a>
 </pre></td>
   <td class="code"><pre><span class="class">DELETE</span> <span class="keyword">FROM</span> account
 <span class="keyword">WHERE</span> billingCity = <span class="string"><span class="delimiter">'</span><span class="content">Super City</span><span class="delimiter">'</span></span></pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 
 <p></p>
 <h2>SELECT</h2>
@@ -70,20 +70,20 @@
 <ul>
 <li>Support for "SELECT *". This is almost priceless!</li>
 <li>Support for column aliases via "as"</li>
-</ul><pre><code class="language-sql"><table class="CodeRay"><tr>
+</ul><div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre><a href="#n1" name="n1">1</a>
 <a href="#n2" name="n2">2</a>
 </pre></td>
   <td class="code"><pre><span class="class">SELECT</span> FirstName <span class="keyword">as</span> fn, LastName <span class="keyword">as</span> ln, CreatedBy.name <span class="keyword">as</span> cn
 <span class="keyword">FROM</span> Lead</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 <ul>
 <li>Support for "count(*)", as well as Salesforce-native "count()" and "count(id)".</li>
-<li>Patches illegal SOQL to valid SQL, ie: "WHERE ID = null" to "WHERE 0 = 1". </li>
+<li>Patches illegal SOQL to valid SQL, ie: "WHERE ID = null" to "WHERE 0 = 1".á</li>
 </ul><h2>SELECT non-features</h2>
 <p>We haven't rewritten the Salesforce SQL engine, and still inherit the other Salesforce-supplied SOQL SELECT limitations, including no support for normal SQL joins.</p>
-<p>We also don't support SOQL's nested SELECT functionality, because it doesn't really fit into the relational model. eg:</p>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<p>We also don't support SOQL's┬ánested SELECT functionality, because it doesn't really fit into the relational model. eg:</p>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre><a href="#n1" name="n1">1</a>
 <a href="#n2" name="n2">2</a>
 <a href="#n3" name="n3">3</a>
@@ -91,7 +91,7 @@
   <td class="code"><pre><span class="class">SELECT</span> Account.Name, Type,
 (<span class="class">SELECT</span> b.LastName <span class="keyword">FROM</span> Account.Contacts b)
 <span class="keyword">FROM</span> Account</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 
 <p></p>
 <h2>Data Type Literals</h2>
@@ -120,13 +120,13 @@
 </tbody></table><p></p>
 <h2>General Limitations</h2>
 <p>UPDATE, DELETE and SELECT all depend on the SOQL WHERE clause, so they inherit the limitations provided by Salesforce. In particular you cannot write a WHERE clause that compares one column to another, eg:</p>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre><a href="#n1" name="n1">1</a>
 <a href="#n2" name="n2">2</a>
 </pre></td>
   <td class="code"><pre><span class="class">SELECT</span> * <span class="keyword">FROM</span> Lead
 <span class="keyword">WHERE</span> LastActivityDate = ConvertedDate</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 <br/>
     </div>
     <div id="sidebar">
@@ -135,7 +135,6 @@
         <li><a href="/">Home</a></li>
         <li><a href="/download">Download</a></li>
         <li><a href="/contact">Contact</a></li>
-        <li><a href="/community">Community</a></li>
       </ul>
       <h2>JDBC Driver</h2>
       <ul>
@@ -160,7 +159,7 @@
       </ul>
       <br/>
       <br/>
-      &copy; <a href="/contact">stuntbyte</a> 2012-2013
+      &copy; <a href="/contact">stuntbyte</a> 2012-2014
       </p> 
     </div>
   </body>

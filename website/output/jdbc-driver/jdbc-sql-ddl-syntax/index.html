@@ -29,16 +29,16 @@
 <h2>CREATE TABLE</h2>
 <p>We provide a way to create a Salesforce "custom object" via the JDBC driver:</p>
 
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre><a href="#n1" name="n1">1</a>
 <a href="#n2" name="n2">2</a>
 </pre></td>
   <td class="code"><pre><span class="class">CREATE</span> <span class="type">TABLE</span> &lt;tableName&gt; ( &lt;columnName&gt; &lt;dataType&gt; [<span class="predefined-constant">null</span> | <span class="keyword">not</span> <span class="predefined-constant">null</span> ]
 [ WITH &lt;withClause&gt; ] ,... );</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 
 <p>For example:</p>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre><a href="#n1" name="n1">1</a>
 <a href="#n2" name="n2">2</a>
 <a href="#n3" name="n3">3</a>
@@ -58,14 +58,14 @@ group__c reference <span class="keyword">references</span>(superherogroup__c) wi
 my_formula__c string(<span class="integer">80</span>) with (formula <span class="string"><span class="delimiter">"</span><span class="content">name &amp; ' ' &amp; identity__r.Name</span><span class="delimiter">"</span></span>),
 secret__c encryptedstring(<span class="integer">50</span>) with (maskChar asterisk, maskType <span class="keyword">all</span>),
 commitment__c percent(<span class="integer">3</span>,<span class="integer">0</span>) with (inlineHelpText <span class="string"><span class="delimiter">"</span><span class="content">Here is some help!</span><span class="delimiter">"</span></span>));</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 <p></p>
 <h3>Data Types</h3>
 <p>We support the following datatypes via the CREATE and ALTER table commands.</p>
 <h4>Numeric datatypes</h4>
 <p>These data types support an optional "precision, scale" clause:</p>
 
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre><a href="#n1" name="n1">1</a>
 <a href="#n2" name="n2">2</a>
 <a href="#n3" name="n3">3</a>
@@ -77,12 +77,12 @@ Percent[(&lt;precision&gt;, [&lt;scale&gt;])]
 <span class="predefined-type">Double</span>[(&lt;precision&gt;, [&lt;scale&gt;])]
 <span class="predefined-type">Int</span>[(&lt;precision&gt;)]
 <span class="predefined-type">Decimal</span>[(&lt;precision&gt;, [&lt;scale&gt;])]</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 
 <p></p>
 <h4>String datatypes</h4>
 <p>These data types support an optional "length" clause:</p>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre><a href="#n1" name="n1">1</a>
 <a href="#n2" name="n2">2</a>
 <a href="#n3" name="n3">3</a>
@@ -90,23 +90,23 @@ Percent[(&lt;precision&gt;, [&lt;scale&gt;])]
   <td class="code"><pre>String[(&lt;length&gt;)]
 TextArea[(&lt;length&gt;)]
 LongTextArea[(&lt;length&gt;)] with (visibleLines <span class="integer">3</span>)</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 
 <p></p>
 <h4>Picklist and Multipicklist datatype</h4>
-<p>[Multi]Picklist supports a list of valid values, a default indicator, and an optional "sorted" clause.  Note that currently there is no support for "controlling field" in Picklist.</p>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<p>[Multi]Picklist supports a list of valid values, a default indicator, and an optional "sorted" clause.┬á Note that currently there is no support for "controlling field" in Picklist.</p>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre><a href="#n1" name="n1">1</a>
 <a href="#n2" name="n2">2</a>
 </pre></td>
   <td class="code"><pre>PickList(&lt;value&gt; [<span class="directive">default</span>] ... [sorted]
 MultiPickList(&lt;value&gt; [<span class="directive">default</span>] ... [sorted]</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 
 <p></p>
 <h4>Foreign key relationships</h4>
 <p>Foreign keys are defined via the "Reference" and "MasterRecord" data types:</p>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre><a href="#n1" name="n1">1</a>
 <a href="#n2" name="n2">2</a>
 <a href="#n3" name="n3">3</a>
@@ -114,21 +114,21 @@ MultiPickList(&lt;value&gt; [<span class="directive">default</span>] ... [sorted
   <td class="code"><pre>Reference <span class="keyword">references</span> (&lt;referencedTable&gt;) with (relationshipName &lt;refName&gt; [ , relationshipLabel <span class="string"><span class="delimiter">'</span><span class="content">&lt;labelName&gt;</span><span class="delimiter">'</span></span>])
 
 MasterRecord <span class="keyword">references</span> (&lt;referencedTable&gt;) with (relationshipName &lt;refName&gt; [ , relationshipLabel <span class="string"><span class="delimiter">'</span><span class="content">&lt;labelName&gt;</span><span class="delimiter">'</span></span>])</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 
 <p></p>
 <h4>AutoNumber</h4>
 <p>The AutoNumber datatype, used with the built-in "Name" field, defaults to a format of {0000000000}, but this can be changed via the 'with' clause, eg:</p>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre>
 </pre></td>
   <td class="code"><pre>AutoNumber with (displayFormat <span class="string"><span class="delimiter">"</span><span class="content">{INV0000}</span><span class="delimiter">"</span></span>)</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 
 <p></p>
 <h4>Other datatypes</h4>
 <ul>
-<li>EncryptedString -- for example:  encryptedstring(50) with (maskChar asterisk, maskType all),</li>
+<li>EncryptedString -- for example: ┬áencryptedstring(50) with (maskChar asterisk, maskType all),</li>
 <li>Email</li>
 <li>Phone</li>
 <li>Url</li>
@@ -141,40 +141,40 @@ MasterRecord <span class="keyword">references</span> (&lt;referencedTable&gt;) w
 </ul><h3>Use of 'with clause'</h3>
 <p>The CREATE command maps standard SQL values such as the the column name, data type, and field size to an internal Salesforce structure. The 'with' clause is really just a back-door to support unusual features associated with a column definition. The values listed in the 'with' clause are passed through to Salesforce unmodified, and values are case sensitive.</p>
 <p>The "with" values are documented by salesforce <a href="http://www.salesforce.com/us/developer/docs/api_meta/Content/customfield.htm">here</a>. If you wanted, for example, to define "inline help text" for a field you would use:</p>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre>
 </pre></td>
   <td class="code"><pre>...with (inlineHelpText <span class="string"><span class="delimiter">"</span><span class="content">Here is some help!</span><span class="delimiter">"</span></span>)</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 
 <p>Some data types, like LongTextArea, Reference and MasterRecord actually <em>require</em> the use of the 'with' clause, as documented above. Failure to include the 'with' clause will cause Salesforce to generate an error that provides a pretty good clue about what you need to add.<br><br>For example:</p>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre>
 </pre></td>
   <td class="code"><pre><span class="class">create</span> <span class="type">table</span> wibble__c (description__c longTextArea(<span class="integer">12000</span>));</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 <p>Will generate an error:</p>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre><a href="#n1" name="n1">1</a>
 <a href="#n2" name="n2">2</a>
 </pre></td>
   <td class="code"><pre>Error: wibble__c.description__c Must specify <span class="string"><span class="delimiter">'</span><span class="content">visibleLines</span><span class="delimiter">'</span></span> <span class="keyword">for</span>
 a CustomField <span class="keyword">of</span> type LongTextArea <span class="keyword">on</span> line <span class="integer">1</span> col <span class="integer">372</span></pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 <p>So add a "with" clause as appropriate, eg:</p>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre><a href="#n1" name="n1">1</a>
 <a href="#n2" name="n2">2</a>
 </pre></td>
   <td class="code"><pre><span class="class">create</span> <span class="type">table</span> wibble__c(description__c longTextArea(<span class="integer">12000</span>)
 with (visibleLines <span class="integer">3</span>))</pre></td>
-</tr></table></code></pre>
-<p>Formula fields are also handled via the "with" clause. For example: </p>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+</tr></table></code></pre></div></div>
+<p>Formula fields are also handled via the "with" clause. For example:┬á</p>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre>
 </pre></td>
   <td class="code"><pre>my_formula__c string(<span class="integer">80</span>) with (formula <span class="string"><span class="delimiter">"</span><span class="content">name &amp; ' ' &amp; identity__r.Name</span><span class="delimiter">"</span></span>),</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 
 <p></p>
 <h3>Known Issues</h3>
@@ -196,26 +196,26 @@ with (visibleLines <span class="integer">3</span>))</pre></td>
 <p>If you create a 'relationship' column with name given name, you won't be able to reuse the name, even if you drop the table or column. This is because Salesforce doesn't <em>really</em> drop the data until later, just in case you change your mind, so you can't reuse the relationship name until the column is completely deleted.</p>
 <h2>ALTER TABLE</h2>
 <p>You can add OR MODIFY a column with:</p>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre>
 </pre></td>
   <td class="code"><pre><span class="class">ALTER</span> <span class="type">TABLE</span> <span class="class">ADD</span> &lt;columnName&gt; &lt;dataTypeDefinition&gt;</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 <p>and remove columns with:</p>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre>
 </pre></td>
   <td class="code"><pre><span class="class">ALTER</span> <span class="type">TABLE</span> <span class="class">DROP</span> <span class="type">COLUMN</span> &lt;columnName&gt;</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 
 <p></p>
 <h2>DROP TABLE</h2>
 <p>You can remove a table from salesforce with:</p>
-<pre><code class="language-sql"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-sql"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre>
 </pre></td>
   <td class="code"><pre><span class="class">DROP</span> <span class="type">TABLE</span> [ <span class="keyword">IF</span> <span class="keyword">EXISTS</span> ]</pre></td>
-</tr></table></code></pre>
+</tr></table></code></pre></div></div>
 <br/>
     </div>
     <div id="sidebar">
@@ -224,7 +224,6 @@ with (visibleLines <span class="integer">3</span>))</pre></td>
         <li><a href="/">Home</a></li>
         <li><a href="/download">Download</a></li>
         <li><a href="/contact">Contact</a></li>
-        <li><a href="/community">Community</a></li>
       </ul>
       <h2>JDBC Driver</h2>
       <ul>
@@ -249,7 +248,7 @@ with (visibleLines <span class="integer">3</span>))</pre></td>
       </ul>
       <br/>
       <br/>
-      &copy; <a href="/contact">stuntbyte</a> 2012-2013
+      &copy; <a href="/contact">stuntbyte</a> 2012-2014
       </p> 
     </div>
   </body>

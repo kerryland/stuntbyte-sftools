@@ -4,7 +4,7 @@ title: Grant Permissions
 
 <p>The JDBC driver can set profile permissions, although these currently cannot be embedded within the deployment script and must be run directly against the destination environment. It does save a lot of pointing and clicking.</p>
 <p>But first, a disclaimer:</p>
-<p style="padding-left: 30px;">WARNING: DO NOT RUN THESE COMMANDS AGAINST A PRODUCTION INSTANCE OF SALESFORCE IF YOU HAVE MANY APEX UNIT TESTS.</p>
+<p style="padding-left: 30px;"><em>WARNING: DO NOT RUN THESE COMMANDS AGAINST A PRODUCTION INSTANCE OF SALESFORCE IF YOU HAVE MANY APEX UNIT TESTS.</em></p>
 <p>This is because each GRANT or REVOKE command is currently an independent "deployment" from Salesforce's perspective, so if run against a Production instance then ALL TESTS will be run for EACH command. If you have a lot of Apex unit tests this may end up taking a very, very, long time. One day this functionality will be rolled into the Deployment Tool, if there is sufficient demand.</p>
 <p>Permissions can be granted, or revoked at an object level:</p>
 

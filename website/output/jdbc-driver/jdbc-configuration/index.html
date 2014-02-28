@@ -33,27 +33,27 @@
 <h3><strong>JDBC URL</strong></h3>
 <p>Here is a sample JDBC URL. Make sure to use the correct domain for your instance. ie: "login.salesforce.com" for a Production or Developer instance, and "test.salesforce.com" for a Sandbox instance.
 </p>
-<pre><code class="language-html"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-html"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre>
 </pre></td>
   <td class="code"><pre>jdbc:sfdc:https://login.salesforce.com</pre></td>
 </tr></table></code>
-</pre>
+</pre></div></div>
 <p>The URL also takes an optional "datatypes" parameter that controls how the various data types are displayed to the user. For example:</p>
-<pre><code class="language-html"><table class="CodeRay"><tr>
+<div class="CodeRay"><div class="code"><pre><code class="language-html"><table class="CodeRay"><tr>
 <td class="line-numbers" title="double click to toggle" ondblclick="with (this.firstChild.style) { display = (display == '') ? 'none' : '' }"><pre>
 </pre></td>
   <td class="code"><pre>jdbc:sfdc:https://login.salesforce.com?datatypes=sql92</pre></td>
 </tr></table></code>
-</pre>
+</pre></div></div>
 <p>The supported values for the "datatypes" parameter are:</p>
 <ul>
 <li>
 <strong>api</strong> uses the datatypes as returned by the Salesforce API. This offers the richest range of data types, and is the default.</li>
 <li>
-<strong>ui</strong> uses the datatypes as they appear in the Salesforce UI. Ideal for users who are more comfortable at that level.</li>
+<strong>ui</strong>áuses the datatypes as they appear in the Salesforce UI. Ideal for users who are more comfortable at that level.</li>
 <li>
-<strong>sql92</strong> uses SQL92 datatypes. Useful for tools that can't handle Salesforce datatypes, like <a href="http://mogwai.sourceforge.net/">Mogawai</a>.</li>
+<strong>sql92</strong>áuses SQL92 datatypes. Useful for tools that can't handle Salesforce datatypes, like <a href="http://mogwai.sourceforge.net/">Mogawai</a>.</li>
 </ul><p>Note that "datatypes" can also be configured as a Property in the database connection, as well as part of the server URL.</p>
 
 <h3><strong>JDBC Username</strong></h3>
@@ -73,7 +73,7 @@
 <p>If you decide to include the licence as part a separate property then you should define the password as:</p>
 <p style="padding-left: 30px;"><strong>&lt;sfdc-password&gt;&lt;sfdc-security-token&gt;, </strong>for example:<br><br><strong>S3CR3T!a2dQxG0Y3kqWiJQVEwnYtryr1Ja1</strong></p>
 <p>... and then define a property named "licence" with the appropriate value.</p>
-<p>Read more about obtaining a licence (including free ones) on the <a href="/download">download</a> page.</p>
+<p>Read more about obtaining a licence (including free ones) on the <a href="/download">download</a> page.</p>
 <br/>
     </div>
     <div id="sidebar">
@@ -82,7 +82,6 @@
         <li><a href="/">Home</a></li>
         <li><a href="/download">Download</a></li>
         <li><a href="/contact">Contact</a></li>
-        <li><a href="/community">Community</a></li>
       </ul>
       <h2>JDBC Driver</h2>
       <ul>
@@ -107,7 +106,7 @@
       </ul>
       <br/>
       <br/>
-      &copy; <a href="/contact">stuntbyte</a> 2012-2013
+      &copy; <a href="/contact">stuntbyte</a> 2012-2014
       </p> 
     </div>
   </body>
