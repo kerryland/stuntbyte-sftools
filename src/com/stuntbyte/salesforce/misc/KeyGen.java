@@ -72,7 +72,7 @@ StuntByte demo: support@stuntbyte.com
         checkLicence(1003, "Fronde Admin", "Fronde Admin", "Fronde Admin", USER_JDBC_AND_DEPLOY, 3000, Calendar.DECEMBER, 31);
 
         // The real demo licence:
-        checkLicence(1004, "PERSONAL_DEMO", "PERSONAL_DEMO", "PERSONAL_DEMO", USER_JDBC_AND_DEPLOY, 2014, Calendar.JULY, 31);
+        checkLicence(1004, "PERSONAL_DEMO", "PERSONAL_DEMO", "PERSONAL_DEMO", USER_JDBC_AND_DEPLOY, 2014, Calendar.NOVEMBER, 31);
 
         // Lobotomised demo (vs website alleged bsCbe26QJkFi_7H_ICMPuQ )
         checkLicence(1005, "PERSONAL_DEMO", "Free Limited SQL", "PERSONAL_DEMO", FREE_LIMITED_SQL, 3000, Calendar.MARCH, 31);

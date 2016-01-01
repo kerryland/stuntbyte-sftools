@@ -1,5 +1,7 @@
+0. websetup.cmd
 1. Change 'content'
 2. nanoc (to compile)
 3. nanoc view (to view) -- can leave this running
 4. http://localhost:3000
 5. sync.sh -- deploy to amazon
+   go.cmd (windows equiv)
