@@ -47,7 +47,7 @@ LongTextArea[(&lt;length&gt;)] with (visibleLines 3)
 
 <p></p>
 <h4>Picklist and Multipicklist datatype</h4>
-<p>[Multi]Picklist supports a list of valid values, a default indicator, and an optional "sorted" clause.  Note that currently there is no support for "controlling field" in Picklist.</p>
+<p>[Multi]Picklist supports a list of valid values, a default indicator, and an optional "sorted" clause. Note that currently there is no support for "controlling field" in Picklist.</p>
 <pre><code class="language-sql">
 PickList(&lt;value&gt; [default] ... [sorted]
 MultiPickList(&lt;value&gt; [default] ... [sorted]
@@ -72,7 +72,7 @@ AutoNumber with (displayFormat "{INV0000}")
 <p></p>
 <h4>Other datatypes</h4>
 <ul>
-<li>EncryptedString -- for example:  encryptedstring(50) with (maskChar asterisk, maskType all),</li>
+<li>EncryptedString -- for example:  encryptedstring(50) with (maskChar asterisk, maskType all),</li>
 <li>Email</li>
 <li>Phone</li>
 <li>Url</li>
@@ -85,7 +85,7 @@ AutoNumber with (displayFormat "{INV0000}")
 </ul>
 <h3>Use of 'with clause'</h3>
 <p>The CREATE command maps standard SQL values such as the the column name, data type, and field size to an internal Salesforce structure. The 'with' clause is really just a back-door to support unusual features associated with a column definition. The values listed in the 'with' clause are passed through to Salesforce unmodified, and values are case sensitive.</p>
-<p>The "with" values are documented by salesforce <a href="http://www.salesforce.com/us/developer/docs/api_meta/Content/customfield.htm">here</a>. If you wanted, for example, to define "inline help text" for a field you would use:</p>
+<p>The "with" values are documented by Salesforce <a href="http://www.salesforce.com/us/developer/docs/api_meta/Content/customfield.htm">here</a>. If you wanted, for example, to define "inline help text" for a field you would use:</p>
 <pre><code class="language-sql">
 ...with (inlineHelpText "Here is some help!")
 </code></pre>
@@ -104,7 +104,7 @@ a CustomField of type LongTextArea on line 1 col 372
 create table wibble__c(description__c longTextArea(12000)
 with (visibleLines 3))
 </code></pre>
-<p>Formula fields are also handled via the "with" clause. For example: </p>
+<p>Formula fields are also handled via the "with" clause. For example: </p>
 <pre><code class="language-sql">
 my_formula__c string(80) with (formula "name &amp; ' ' &amp; identity__r.Name"), 
 </code></pre>
@@ -140,7 +140,7 @@ ALTER TABLE DROP COLUMN &lt;columnName&gt;
 
 <p></p>
 <h2>DROP TABLE</h2>
-<p>You can remove a table from salesforce with:</p>
+<p>You can remove a table from Salesforce with:</p>
 <pre><code class="language-sql">
 DROP TABLE [ IF EXISTS ]
 </code></pre>

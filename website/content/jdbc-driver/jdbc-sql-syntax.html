@@ -41,12 +41,12 @@ FROM Lead
 </code></pre>
 <ul>
 <li>Support for "count(*)", as well as Salesforce-native "count()" and "count(id)".</li>
-<li>Patches illegal SOQL to valid SQL, ie: "WHERE ID = null" to "WHERE 0 = 1". </li>
+<li>Patches illegal SOQL to valid SQL, ie: "WHERE ID = null" to "WHERE 0 = 1".</li>
 </ul>
 
 <h2>SELECT non-features</h2>
 <p>We haven't rewritten the Salesforce SQL engine, and still inherit the other Salesforce-supplied SOQL SELECT limitations, including no support for normal SQL joins.</p>
-<p>We also don't support SOQL'sÂ nested SELECT functionality, because it doesn't really fit into the relational model. eg:</p>
+<p>We also don't support SOQL's nested SELECT functionality, because it doesn't really fit into the relational model. eg:</p>
 <pre><code class="language-sql">
 SELECT Account.Name, Type,
 (SELECT b.LastName FROM Account.Contacts b)
