@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Farceide.iml" filepath="$PROJECT_DIR$/Farceide.iml" />
+      <module fileurl="file://$PROJECT_DIR$/jdbc-core/jdbc-core.iml" filepath="$PROJECT_DIR$/jdbc-core/jdbc-core.iml" />
     </modules>
   </component>
 </project>
