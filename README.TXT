@@ -1,3 +1,17 @@
+I was inspired by two projects, and used small amounts of code from both:
+
+Lexical parsing code from Gregory Smith (gsmithfarmer@gmail.com)'s "SQLForce" code
+via https://github.com/abhidotnet/sqlforce (repurposed as com.stuntbyte.salesforce.jdbc.sqlforce).
+Released under the Eclipse Public Licence 1.0. You might like to look at http://www.capstorm.com for more of his tools.
+
+Salesforce Data type mapping from Keith Clarke (keith.clarke.claimvantage@gmail.com)'s "Force Metadata" code
+via https://code.google.com/archive/p/force-metadata-jdbc-driver/ (repurposed as com.stuntbyte.salesforce.jdbc.metaforce).
+Released under the "New BSD Licence" (aka BSD 3)
+
+TODO:
+
+Update to API 31 and fix ExporterTest
+Migrate nanoc to Markdown
 
 https://bitbucket.org/repo/mine
 http://kerryland.myjetbrains.com/youtrack/issues#
