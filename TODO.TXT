@@ -1,5 +1,11 @@
-7742 down, 225 up
-6197 down, 351 up
+Proguard maven shaded jar
+Test maven shaded jar in SQL Workbench
+Create sub-project for ide files - 'editors'
+Create sub-project for documentation
+Remove ant (and wsdl)
+Migrate to API 31
+Mention grails and hibernate
+Mention migration tool
 
 - Map any-case in getString(etc) to correct case
 - SfPreparedStatement.setObject needs lots of work....
