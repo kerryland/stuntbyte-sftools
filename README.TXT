@@ -165,3 +165,18 @@ COMPILATION:
 
 
 mvn install:install-file -Dfile=stuntbyte-sfdc-1.4.jar -DgroupId=com.stuntbyte -DartifactId=farce-base -Dversion=1.4 -Dpackaging=jar -DgeneratePom=true
+
+
+
+Competitors:
+
+Simba.
+http://www.simba.com/product/salesforce-drivers-with-sql-connector/#purchase
+Desktop: $199
+Server: $999
+
+cdata.
+http://www.cdata.com/drivers/salesforce/order/jdbc/
+Standard: $349 pa
+Prof (server): $799 pa
+Cloud: request quote
