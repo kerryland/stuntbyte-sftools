@@ -331,27 +331,6 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public void setSchema(String schema) throws SQLException {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public String getSchema() throws SQLException {
-        return "";  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public void abort(Executor executor) throws SQLException {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public int getNetworkTimeout() throws SQLException {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    /*
-    public void setSchema(String s) throws SQLException {
     }
 
     public String getSchema() throws SQLException {
@@ -361,14 +340,12 @@ public class SfConnection implements java.sql.Connection {
     public void abort(Executor executor) throws SQLException {
     }
 
-    public void setNetworkTimeout(Executor executor, int i) throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+    public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
     }
 
     public int getNetworkTimeout() throws SQLException {
-        throw new SQLFeatureNotSupportedException();
+        return 0;
     }
-    */
 
     public <T> T unwrap(Class<T> iface) throws SQLException {
         throw new SQLFeatureNotSupportedException();

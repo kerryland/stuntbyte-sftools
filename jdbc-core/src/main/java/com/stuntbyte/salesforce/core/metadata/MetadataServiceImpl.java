@@ -39,6 +39,137 @@ public class MetadataServiceImpl implements MetadataService {
     
     private Map<String, List<Metadata>> metaDataContainerByType = new HashMap<String, List<Metadata>>();
 
+    private static List<String> metaDataTypes;
+
+    {
+        // https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_types_list.htm
+        // More, or less.
+        metaDataTypes = new ArrayList<String>();
+
+        metaDataTypes.add("AccountCriteriaBasedSharingRule");
+        metaDataTypes.add("ActionLinkGroupTemplate");
+        metaDataTypes.add("AnalyticSnapshot");
+        metaDataTypes.add("ApexClass");
+        metaDataTypes.add("ApexComponent");
+        metaDataTypes.add("ApexPage");
+        metaDataTypes.add("ApexTrigger");
+        metaDataTypes.add("AppMenu");
+        metaDataTypes.add("ApprovalProcess");
+        metaDataTypes.add("AssignmentRules");
+        metaDataTypes.add("AuthProvider");
+        metaDataTypes.add("AuraDefinitionBundle");
+        metaDataTypes.add("AutoResponseRules");
+        metaDataTypes.add("BusinessProcess");
+        metaDataTypes.add("CallCenter");
+        metaDataTypes.add("CampaignCriteriaBasedSharingRule");
+        metaDataTypes.add("CaseCriteriaBasedSharingRule");
+        metaDataTypes.add("Certificate");
+        metaDataTypes.add("CleanDataService");
+        metaDataTypes.add("Community"); // Zone
+        metaDataTypes.add("CommunityTemplateDefinition");
+        metaDataTypes.add("CommunityThemeDefinition");
+        metaDataTypes.add("CompactLayout");
+        metaDataTypes.add("ConnectedApp");
+        metaDataTypes.add("ContactCriteriaBasedSharingRule");
+        metaDataTypes.add("ContentAsset");
+        metaDataTypes.add("CorsWhitelistOrigin");
+        metaDataTypes.add("CustomApplication");
+        metaDataTypes.add("CustomApplicationComponent");
+        metaDataTypes.add("CustomFeedFilter");
+        metaDataTypes.add("CustomField");
+        metaDataTypes.add("CustomLabel");
+        metaDataTypes.add("CustomObject");
+        metaDataTypes.add("CustomObjectCriteriaBasedSharingRule");
+        metaDataTypes.add("CustomObjectTranslation");
+        metaDataTypes.add("CustomPageWebLink");
+        metaDataTypes.add("CustomPermission");
+        metaDataTypes.add("CustomSite");
+        metaDataTypes.add("CustomTab");
+        metaDataTypes.add("Dashboard");
+        metaDataTypes.add("DataCategoryGroup");
+        metaDataTypes.add("DelegateGroup");
+        metaDataTypes.add("Document");
+        metaDataTypes.add("DuplicateRule");
+        metaDataTypes.add("EmailTemplate");
+        metaDataTypes.add("EntitlementProcess");
+        metaDataTypes.add("EntitlementTemplate");
+        metaDataTypes.add("ExternalDataSource");
+        metaDataTypes.add("FieldSet");
+        metaDataTypes.add("Flow");
+        metaDataTypes.add("FlowDefinition");
+        metaDataTypes.add("GlobalValueSetTranslation");
+        metaDataTypes.add("GlobalPicklistValue");
+        metaDataTypes.add("Group");
+        metaDataTypes.add("HomePageComponent");
+        metaDataTypes.add("HomePageLayout");
+        metaDataTypes.add("InstalledPackage");
+        metaDataTypes.add("KeywordList");
+        metaDataTypes.add("Layout");
+        metaDataTypes.add("LeadCriteriaBasedSharingRule");
+        metaDataTypes.add("Letterhead");
+        metaDataTypes.add("ListView");
+        metaDataTypes.add("LiveChatButton");
+        metaDataTypes.add("LiveChatDeployment");
+        metaDataTypes.add("LiveChatSensitiveDataRule");
+        metaDataTypes.add("ManagedTopics");
+        metaDataTypes.add("MatchingRule");
+        metaDataTypes.add("MilestoneType");
+        metaDataTypes.add("ModerationRule");
+        metaDataTypes.add("NamedCredential");
+        metaDataTypes.add("NamedFilter");
+        metaDataTypes.add("Network");
+        metaDataTypes.add("OpportunityCriteriaBasedSharingRule");
+        metaDataTypes.add("PathAssistant");
+        metaDataTypes.add("PermissionSet");
+        metaDataTypes.add("PlatformCachePartition");
+        metaDataTypes.add("Portal");
+        metaDataTypes.add("PostTemplate");
+        metaDataTypes.add("Profile");
+        metaDataTypes.add("Queue");
+        metaDataTypes.add("QuickAction");
+        metaDataTypes.add("RecordType");
+        metaDataTypes.add("RemoteSiteSetting");
+        metaDataTypes.add("Report");
+        metaDataTypes.add("ReportType");
+        metaDataTypes.add("Role");
+        metaDataTypes.add("SamlSsoConfig");
+        metaDataTypes.add("Scontrol");
+        metaDataTypes.add("Settings");
+        metaDataTypes.add("SharingReason");
+        metaDataTypes.add("SharingRules");
+        metaDataTypes.add("SiteDotCom");
+        metaDataTypes.add("Skill");
+        metaDataTypes.add("StandardValueSet");
+        metaDataTypes.add("StandardValueSetTranslation");
+        metaDataTypes.add("StaticResource");
+        metaDataTypes.add("SynonymDictionary");
+        metaDataTypes.add("Territory");
+        metaDataTypes.add("Territory2");
+        metaDataTypes.add("Territory2Model");
+        metaDataTypes.add("Territory2Rule");
+        metaDataTypes.add("Territory2Type");
+        metaDataTypes.add("TransactionSecurityPolicy");
+        metaDataTypes.add("Translations");
+        metaDataTypes.add("UserCriteriaBasedSharingRule");
+        metaDataTypes.add("ValidationRule");
+        metaDataTypes.add("WaveApplication");
+        metaDataTypes.add("WaveDashboard");
+        metaDataTypes.add("WaveDataflow");
+        metaDataTypes.add("WaveDataset");
+        metaDataTypes.add("WaveLens");
+        metaDataTypes.add("WaveTemplateBundle");
+        metaDataTypes.add("WebLink");
+        metaDataTypes.add("Workflow");
+        metaDataTypes.add("WorkflowAlert");
+        metaDataTypes.add("WorkflowFieldUpdate");
+        metaDataTypes.add("WorkflowFlowAction");
+        metaDataTypes.add("WorkflowKnowledgePublish");
+        metaDataTypes.add("WorkflowOutboundMessage");
+        metaDataTypes.add("WorkflowRule");
+        metaDataTypes.add("WorkflowTask");
+        metaDataTypes = Collections.unmodifiableList(metaDataTypes);
+
+    }
 
     public MetadataServiceImpl(Reconnector reconnector) {
         this.reconnector = reconnector;
@@ -46,70 +177,13 @@ public class MetadataServiceImpl implements MetadataService {
 
 
     public List<String> getMetadataTypes() {
-        // http://www.salesforce.com/us/developer/docs/dev_lifecycle/Content/plan_proj_meta_components.htm
-        // More, or less.
-
-        List<String> metaDataToDownload = new ArrayList<String>();
-        metaDataToDownload.add("ActionOverride");
-        metaDataToDownload.add("AnalyticSnapshot");
-        metaDataToDownload.add("ApexClass");
-        metaDataToDownload.add("ArticleType");
-
-        metaDataToDownload.add("ApexComponent");
-        metaDataToDownload.add("ApexPage");
-        metaDataToDownload.add("ApexTrigger");
-
-        metaDataToDownload.add("BusinessProcess");
-
-        metaDataToDownload.add("CustomApplication");
-        metaDataToDownload.add("CustomField");
-        metaDataToDownload.add("CustomLabel");
-
-        metaDataToDownload.add("CustomObject");
-        metaDataToDownload.add("CustomObjectTranslation");
-
-        metaDataToDownload.add("CustomPageWebLink");
-        metaDataToDownload.add("CustomSite");
-        metaDataToDownload.add("CustomTab");
-        metaDataToDownload.add("Dashboard");
-        metaDataToDownload.add("DataCategoryGroup");
-        metaDataToDownload.add("Document");
-        metaDataToDownload.add("EmailTemplate");
-        metaDataToDownload.add("EntitlementTemplate");
-        metaDataToDownload.add("FieldSet");
-        metaDataToDownload.add("HomePageComponent");
-        metaDataToDownload.add("HomePageLayout");
-        metaDataToDownload.add("Layout");
-        metaDataToDownload.add("Letterhead");
-        metaDataToDownload.add("ListView");
-        metaDataToDownload.add("NamedFilter");
-        metaDataToDownload.add("PermissionSet");
-        metaDataToDownload.add("Portal");
-        metaDataToDownload.add("Profile");
-        metaDataToDownload.add("RecordType");
-        metaDataToDownload.add("RemoteSiteSetting");
-        metaDataToDownload.add("Report");
-        metaDataToDownload.add("ReportType");
-        metaDataToDownload.add("Scontrol");
-        metaDataToDownload.add("SharingReason");
-        metaDataToDownload.add("SharingRecalculation");
-        metaDataToDownload.add("StaticResource");
-        metaDataToDownload.add("Translations");
-        metaDataToDownload.add("ValidationRule");
-        metaDataToDownload.add("WebLink");
-        metaDataToDownload.add("Workflow");
-        metaDataToDownload.add("WorkflowAlert");
-        metaDataToDownload.add("WorkflowFieldUpdate");
-        metaDataToDownload.add("WorkflowOutboundMessage");
-        metaDataToDownload.add("WorkflowRule");
-        metaDataToDownload.add("WorkflowTask");
-        return metaDataToDownload;
+        return metaDataTypes;
     }
 
 
     public List<Metadata> getMetadataByType(String metaDataType) {
 
-        List<Metadata> container = null;
+        List<Metadata> container;
 
         // Try to fix the case if we can
         List<String> types = getMetadataTypes();

@@ -1,8 +1,11 @@
 package com.stuntbyte.salesforce.deployment;
 
+import com.stuntbyte.salesforce.core.metadata.MetadataService;
+import com.stuntbyte.salesforce.core.metadata.MetadataServiceImpl;
 import com.stuntbyte.salesforce.jdbc.SfConnection;
 import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.stuntbyte.salesforce.misc.TestHelper;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -49,4 +52,35 @@ public class DeploymentSchemaTests {
         assertEquals(0, rs.getInt(1));
         assertEquals(0, rs.getInt("COUNT"));
     }
+
+
+
+    @Test
+    public void testMetadataTypesCanBeQueried() throws SQLException {
+
+        MetadataService metadataService = new MetadataServiceImpl(null);
+        Statement stmt = conn.createStatement();
+
+        for (String metadataType : metadataService.getMetadataTypes()) {
+            ResultSet rs;
+            try {
+                rs = stmt.executeQuery("select count(*) from " + ResultSetFactory.DEPLOYABLE + "." + metadataType);
+            } catch (Exception e) {
+                if (e.getMessage().matches(".*Cannot use.*in this version")) {
+                    continue; // fine. likely will work in another version
+                } else if (e.getMessage().matches(".*Cannot use.*in this organization")) {
+                    continue; // fine. likely will work in another organisation
+                } else {
+                    Assert.fail("Unexpected error encountered: " + e.getMessage());
+                    continue;
+                }
+            }
+            assertEquals("Weird column count for " + metadataType, 1, rs.getMetaData().getColumnCount());
+            assertTrue(rs.next());
+            assertEquals("COUNT", rs.getMetaData().getColumnName(1));
+            assertEquals("COUNT", rs.getMetaData().getColumnLabel(1));
+        }
+
+    }
+
 }

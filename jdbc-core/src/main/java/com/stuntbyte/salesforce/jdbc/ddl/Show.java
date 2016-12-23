@@ -39,8 +39,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * select * from metadata.Types [ WHERE Identifier LIKE '<likeClause>' ]
- * select * from metadata.ApexClass [ WHERE Identifier LIKE '<likeClause>' ];
+ * select * from deployable.Types [ WHERE Identifier LIKE '<likeClause>' ]
+ * select * from deployable.ApexClass [ WHERE Identifier LIKE '<likeClause>' ];
 
  */
 public class Show {

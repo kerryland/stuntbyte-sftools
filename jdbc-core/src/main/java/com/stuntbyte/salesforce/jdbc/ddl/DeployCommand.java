@@ -543,7 +543,7 @@ public class DeployCommand {
     }
 
 
-    // TODO: Move to a generic class
+    // TODO: Move to a generic class related to "metaDataTypes" in MetadataServiceImpl
     private String determineXmlLabel(String componentType) throws Exception {
         if (componentType.equals("BusinessProcess")) return "businessProcesses";
         if (componentType.equals("CustomLabel")) return "labels";
@@ -556,6 +556,8 @@ public class DeployCommand {
         if (componentType.equals("WorkflowAlert")) return "alerts";
         if (componentType.equals("WorkflowFieldUpdate")) return "fieldUpdates";
         if (componentType.equals("WorkflowOutboundMessage")) return "outboundMessages";
+        if (componentType.equals("WorkflowKnowledgePublish")) return "knowledgePublishes";
+        if (componentType.equals("WorkflowFlowAction")) return "flowActions";
         if (componentType.equals("WorkflowRule")) return "rules";
         if (componentType.equals("WorkflowTask")) return "tasks";
 
