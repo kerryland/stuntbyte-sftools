@@ -73,7 +73,6 @@ public class SelectEngineTests {
         info.put("standard", "true");
         info.put("includes", "Lead,Account");
         info.put("useLabels", "true");
-        info.put("licence", TestHelper.licence);
 
         // Get a connection to the database
         conn = (SfConnection) DriverManager.getConnection(

@@ -129,13 +129,6 @@ public class SfStatement implements java.sql.Statement {
 
     public int executeUpdate(String sql, Boolean batchMode) throws SQLException {
         try {
-            if (sfConnection.getHelper().getLicenceResult().getLicence().supportsLimitedLicence()) {
-                throw new SQLException("Your Free Stunt Byte Licence only supports SELECT -- sorry!");
-            }
-            if (!sfConnection.getHelper().getLicenceResult().getLicence().supportsJdbcFeature()) {
-                throw new SQLException("Your Stunt Byte licence does not allow use of SQL updates");
-            }
-
             if (sfConnection.isReadOnly()) {
                 throw new SQLException("Connection is marked as read-only");
             }

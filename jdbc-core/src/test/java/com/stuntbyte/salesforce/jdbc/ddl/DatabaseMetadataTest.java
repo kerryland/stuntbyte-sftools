@@ -72,7 +72,6 @@ public class DatabaseMetadataTest {
                 url,
                 TestHelper.username,
                 TestHelper.password,
-                TestHelper.licence,
                 new Properties()
         );
         checkDataTypeName("Text", conn);

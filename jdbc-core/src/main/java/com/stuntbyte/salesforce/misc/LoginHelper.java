@@ -22,11 +22,8 @@
  */
 package com.stuntbyte.salesforce.misc;
 
-import com.stuntbyte.salesforce.jdbc.LicenceException;
 import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.stuntbyte.salesforce.jdbc.metaforce.WscService;
-//import com.sforce.async.AsyncApiException;
-//import com.sforce.async.RestConnection;
 import com.sforce.soap.apex.SoapConnection;
 import com.sforce.soap.metadata.MetadataConnection;
 import com.sforce.soap.partner.Connector;
@@ -34,7 +31,6 @@ import com.sforce.soap.partner.LoginResult;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
-//import com.sforce.ws.wsdl.Part;
 
 import java.util.Properties;
 
@@ -45,9 +41,6 @@ public class LoginHelper {
     private String server;
     private String username;
     private String password;
-    private String key;
-
-    private LicenceResult licenceResult;
 
     private boolean trace = false;
 
@@ -59,14 +52,9 @@ public class LoginHelper {
     private PartnerConnection partnerConnection;
 
     public LoginHelper(String server, String username, String password) {
-        this(server, username, password, null);
-    }
-
-    public LoginHelper(String server, String username, String password, String key) {
         this.server = server;
         this.username = username;
         this.password = password;
-        this.key = key;
     }
 
     public void reconnect() {
@@ -97,25 +85,6 @@ public class LoginHelper {
         LoginResult lr;
         try {
             lr = pConn.login(username, password);
-
-//            System.out.println("Login to " + lr.getUserInfo().getUserFullName());
-
-            if (key != null) {
-                LicenceService ls = new LicenceService();
-
-                licenceResult = ls.checkLicence(lr.getUserInfo().getUserFullName(),
-                        lr.getUserInfo().getOrganizationName(),
-                        key);
-
-//                if (!licenceResult.getLicenceOk()) {
-//                    throw new ConnectionException("JDBC Driver Licence problem for " +
-//                            lr.getUserInfo().getUserFullName() + " at " +
-//                            lr.getUserInfo().getOrganizationName() + " with " + key);
-//                }
-            }
-
-        } catch (LicenceException e) {
-            throw new ConnectionException(e.getMessage());
         } catch (ConnectionException e) {
             throw e;
         } catch (Exception e) {
@@ -210,10 +179,6 @@ public class LoginHelper {
 
     private void log(String msg) {
 //        System.out.println(msg);
-    }
-
-    public LicenceResult getLicenceResult() {
-        return licenceResult;
     }
 
     public double getSfVersion() {

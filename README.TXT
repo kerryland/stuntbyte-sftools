@@ -8,10 +8,8 @@ Salesforce Data type mapping from Keith Clarke (keith.clarke.claimvantage@gmail.
 via https://code.google.com/archive/p/force-metadata-jdbc-driver/ (repurposed as com.stuntbyte.salesforce.jdbc.metaforce).
 Released under the "New BSD Licence" (aka BSD 3)
 
-TODO:
-
-Update to API 31 and fix ExporterTest
-Migrate nanoc to Markdown
+D:\dev\kerry\farce-ide>
+d:\Python27\Scripts\grip.exe index.md )
 
 https://bitbucket.org/repo/mine
 http://kerryland.myjetbrains.com/youtrack/issues#

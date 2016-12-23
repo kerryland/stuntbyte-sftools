@@ -59,39 +59,20 @@ public class SfConnection implements java.sql.Connection {
 
     public SfConnection(String server, String username, String password, Properties info) throws SQLException {
 
-        String licenceKey = null;
-        if (info.containsKey("licence")) {
-            licenceKey = info.getProperty("licence");
-        }
-
-        if (password.startsWith("licence(")) {
-            int sfdcPos = password.indexOf("sfdc(");
-            if (sfdcPos == -1) {
-                throw new RuntimeException("Password starts with licence( but does not contain sfdc(");
-            }
-            licenceKey = password.substring(8, password.indexOf(")"));
-            password = password.substring(sfdcPos + 5, password.lastIndexOf(")"));
-        }
-
         server = pushUrlParametersIntoInfo(server, info);
 
         this.server = server;
         this.username = username;
         this.info = info;
-        helper = new LoginHelper(server, username, password, licenceKey);  // TODO: Put version into "info"
+        helper = new LoginHelper(server, username, password);  // TODO: Put version into "info"
 
-        if (licenceKey == null) {
-            throw new SQLException("No licence information found");
-        }
         try {
             helper.authenticate();
 
-            metaDataFactory = helper.createResultSetFactory(info, helper.getLicenceResult().getLicence().supportsJdbcFeature());
+            metaDataFactory = helper.createResultSetFactory(info, true);
             metadataService = new MetadataServiceImpl(new Reconnector(helper));
 
-            if (helper.getLicenceResult().getLicence().supportsDeploymentFeature()) {
-                populateWithDeployableTables(metaDataFactory, metadataService);
-            }
+            populateWithDeployableTables(metaDataFactory, metadataService);
             closed = false;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -186,7 +167,7 @@ public class SfConnection implements java.sql.Connection {
     }
 
     public DatabaseMetaData getMetaData() throws SQLException {
-        return new SfDatabaseMetaData(this, metaDataFactory, metadataService);
+        return new SfDatabaseMetaData(this, metaDataFactory);
     }
 
     public void setReadOnly(boolean readOnly) throws SQLException {

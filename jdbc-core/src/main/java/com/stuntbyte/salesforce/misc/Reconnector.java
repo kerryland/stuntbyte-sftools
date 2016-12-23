@@ -175,10 +175,6 @@ public class Reconnector {
         return lh.getApexConnection();
     }
 
-    public Licence getLicence() {
-        return lh.getLicenceResult().getLicence();
-    }
-
     public double getSfVersion() {
         return lh.getSfVersion();
     }

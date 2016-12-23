@@ -58,11 +58,6 @@ public class Select {
 
     public ResultSet execute(String sql) throws SQLException {
         try {
-            if ((!reconnector.getLicence().supportsJdbcFeature()) &&
-                    (!reconnector.getLicence().supportsDeploymentFeature())) {
-                throw new SQLException("Licence does not support JDBC");
-            }
-
             SimpleParser la = new SimpleParser(sql);
 
             List<ParsedSelect> parsedSelects = la.extractColumnsFromSoql();
@@ -93,10 +88,6 @@ public class Select {
                     Show show = new Show(parsedSelect, metadataService);
                     return show.execute();
                 }
-            }
-
-            if (reconnector.getLicence().supportsLimitedLicence()) {
-                statement.setMaxRows(50);
             }
 
             Integer oldBatchSize = 2000;

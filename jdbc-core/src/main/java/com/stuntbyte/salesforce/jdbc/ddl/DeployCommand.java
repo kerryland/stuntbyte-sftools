@@ -109,9 +109,6 @@ public class DeployCommand {
     }
 
     public void execute() throws SQLException {
-        if (!reconnector.getLicence().supportsDeploymentFeature()) {
-            throw new SQLException("Your Stunt Byte licence does not allow use of the deployment tool.");
-        }
         try {
             String value = al.getValue();
             if (value.equalsIgnoreCase("start")) {

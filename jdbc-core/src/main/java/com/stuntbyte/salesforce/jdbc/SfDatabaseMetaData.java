@@ -22,9 +22,7 @@
  */
 package com.stuntbyte.salesforce.jdbc;
 
-import com.stuntbyte.salesforce.core.metadata.MetadataService;
 import com.stuntbyte.salesforce.jdbc.metaforce.*;
-import com.stuntbyte.salesforce.misc.Licence;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -40,17 +38,11 @@ import java.util.List;
 public class SfDatabaseMetaData implements DatabaseMetaData {
     private SfConnection sfConnection;
     private ResultSetFactory metaDataFactory;
-    private MetadataService metadataService;
-
-    private Licence licence;
 
     public SfDatabaseMetaData(SfConnection sfConnection,
-                              ResultSetFactory metaDataFactory,
-                              MetadataService metadataService) throws SQLException {
+                              ResultSetFactory metaDataFactory) throws SQLException {
         this.sfConnection = sfConnection;
         this.metaDataFactory = metaDataFactory;
-        this.metadataService = metadataService;
-        licence = sfConnection.getHelper().getLicenceResult().getLicence();
     }
 
     public boolean allProceduresAreCallable() throws SQLException {
@@ -102,7 +94,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public String getDriverVersion() throws SQLException {
-        return "1.3";
+        return "1.5";
     }
 
     public int getDriverMajorVersion() {
@@ -110,7 +102,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public int getDriverMinorVersion() {
-        return 3;
+        return 5;
     }
 
     public boolean usesLocalFiles() throws SQLException {
@@ -543,7 +535,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public ResultSet getSchemas() throws SQLException {
-        return metaDataFactory.getSchemas(licence);
+        return metaDataFactory.getSchemas();
     }
 
     public ResultSet getCatalogs() throws SQLException {
