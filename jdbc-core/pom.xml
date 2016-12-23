@@ -88,6 +88,7 @@
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <version>1.3.176</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -160,14 +161,15 @@
                     </transformers>
                     <relocations>
                         <relocation>
-                            <pattern>com</pattern>
+                            <pattern>com.</pattern>
                             <shadedPattern>hidden.com</shadedPattern>
                             <excludes>
                                 <exclude>com.stuntbyte.*</exclude>
+                                <exclude>com.sforce.*</exclude>
                             </excludes>
                         </relocation>
                         <relocation>
-                            <pattern>org</pattern>
+                            <pattern>org.</pattern>
                             <shadedPattern>hidden.org</shadedPattern>
                         </relocation>
 
