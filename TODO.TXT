@@ -1,26 +1,6 @@
 - Update to API 31 and fix ExporterTest
 - Remove nanoc
 
-'deployable' schema objects fail with counts:
-
-2016-12-24 08:09:47 DEBUG TableDataPanel.showRowCount() Retrieving row count using:
-SELECT count(*)
-FROM deployable.WebLink
-2016-12-24 08:09:47 ERROR TableDataPanel.showRowCount() Error retrieving rowcount for deployable.WebLink using
- SELECT count(*)
-FROM deployable.WebLink java.lang.NumberFormatException
-java.lang.NumberFormatException
-	at java.math.BigDecimal.<init>(BigDecimal.java:494)
-	at java.math.BigDecimal.<init>(BigDecimal.java:383)
-	at java.math.BigDecimal.<init>(BigDecimal.java:806)
-	at com.stuntbyte.salesforce.jdbc.SfResultSet.getLong(SfResultSet.java:549)
-	at com.stuntbyte.salesforce.jdbc.SfResultSet.getLong(SfResultSet.java:540)
-	at workbench.gui.dbobjects.TableDataPanel.showRowCount(TableDataPanel.java:532)
-	at workbench.gui.dbobjects.TableDataPanel.showData(TableDataPanel.java:1161)
-	at workbench.gui.dbobjects.TableListPanel.retrieveSelectedPanel(TableListPanel.java:1956)
-	at workbench.gui.dbobjects.TableListPanel.retrieveCurrentPanel(TableListPanel.java:1925)
-	at workbench.gui.dbobjects.TableListPanel$3.run(TableListPanel.java:1878)
-
 'deployable' schema has unknown types:
 
 2016-12-24 08:09:31 ERROR TableDataPanel.showRowCount() Error retrieving rowcount for deployable.ActionOverride using
@@ -40,6 +20,9 @@ Caused by: java.lang.RuntimeException: com.sforce.ws.SoapFaultException: INVALID
 	at com.stuntbyte.salesforce.jdbc.dml.Select.execute(Select.java:89)
 	... 6 more
 
+
+- Make 'deployable' schema optional (if it speeds up connection time) -- via 'includes'?
+- Document 'includes', 'standard' and 'useLabels' parameters
 
 
 Create sub-project for ide files - 'editors'
@@ -69,6 +52,7 @@ Mention migration tool
 
 
 DONE
+- 'deployable' schema objects fail with counts: SELECT count(*)FROM deployable.WebLink
 - Remove licence
 - Migrate nanoc to Markdown
 - Proguard maven shaded jar

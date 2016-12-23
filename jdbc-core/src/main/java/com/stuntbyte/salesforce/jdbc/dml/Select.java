@@ -134,12 +134,13 @@ public class Select {
         }
 
         if (countDetected) {
+            // Yuck
             sql = sql.replaceAll("COUNT \\( \\* \\)", "COUNT(ID)");
-            sql = sql.replaceAll("count \\( \\* \\)", "count(ID)");
+            sql = sql.replaceAll("count \\( \\* \\)", "COUNT(ID)");
             sql = sql.replaceAll("COUNT \\(\\)", "COUNT(ID)");
-            sql = sql.replaceAll("count \\(\\)", "count(ID)");
-            sql = sql.replaceAll("count \\( \\)", "count(ID)");
-            sql = sql.replaceAll("COUNT \\( \\)", "count(ID)");
+            sql = sql.replaceAll("count \\(\\)", "COUNT(ID)");
+            sql = sql.replaceAll("count \\( \\)", "COUNT(ID)");
+            sql = sql.replaceAll("COUNT \\( \\)", "COUNT(ID)");
 
             // sql = sql.replaceAll("\\. \\*", "count(ID)");
         }
@@ -164,22 +165,6 @@ public class Select {
         }
         return sql;
     }
-
-    // DBVisualizer likes to put quotes around the tableName name
-    // for no obvious reason. This undoes that, kinda crudely....
-    private String removeQuotedTableName(String sql) {
-        return replace(sql, "from " + tableName, "from \"" + tableName + "\"");
-    }
-
-    // SQL Workbench likes to put quotes around some column names, like "Type",
-    // for no obvious reason. This undoes that, kinda crudely....
-    private String removeQuotedColumns(String sql, ParsedSelect parsedSelect) {
-        for (ParsedColumn parsedColumn : parsedSelect.getColumns()) {
-            sql = replace(sql, parsedColumn.getName(), "\"" + parsedColumn.getName() + "\"");
-        }
-        return sql;
-    }
-
 
     private String replace(String sql, String replace, String check) {
         String upper = sql.toUpperCase();
