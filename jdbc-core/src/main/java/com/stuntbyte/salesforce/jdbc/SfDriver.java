@@ -22,6 +22,8 @@
  */
 package com.stuntbyte.salesforce.jdbc;
 
+import com.stuntbyte.salesforce.jdbc.sqlforce.Version;
+
 import java.sql.*;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -34,7 +36,7 @@ public class SfDriver implements java.sql.Driver {
         try {
             DriverManager.registerDriver(new SfDriver());
         } catch (SQLException e) {
-            e.printStackTrace();  // TODO properly!
+            e.printStackTrace();
         }
     }
 
@@ -62,11 +64,11 @@ public class SfDriver implements java.sql.Driver {
     }
 
     public int getMajorVersion() {
-        return 1;
+        return Version.majorVersion;
     }
 
     public int getMinorVersion() {
-        return 0;
+        return Version.minorVersion;
     }
 
     public boolean jdbcCompliant() {

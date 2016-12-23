@@ -31,6 +31,7 @@ import com.sforce.soap.partner.LoginResult;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
+import com.stuntbyte.salesforce.jdbc.sqlforce.Version;
 
 import java.util.Properties;
 
@@ -44,9 +45,7 @@ public class LoginHelper {
 
     private boolean trace = false;
 
-//    public static final double SFDC_VERSION = 22D;
-//    public static final double WSDL_VERSION = 22D;
-    private double sfVersion = 29d; // TODO: Move to 31 (at least)
+    private int sfVersion = Version.sfdcVersion;
 
     private MetadataConnection metadataConnection;
     private PartnerConnection partnerConnection;

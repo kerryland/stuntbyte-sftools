@@ -23,13 +23,9 @@
 package com.stuntbyte.salesforce.jdbc;
 
 import com.stuntbyte.salesforce.jdbc.metaforce.*;
+import com.stuntbyte.salesforce.jdbc.sqlforce.Version;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.RowIdLifetime;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,23 +82,24 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public String getDatabaseProductVersion() throws SQLException {
-        return "Spring12"; //TODO: Pull from API?
+        return "SFDC " + Version.sfdcVersion;
     }
 
     public String getDriverName() throws SQLException {
         return "Stunt Byte";
     }
 
+
     public String getDriverVersion() throws SQLException {
-        return "1.5";
+        return getDriverMajorVersion() + "." + getDriverMinorVersion() + "-"  + getDatabaseProductVersion();
     }
 
     public int getDriverMajorVersion() {
-        return 1;
+        return Version.majorVersion;
     }
 
     public int getDriverMinorVersion() {
-        return 5;
+        return Version.minorVersion;
     }
 
     public boolean usesLocalFiles() throws SQLException {
@@ -812,7 +809,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public int getDatabaseMajorVersion() throws SQLException {
-        return 0;
+        return Version.sfdcVersion;
     }
 
     public int getDatabaseMinorVersion() throws SQLException {
