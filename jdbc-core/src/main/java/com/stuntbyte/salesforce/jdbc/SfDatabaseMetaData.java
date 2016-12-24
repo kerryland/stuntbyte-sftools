@@ -86,7 +86,7 @@ public class SfDatabaseMetaData implements DatabaseMetaData {
     }
 
     public String getDriverName() throws SQLException {
-        return "Stunt Byte";
+        return "Stuntbyte";
     }
 
 
