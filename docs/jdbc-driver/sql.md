@@ -298,4 +298,4 @@ Although the JDBC Driver doesn't offer every piece of JDBC functionality, it doe
 
 The major unsupported feature is currently scroll cursors.
 
-Anything that isn't supported will generally throw a SQLFeatureNotSupportedException, so it should be obvious when you have pushed the current version too far. If there's particular functionality you need, plea
+Anything that isn't supported will generally throw a SQLFeatureNotSupportedException, so it should be obvious when you have pushed the current version too far.

@@ -1,6 +1,6 @@
 # Deployment Tool
 
-The Stuntbyte Salesforce Deployment Tool is a text-based tool that helps with migration of Salesforce components between instances of Salesforce.
+The Deployment Tool is a text-based tool that helps with migration of Salesforce components between instances of Salesforce.
 
 It's especially helpful if you use separate development, test and productions instances of Salesforce -- like you know you should.
 
@@ -18,7 +18,9 @@ Here's how to make use of the deployment tool
 
 ## Step 1\. Install it.
 
-Currently the deployment tool is embedded within the JDBC driver. You have to [install that first](/jdbc-driver/jdbc-configuration). We've added some new commands to the JDBC driver.
+Currently the deployment tool is embedded within the JDBC driver.
+You have to [install that](/docs/jdbc-driver/jdbc-configuration.md) and use the JDBC SQL Tool of your choice (I like [SQL Workbench/J](http://www.sql-workbench.net/)).
+We've added some new 'SQL' commands to the JDBC driver.
 
 ## Step 2\. Write a script to create a deployment file
 
@@ -116,7 +118,7 @@ dep upload...
 
 ## How do I know what types of components can be deployed?
 
-The types of components supported are defined [here](http://www.salesforce.com/us/developer/docs/api_meta/Content/meta_types_list.htm) (except that these pages incorrectly state 'CustomLabels' is a component type -- actually it's singular, 'CustomLabel' -- yes, we have reported the problem, years ago).
+The types of components supported are defined [here](http://www.salesforce.com/us/developer/docs/api_meta/Content/meta_types_list.htm)
 
 You can also use your SQL tool to browse the "deployment" schema.
 

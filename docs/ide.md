@@ -19,9 +19,9 @@ These Editors:
 
 The 'IDE' extensions don't do everything:
 
-1.  There is no support for creation of new files from within the editor. In practice this isn't a big deal, and if people shout we'll be happy to add it :-)
-2.  File deletion isn't integrated into the editors. You'll just be deleting the file from the local file system. Given the lack of version control in Salesforce, this is currently considered to be a good thing, and we have deliberately not wired it up. Our "backend" does support file deletion, so if you are brave you are welcome to add it.
-3.  Controlling debugging levels [via the API](http://www.salesforce.com/us/developer/docs/apexcode/Content/sforce_api_header_debuggingheader.htm) simply doesn't seem to work. If anybody from Salesforce can help, we'd be glad to hear from you!
+1.  There is no support for creation of new files from within the editor. In practice this isn't a big deal, and if people shout it could be added :-)
+2.  File deletion isn't integrated into the editors. You'll just be deleting the file from the local file system. Given the lack of version control in Salesforce, this is currently considered to be a good thing, and it is deliberately not wired it up. The "backend" does support file deletion, so if you are brave you are welcome to add it.
+3.  Controlling debugging levels [via the API](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/sforce_api_header_debuggingheader.htm) simply doesn't seem to work. I see that it's now deprecated. Maybe its replacement works.
 
 
 # Sublime Text 2
@@ -30,17 +30,18 @@ Installation and setup is a little clunky in Sublime Text 2\. Hopefully this can
 
 This installation includes a number of "snippets", so you can quickly construct common blocks of code, but these snippets have simply been quickly copied from the Sublime's Java support, and include no Salesforce-specific features. If anybody is keen on extending these, we'd be happy to update the package!
 
-We have begun the process of making this code available on Github as part of https://github.com/SublimeText
+Here are the installation steps:
 
 *   Install [Java](http://www.java.com/) and ensure it's on your path.
 *   Install [Exuberant ctags](http://ctags.sourceforge.net/) and ensure it's on your path;
  ```sudo apt-get install ctags```
 *   Install [Sublime Text 2](http://www.sublimetext.com/2)
 *   Start Sublime Text 2
-*   Select menu item "Preferences : Settings - User" and add a setting that defines the location of the Stuntbyte all-purpose "jdbc" jar file you downloaded from the [download page](/download). Save the change. eg:
+*   Select menu item "Preferences : Settings - User" and add a setting that defines the location of the Stuntbyte all-purpose "jdbc" jar file you downloaded from [here](https://bitbucket.org/kerryland/farce-ide/downloads/stuntbyte-sfdc-1.5.jar).
+    eg:
 
-stuntbyte_jar": "/apps/stuntbyte/stuntbyte-sfdc-1.4.jar"
-
+    ```"stuntbyte_jar": "/apps/stuntbyte/stuntbyte-sfdc-1.5.jar"```
+*   Save the change.
 *   Download the "[editors.zip](/downloads/editors.zip)" and unzip it.
 *   Put the Packages directory (/sublime2/Packages in editors.zip) under
   *   ~/.config/sublime-text-2 (Linux) or
