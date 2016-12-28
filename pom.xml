@@ -10,6 +10,7 @@
 
     <modules>
         <module>jdbc-core</module>
+        <module>editors</module>
     </modules>
 
 
