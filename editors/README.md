@@ -4,7 +4,7 @@ The Stuntbyte "IDE" allows developers to use quality editors like Sublime Text 2
 
 Here's what Sublime Text 2 looks like:
 
-![Sublime Text 2](sublime2.png "Sublime Text 2")
+![Sublime Text 2](docs/sublime2.png "Sublime Text 2")
 
 These Editors:
 
