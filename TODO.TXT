@@ -1,3 +1,6 @@
+- Mention migration tool
+- Soft-code test properties
+- Rearrange 'docs' into actual sub-projects
 - Update to API 31 and fix ExporterTest
 - Remove nanoc
 
@@ -6,13 +9,12 @@
 - Document 'includes', 'standard' and 'useLabels' parameters
 
 
-Create sub-project for ide files - 'editors'
 Create sub-project for documentation
 Remove ant (and wsdl)
 Migrate to API 31
 Mention grails and hibernate
-Mention migration tool
 
+- union
 - Map any-case in getString(etc) to correct case
 - SfPreparedStatement.setObject needs lots of work....
 - getDate
@@ -33,6 +35,7 @@ Mention migration tool
 
 
 DONE
+- Create sub-project for ide files - 'editors'
 - Get api version numbers from maven
 - 'deployable' schema has unknown types:
 - 'deployable' schema objects fail with counts: SELECT count(*)FROM deployable.WebLink

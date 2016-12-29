@@ -26,8 +26,6 @@ import com.stuntbyte.salesforce.database.migration.MigrationCriteria;
 import com.stuntbyte.salesforce.database.migration.Migrator;
 import com.stuntbyte.salesforce.database.migration.SimpleKeyBuilder;
 import com.stuntbyte.salesforce.jdbc.SfConnection;
-import com.stuntbyte.salesforce.misc.StdOutDeploymentEventListener;
-import com.stuntbyte.salesforce.misc.TestHelper;
 import org.junit.Assert;
 
 import java.sql.Connection;

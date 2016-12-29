@@ -20,7 +20,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.stuntbyte.salesforce.misc;
+package com.stuntbyte.database.migration;
+
+import com.stuntbyte.salesforce.misc.BaseDeploymentEventListener;
 
 /**
  * Write deployment messages and errors to stdout

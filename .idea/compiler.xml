@@ -27,7 +27,9 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
+        <module name="editors" />
         <module name="jdbc-core" />
+        <module name="migration" />
       </profile>
     </annotationProcessing>
   </component>

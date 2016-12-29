@@ -18,7 +18,7 @@ More information about the tools here:
     * [Supported SQL](docs/jdbc-driver/sql.md)
 *   **[Deploy](docs/deployment-tool.md)** - A deployment tool for Salesforce. It takes away much of the pain of Salesforce deployments.
 *   **[IDE](docs/ide.md)** - A replacement for the "Force IDE". It lets developers use quality editors like Sublime Text 2 and VIM to compile, test, and navigate Salesforce Apex code.
-
+*   **[Migration/Export](docs/migrate.md)** - When you have a JDBC driver and a deployment tool you can do fun things with Salesforce Instances.
 
 TODO: Exporter
 

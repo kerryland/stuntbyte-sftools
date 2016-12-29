@@ -6,11 +6,12 @@
     <artifactId>tools</artifactId>
     <packaging>pom</packaging>
     <version>1.5</version>
-    <name>Stuntbyte JDBC Parent</name>
+    <name>Stuntbyte Parent</name>
 
     <modules>
-        <module>jdbc-core</module>
+        <module>jdbc</module>
         <module>editors</module>
+        <module>migration</module>
     </modules>
 
 

@@ -26,7 +26,6 @@ import com.stuntbyte.salesforce.database.migration.MigrationCriteria;
 import com.stuntbyte.salesforce.database.migration.Exporter;
 import com.stuntbyte.salesforce.database.migration.Migrator;
 import com.stuntbyte.salesforce.jdbc.SfConnection;
-import com.stuntbyte.salesforce.misc.TestHelper;
 import org.h2.util.ScriptReader;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -61,6 +60,7 @@ public class ExporterTest {
 
     @BeforeClass
     public static void oneTimeSetUp() throws Exception {
+        // TODO: Get a connection!
         sfconn = TestHelper.getTestConnection();
     }
 

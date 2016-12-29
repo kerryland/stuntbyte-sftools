@@ -24,6 +24,8 @@
     <option name="originalFiles">
       <list>
         <option value="$PROJECT_DIR$/jdbc-core/pom.xml" />
+        <option value="$PROJECT_DIR$/migration/pom.xml" />
+        <option value="$PROJECT_DIR$/editors/pom.xml" />
       </list>
     </option>
   </component>
