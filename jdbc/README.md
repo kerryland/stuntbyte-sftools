@@ -12,19 +12,19 @@ The JDBC driver allows users to browse and update Salesforce databases using som
 
 It also exposes useful information about Salesforce objects via the JDBC meta data api, so tools like SQL-Workbench make it really easy to learn more about your objects without having to click through lots of web pages in Salesforce. Take note of the "Remarks" column for this sample table:
 
-![](remarks-example.png)
+![](docs/remarks-example.png)
 
 You can produce PDF reports using [Jasper Reports iReport](http://jasperforge.org/projects/ireport) (hot tip: Register the Stuntbyte driver on the "Services" window):
 
-![](jasper-example.png)
+![](docs/jasper-example.png)
 
 Tools like [DbVisualizer](http://www.dbvis.com/), and especially [Execute Query](http://executequery.org) make it easier to understand the relationships between your objects.
 
-![](dbvis2.png)
+![](docs/dbvis2.png)
 
 The JDBC Driver integrates with Eclipse, so you can use it from within the Force IDE if you use that tool as your development platform.
 
-![](dbviewer-crop.png)
+![](docs/dbviewer-crop.png)
 
 The JDBC driver does NOT turn Salesforce into a fully compliant SQL database. In particular, it does NOT add support for arbitrary joins, but it does offer the following enhancements to Salesforce SOQL:
 

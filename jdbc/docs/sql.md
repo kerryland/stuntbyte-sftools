@@ -304,4 +304,6 @@ Anything that isn't supported will generally throw a SQLFeatureNotSupportedExcep
 # Hibernate
 Also included is a simple Hibernate profile that handles the basics.
 
-```com.stuntbyte.salesforce.jdbc.hibernate.SalesforceDialect```
+```
+com.stuntbyte.salesforce.jdbc.hibernate.SalesforceDialect
+```
