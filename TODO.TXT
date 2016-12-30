@@ -1,40 +1,23 @@
-- Mention migration tool
+- DRY version numbers in pom (parent-pom)
 - Soft-code test properties
-- Rearrange 'docs' into actual sub-projects
-- Update to API 31 and fix ExporterTest
-- Remove nanoc
-
-
-- Make 'deployable' schema optional (if it speeds up connection time) -- via 'includes'?
 - Document 'includes', 'standard' and 'useLabels' parameters
 
+- Update to API 31 and fix ExporterTest
+- Remove nanoc
+- Update stuntbyte.com to link to github
 
-Create sub-project for documentation
-Remove ant (and wsdl)
-Migrate to API 31
-Mention grails and hibernate
+
 
 - union
-- Map any-case in getString(etc) to correct case
-- SfPreparedStatement.setObject needs lots of work....
-- getDate
-- getTime
-- DELETE
-- Add "default" values to Metadata
-
-- CREATE TABLE
-- ALTER TABLE
-- DROP TABLE
-- setMaxRows()
-- SELECT Name, MAX(Amount), MIN(Amount) FROM Opportunity GROUP BY Name
-- Handle commit / bulk insert
-- Handle large results
 - SELECT ... INSERT INTO ...
 
 - Do a CI server, with associated metrics
 
 
 DONE
+- Rearrange 'docs' into actual sub-projects
+- Mention migration tool
+
 - Create sub-project for ide files - 'editors'
 - Get api version numbers from maven
 - 'deployable' schema has unknown types:
@@ -47,6 +30,3 @@ DONE
 - Support count(*)
 - Prepared statements
 - Handle UPDATE TABLE BLAH\n SET
-
-
-

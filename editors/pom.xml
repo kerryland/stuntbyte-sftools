@@ -29,9 +29,14 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.stuntbyte.salesforce</groupId>
+    <parent>
+        <groupId>com.stuntbyte.salesforce</groupId>
+        <artifactId>tools</artifactId>
+        <version>1.5</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
     <artifactId>editors</artifactId>
-    <version>1.5</version>
 
     <name>Salesforce Editor Files</name>
 

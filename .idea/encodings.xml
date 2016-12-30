@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false">
+    <file url="file://$PROJECT_DIR$/editors" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/editors/pom.xml" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/editors/src/main/plugins/intellij/README.TXT" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/jdbc" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/migration" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/migration/src/main/java/com/stuntbyte/salesforce/database/migration" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/migration/src/test/java/com/stuntbyte/database/migration" charset="UTF-8" />
   </component>

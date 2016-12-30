@@ -4,9 +4,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.stuntbyte.salesforce</groupId>
+    <parent>
+        <groupId>com.stuntbyte.salesforce</groupId>
+        <artifactId>tools</artifactId>
+        <version>1.5</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
     <artifactId>migrate</artifactId>
-    <version>1.5</version>
 
     <name>Salesforce Migration Tools</name>
 
@@ -14,7 +19,7 @@
         <dependency>
             <groupId>com.stuntbyte.salesforce</groupId>
             <artifactId>jdbc</artifactId>
-            <version>1.5</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>

@@ -28,10 +28,16 @@
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
         <module name="editors" />
+        <module name="jdbc" />
         <module name="jdbc-core" />
         <module name="migration" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="editors" target="1.7" />
+      <module name="jdbc" target="1.7" />
+      <module name="migration" target="1.7" />
+    </bytecodeTargetLevel>
   </component>
 </project>
 
