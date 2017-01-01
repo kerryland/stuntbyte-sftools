@@ -22,6 +22,8 @@
  */
 package com.stuntbyte.salesforce.parse;
 
+import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
+
 import java.util.List;
 
 /**
@@ -30,7 +32,7 @@ public class ParsedSelect {
     private String drivingTable;
     private String parsedSql="";
     private List<ParsedColumn> columns;
-    private String drivingSchema;
+    private String drivingSchema = ResultSetFactory.schemaName;
 
     public String getDrivingSchema() {
         return drivingSchema;

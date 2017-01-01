@@ -48,9 +48,11 @@ public class DeployCommandTest {
 
     private static SfConnection conn = null;
 
+    private static TestHelper testHelper = new TestHelper();
+
     @BeforeClass
     public static void oneTimeSetUp() throws Exception {
-        conn = TestHelper.getTestConnection();
+        conn = testHelper.getTestConnection();
     }
 
 
@@ -99,8 +101,9 @@ public class DeployCommandTest {
     @Test
     public void testReplacements() throws Exception {
 
-        LoginHelper lh = new LoginHelper(TestHelper.loginUrl,
-                TestHelper.username, TestHelper.password);
+        LoginHelper lh = new LoginHelper(testHelper.getLoginUrl(),
+                testHelper.getUsername(),
+                testHelper.getPassword());
 
         DeploymentTestHelper dth = new DeploymentTestHelper(lh);
 

@@ -47,8 +47,7 @@ public class CreateTableTests {
 
     private static SfConnection conn = null;
 
-    private static String surname;
-    private static List<String> deleteMe = new ArrayList<String>();
+    private static TestHelper testHelper = new TestHelper();
 
     @BeforeClass
     public static void oneTimeSetUp() throws Exception {
@@ -56,7 +55,7 @@ public class CreateTableTests {
     }
 
     private static void createConnection() throws SQLException {
-        conn = TestHelper.getTestConnection();
+        conn = testHelper.getTestConnection();
     }
 
 

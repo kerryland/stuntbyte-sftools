@@ -7,6 +7,10 @@
     <packaging>pom</packaging>
     <version>1.5</version>
     <name>Stuntbyte Parent</name>
+    <inceptionYear>2011-2017</inceptionYear>
+    <organization>
+        <name>Kerry Sainsbury</name>
+    </organization>
 
     <modules>
         <module>jdbc</module>

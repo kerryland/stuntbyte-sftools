@@ -152,6 +152,7 @@ public class Deployer {
 
         deployOptions.setIgnoreWarnings(ignoreWarnings);
         deployOptions.setRollbackOnError(rollbackOnError);
+        deployOptions.setAllowMissingFiles(deploymentOptions.contains(DeploymentOptions.ALLOW_MISSING_FILES));
 
         deployOptions.setRunAllTests(deploymentOptions.contains(Deployer.DeploymentOptions.ALL_TESTS));
         deployOptions.setSinglePackage(true);
@@ -253,11 +254,11 @@ public class Deployer {
 
         dumpErrors(listener, deployResult);
 
-        if (!deployResult.getStatus().equals(DeployStatus.Succeeded)) {
+        if (!deployResult.getStatus().equals(DeployStatus.Succeeded) && !deployResult.getStatus().equals(DeployStatus.SucceededPartial)) {
             // Sometimes Salesforce isn't very helpful, eg: this bug; https://success.salesforce.com/issues_view?id=a1p30000000T5S8AAK
             String msg = "Deployment " + deployResult.getStatus() + "; " +
                     (( deployResult.getErrorMessage() == null && deployResult.getStateDetail() == null) ?
-                    "For Mysterious resons" :
+                    "For Mysterious reasons -- check Salesforce deployment log online" :
                      deployResult.getStateDetail() + ". " +  deployResult.getErrorMessage());
 
             throw new Exception(msg);

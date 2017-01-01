@@ -20,10 +20,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.stuntbyte.salesforce.misc;
+package com.stuntbyte.database.migration;
 
 import com.stuntbyte.salesforce.jdbc.SfConnection;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.DriverManager;
@@ -33,62 +35,73 @@ import java.util.Properties;
 /**
  * Simple helper class for unit tests
  */
-public class TestHelper {
+public class MigrationTestHelper {
+    private Properties testProperties = null;
+    private Properties connectionProperties = new Properties();
 
-    private Properties prop = null;
-
-    public TestHelper() {
+    public MigrationTestHelper() {
         try {
-            prop = new Properties();
-            InputStream stream = getClass().getResourceAsStream( "/test.properties" );
-            prop.load( stream );
+            connectionProperties.setProperty("deployable", "false");
+
+            testProperties = new Properties();
+            InputStream stream;
+
+            String propertyFile = System.getProperty("test.properties");
+            if (propertyFile != null) {
+                stream = new FileInputStream(new File(propertyFile));
+            } else {
+                stream = getClass().getResourceAsStream("/test.properties");
+            }
+            testProperties.load(stream);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public String getLoginUrl() {
-        return getProperty("loginUrl");
+    private String getSourceLoginUrl() {
+        return getProperty("sourceLoginUrl");
     }
 
-    public String getUsername() {
-        return getProperty("username");
+    private String getSourceUsername() {
+        return getProperty("sourceUsername");
     }
 
-    public String getPassword() {
-        return getProperty("password");
+    private String getSourcePassword() {
+        return getProperty("sourcePassword");
     }
 
-    public String getPlebUsername() {
-        return getProperty("plebUsername");
+    private String getDestLoginUrl() {
+        return getProperty("destLoginUrl");
     }
 
-    public String getPlebPassword() {
-        return getProperty("plebPassword");
+    private String getDestUsername() {
+        return getProperty("destUsername");
     }
+
+    private String getDestPassword() {
+        return getProperty("destPassword");
+    }
+
 
     private String getProperty(String propertyName) {
-        String result = prop.getProperty(propertyName);
+        String result = testProperties.getProperty(propertyName);
         if (result == null) {
             throw new IllegalArgumentException(propertyName + " is not defined in test.properties");
         }
         return result;
     }
-    
-    public SfConnection getTestConnection() throws SQLException {
-        return connect(getLoginUrl(), getUsername(), getPassword(), new Properties());
+
+
+    public SfConnection getDestConnection() throws SQLException {
+        return connect(getDestLoginUrl(), getDestUsername(), getDestPassword(), connectionProperties);
     }
 
-    public SfConnection getPlebConnection() throws SQLException {
-        return connect(getLoginUrl(), getPlebUsername(), getPlebPassword(), new Properties());
-    }
-
-    public SfConnection getTestConnection(Properties info) throws SQLException {
-        return connect(getLoginUrl(), getUsername(), getPassword(), info);
+    public SfConnection getSourceConnection() throws SQLException {
+        return connect(getSourceLoginUrl(), getSourceUsername(), getSourcePassword(), connectionProperties);
     }
 
 
-    public SfConnection connect(String lloginurl, String lusername, String lpassword, Properties info) throws SQLException {
+    private SfConnection connect(String lloginurl, String lusername, String lpassword, Properties info) throws SQLException {
         try {
             Class.forName("com.stuntbyte.salesforce.jdbc.SfDriver");
         } catch (ClassNotFoundException e) {

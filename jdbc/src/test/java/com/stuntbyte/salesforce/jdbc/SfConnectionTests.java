@@ -34,13 +34,15 @@ import java.util.Properties;
  */
 public class SfConnectionTests {
 
+    private static TestHelper testHelper = new TestHelper();
+
     @Test
     public void testConnection() throws Exception {
         Properties info = new Properties();
         SfConnection conn = new SfConnection(
-                TestHelper.loginUrl,
-                TestHelper.username,
-                TestHelper.password,
+                testHelper.getLoginUrl(),
+                testHelper.getUsername(),
+                testHelper.getPassword(),
                 info);
 
         Assert.assertFalse(conn.isClosed());
@@ -52,9 +54,9 @@ public class SfConnectionTests {
 
         try {
             SfConnection conn = new SfConnection(
-                    TestHelper.loginUrl,
-                    TestHelper.username,
-                    TestHelper.password + "_IS_NOT_CORRECT",
+                    testHelper.getLoginUrl(),
+                    testHelper.getUsername(),
+                    testHelper.getPassword() + "_IS_NOT_CORRECT",
                     info);
         } catch (Exception e) {
             StringWriter sw = new StringWriter();

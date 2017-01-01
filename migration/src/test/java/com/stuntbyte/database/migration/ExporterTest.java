@@ -26,21 +26,15 @@ import com.stuntbyte.salesforce.database.migration.MigrationCriteria;
 import com.stuntbyte.salesforce.database.migration.Exporter;
 import com.stuntbyte.salesforce.database.migration.Migrator;
 import com.stuntbyte.salesforce.jdbc.SfConnection;
-import org.h2.util.ScriptReader;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -51,22 +45,22 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
 
-import static org.junit.Assert.*;
-
 /**
  */
 public class ExporterTest {
     private static SfConnection sfconn = null;
 
+    private static MigrationTestHelper testHelper = new MigrationTestHelper();
+
     @BeforeClass
     public static void oneTimeSetUp() throws Exception {
-        // TODO: Get a connection!
-        sfconn = TestHelper.getTestConnection();
+        sfconn = testHelper.getSourceConnection();
     }
 
 
     @Test
     @Ignore // TODO: Broken by API version 29. Subsequently fixed in 31, but I don't want to deal with that update just yet!
+            // TODO: This test does too much
     // https://success.salesforce.com/issues_view?id=a1p30000000T5S8AAK
     public void testMigration() throws Exception {
         // Get a connection to the local database
@@ -162,14 +156,11 @@ public class ExporterTest {
         criteria = new MigrationCriteria("four__c");
         criteriaList.add(criteria);
 
-        Set<String> processedTables = new HashSet<String>();
+        Set<String> processedTables = new HashSet<>();
 
         Exporter exporter = new Exporter();
-        exporter.createLocalSchema(sfconn, h2Conn);
+        exporter.createLocalSchema(sfconn, h2Conn, null);
         exporter.downloadData(sfconn, h2Conn, criteriaList, processedTables);
-
-//        if (1==1)
-//        throw new Exception("Check h2 one__c row count");
 
         // Delete the data from the destination salesforce
         sfdc.execute("delete from one__c");
@@ -191,7 +182,7 @@ public class ExporterTest {
 
         // Push rows back to Salesforce
         migrator.restoreRows(sfconn, h2Conn, criteriaList,
-                new ArrayList<MigrationCriteria>());  // TODO: Test this!
+                new ArrayList<MigrationCriteria>(), "Bob");  // TODO: Test this!
 
         // Check salesforce has the same data, but with different ids
         ResultSet rs = sfdc.executeQuery("select * from two__c order by Name__c");
@@ -234,99 +225,4 @@ public class ExporterTest {
         Assert.assertEquals(0, cal.get(Calendar.MINUTE));
 
     }
-
-    private void populateData(Connection conn) throws Exception {
-        /*
-       Mary and Bob are users of the system
-       Bob has created all records in the database
-
-       There are 4 accounts in the system
-       - Pizza Co and Burger Co, both owned by Mary
-       - Vege Co, owned by Bob
-       - Pizza Head Office, owned by Mary, and Parent Account of Pizza Co.
-
-       Each Account has one contact.
-       The contact of Pizza Co reports to the contact of Pizza Head Office
-
-       Pizza Co has one Opportunity, with two Line items.
-
-       The user table is READ ONLY
-
-        */
-        PreparedStatement stmt = conn.prepareStatement("insert into \"User\"(Id, Name) values (?,?)");
-        stmt.setString(1, nextId());
-        stmt.setString(2, "User Bob");
-        stmt.execute();
-
-        stmt.setString(1, nextId());
-        stmt.setString(2, "User Mary");
-        stmt.execute();
-
-
-    }
-
-    int idGenerator = 0;
-
-    private String nextId() {
-        return "ID" + idGenerator++;
-    }
-
-
-    private Connection setupData() throws Exception {
-        Class.forName("org.h2.Driver");
-
-        Properties info = new Properties();
-//        info.put("user", "salesforce@fidelma.com");
-//        info.put("password", "u9SABqa2dQxG0Y3kqWiJQVEwnYtryr1Ja1");
-//        info.put("standard", "true");
-//        info.put("includes", "Lead,Account");
-
-        // Get a connection to the database
-        Connection conn = DriverManager.getConnection(
-                "jdbc:h2:mem:"
-                , info);
-
-//        Statement stmt = conn.createStatement();
-//        stmt.execute(
-//                "create table customer " +
-//                "(Id varchar primary licence, extId varchar) ");
-
-        String inFile = "testData/create-tables.txt";
-//         InputStream is = getClass().getClassLoader().getResourceAsStream(inFile);
-        InputStream is = new FileInputStream(inFile);
-        LineNumberReader lineReader = new LineNumberReader(new InputStreamReader(is, "Cp1252"));
-        ScriptReader reader = new ScriptReader(lineReader);
-        while (true) {
-            String sql = reader.readStatement();
-            if (sql == null) {
-                break;
-            }
-            sql = sql.trim();
-            try {
-                if ("@reconnect".equals(sql.toLowerCase())) {
-                } else if (sql.length() == 0) {
-                    // ignore
-                } else if (sql.toLowerCase().startsWith("select")) {
-                    ResultSet rs = conn.createStatement().executeQuery(sql);
-                    while (rs.next()) {
-                        String expected = reader.readStatement().trim();
-                        String got = "> " + rs.getString(1);
-                        assertEquals(expected, got);
-                    }
-                } else {
-                    conn.createStatement().execute(sql);
-                }
-            } catch (SQLException e) {
-                System.out.println(sql);
-                throw e;
-            }
-        }
-        is.close();
-        //conn.close();
-
-        return conn;
-
-    }
-
-
 }

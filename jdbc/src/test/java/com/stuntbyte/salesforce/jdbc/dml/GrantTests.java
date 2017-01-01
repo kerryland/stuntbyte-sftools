@@ -39,9 +39,11 @@ public class GrantTests {
     private static SfConnection conn = null;
     private static SfConnection plebconn = null;
 
+    private static TestHelper testHelper = new TestHelper();
+
     @BeforeClass
     public static void oneTimeSetUp() throws Exception {
-        conn = TestHelper.getTestConnection();
+        conn = testHelper.getTestConnection();
     }
 
     @Test
@@ -54,7 +56,7 @@ public class GrantTests {
         godStmt.execute("grant object create,update,delete,read on grant_test__c to *");
 
         // Insert a row
-        plebconn = TestHelper.getPlebTestConnection();
+        plebconn = testHelper.getPlebConnection();
         Statement plebStmt = plebconn.createStatement();
 
         plebStmt.execute("insert into grant_test__c(my_num__c) values (1)");

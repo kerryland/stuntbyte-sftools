@@ -35,3 +35,5 @@ Released under the Eclipse Public Licence 1.0. You might like to look at http://
 via https://code.google.com/archive/p/force-metadata-jdbc-driver/ (repurposed as com.stuntbyte.salesforce.jdbc.metaforce).
 Released under the "New BSD Licence" (aka BSD 3)
 
+Random dev notes:
+* ```mvn license:format``` will add MIT headers

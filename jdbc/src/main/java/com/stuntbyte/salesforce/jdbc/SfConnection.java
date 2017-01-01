@@ -72,7 +72,9 @@ public class SfConnection implements java.sql.Connection {
             metaDataFactory = helper.createResultSetFactory(info, true);
             metadataService = new MetadataServiceImpl(new Reconnector(helper));
 
-            populateWithDeployableTables(metaDataFactory, metadataService);
+            if (info == null || "true".equals(info.getProperty("deployable"))) {
+                populateWithDeployableTables(metaDataFactory, metadataService);
+            }
             closed = false;
         } catch (Exception e) {
             throw new RuntimeException(e);

@@ -35,6 +35,8 @@ import java.util.Set;
  */
 public class DeployerTests {
 
+    private static TestHelper testHelper = new TestHelper();
+
     @Test
     public void testDeployment() throws Exception {
 
@@ -81,8 +83,8 @@ public class DeployerTests {
 
     private void checkit(int cnt, String msg, Set<Deployer.DeploymentOptions> deploymentOptions, boolean shouldDeploy) throws Exception {
 
-        LoginHelper lh = new LoginHelper(TestHelper.loginUrl,
-                TestHelper.username, TestHelper.password);
+        LoginHelper lh = new LoginHelper(new TestHelper().getLoginUrl(),
+                testHelper.getUsername(), testHelper.getPassword());
 
         DeploymentTestHelper dth = new DeploymentTestHelper(lh);
         String source = "public class Wibble {\n" +

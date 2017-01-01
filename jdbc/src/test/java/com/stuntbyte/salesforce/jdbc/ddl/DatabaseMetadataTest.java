@@ -39,10 +39,11 @@ import static org.junit.Assert.assertTrue;
 public class DatabaseMetadataTest {
 
     private static SfConnection conn = null;
+    private static TestHelper testHelper = new TestHelper();
 
     @BeforeClass
     public static void oneTimeSetUp() throws Exception {
-        conn = TestHelper.getTestConnection();
+        conn = testHelper.getTestConnection();
     }
 
 
@@ -66,12 +67,12 @@ public class DatabaseMetadataTest {
         
         // And again, using a URL parameter
         
-        String url = TestHelper.loginUrl + "?datatypes=ui";
+        String url = testHelper.getLoginUrl() + "?datatypes=ui";
 
-        SfConnection conn = TestHelper.connect(
+        SfConnection conn = testHelper.connect(
                 url,
-                TestHelper.username,
-                TestHelper.password,
+                testHelper.getUsername(),
+                testHelper.getPassword(),
                 new Properties()
         );
         checkDataTypeName("Text", conn);
@@ -83,7 +84,7 @@ public class DatabaseMetadataTest {
 
         Properties info = new Properties();
         info.put("datatypes", datatypesFormat);
-        SfConnection conn = TestHelper.getTestConnection(info);
+        SfConnection conn = testHelper.getTestConnection(info);
 
         checkDataTypeName(expectedStringType, conn);
     }

@@ -63,20 +63,22 @@ public class SelectEngineTests {
     private static SObject ccc;
     private static SObject ddd;
 
+    private static TestHelper testHelper = new TestHelper();
+
     @BeforeClass
     public static void oneTimeSetUp() throws Exception {
         Class.forName("com.stuntbyte.salesforce.jdbc.SfDriver");
 
         Properties info = new Properties();
-        info.put("user", TestHelper.username);
-        info.put("password", TestHelper.password);
+        info.put("user", testHelper.getUsername());
+        info.put("password", testHelper.getPassword());
         info.put("standard", "true");
         info.put("includes", "Lead,Account");
         info.put("useLabels", "true");
 
         // Get a connection to the database
         conn = (SfConnection) DriverManager.getConnection(
-                "jdbc:sfdc:" + TestHelper.loginUrl
+                "jdbc:sfdc:" + new TestHelper().getLoginUrl()
                 , info);
 
         SfConnection sfConnection = conn;
@@ -465,111 +467,6 @@ http://www.salesforce.com/us/developer/docs/api/Content/sforce_api_calls_soql_se
         assertEquals("NO", rs.getString("IS_NULLABLE"));
     }
 
-    /*
-@Test
-public void testRegression() throws Exception {
-
-Properties info = new Properties();
-//        info.put("user", "kerry.sainsbury@nzpost.co.nz.sandbox");
-//        info.put("password", "xJiKif3IeCLiZKNervuO3W3ozLxyQ6cm");
-//    info.put("standard", "true");
-//    info.put("includes", "Lead,Account");
-
-info.put("user", "fronde.admin@localist.co.nz");
-info.put("password", "jrP2U0TnW09DesQIaxOmAb3yWiN9lRLu");
-
-
-// Get a connection to the database
-Connection conn = DriverManager.getConnection(
-//                "jdbc:sfdc:https://test.salesforce.com"
-      "jdbc:sfdc:https://login.salesforce.com"
-      , info);
-
-while (true) {
-String soql = "select Localist_Order__r.Account__r.Customer_State__c, " +
-      "Localist_Order__r.State__c, count(Id)\n" +
-      "from localist_product__c\n" +
-      "where Product_Offering__r.ProductCode = 'D-LP'\n" +
-      "and state__c = 'Pending'\n" +
-      "group by Localist_Order__r.Account__r.Customer_State__c, Localist_Order__r.State__c";
-
-Statement stmt = conn.createStatement();
-
-
-//        System.out.println(stmt.executeUpdate(soql));
-
-ResultSet rs = stmt.executeQuery(soql);
-assertEquals(3, rs.getMetaData().getColumnCount());
-
-System.out.println(rs.getMetaData().getColumnName(1) + " " + rs.getMetaData().getColumnLabel(1));
-System.out.println(rs.getMetaData().getColumnName(2) + " " + rs.getMetaData().getColumnLabel(2));
-System.out.println(rs.getMetaData().getColumnName(3) + " " + rs.getMetaData().getColumnLabel(3));
-
-//        System.out.println("LAB IS " + lab);
-//        System.out.println("COL IS " + col);
-while (rs.next()) {
-//            System.out.println("1>" + rs.getString("Main_Category__c"));
-//            System.out.println("1>" + rs.getString("Main_Category__r.Name"));
-//            System.out.println("1>" + rs.getInt("expr0"));
-  System.out.println("2>" + rs.getString(1));
-  System.out.println("2>" + rs.getString(2));
-  System.out.println("2>" + rs.getInt(3));
-}
-}
-
-}
-    */
-
-    /*
-    @Test
-    public void testRegression() throws Exception {
-
-
-        SfConnection sfConnection = TestHelper.connect("https://test.salesforce.com", "kerry.sainsbury@nzpost.co.nz.sandbox",
-                "xJiKif3IeCLiZKNervuO3W3ozLxyQ6cm");
-
-
-        Statement stmt = sfConnection.createStatement();
-        ResultSet rs = stmt.executeQuery(
-                "select id, OutstandingValue__c, Start_Date__c, Dunning_Level__r.id, Dunning_Level__r.name, " +
-                        "dunning_level__c, Dunning_Level__r.lastModifiedby.name \n" +
-                        "from\n" +
-                        " Dunning_Level_Member__c " +
-                        ""
-//                        "where Dunning_Level__c != null"
-        );
-
-        ResultSetMetaData md = rs.getMetaData();
-        System.out.println("COLUMN COUNT " + md.getColumnCount());
-
-        for (int i=1; i <= md.getColumnCount(); i++) {
-            System.out.println(md.getColumnName(i));
-
-        }
-        while (rs.next()) {
-            System.out.println(rs.getString("Dunning_Level__r.name") + " " + rs.getString("Dunning_Level__r.lastModifiedby.name"));
-        }
-
-        System.out.println("--------------- not null -------------------");
-        rs = stmt.executeQuery(
-                "select id, OutstandingValue__c, Start_Date__c, Dunning_Level__r.id, Dunning_Level__r.name, dunning_level__c \n" +
-                        "from\n" +
-                        "Dunning_Level_Member__c" +
-//                        ""
-                        " where Dunning_Level__c != null"
-        );
-
-        md = rs.getMetaData();
-        System.out.println("COLUMN COUNT " + md.getColumnCount());
-
-        for (int i=1; i <= md.getColumnCount(); i++) {
-            System.out.println(md.getColumnName(i));
-
-        }
-
-    }
-
-    */
 
     // Given aaa.bbb__r.ccc__r.ddd__r.name
 

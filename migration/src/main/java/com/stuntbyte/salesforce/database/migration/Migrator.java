@@ -62,183 +62,11 @@ import java.util.Set;
  */
 public class Migrator {
 
-    /**
-     * Migrate Salesforce data
-     *
-     * @param sourceInstance Salesforce instance to pull data from
-     * @param targetInstance Salesforce to push data into
-     * @param localdb        Local JDBC database to use a a temporary store
-     * @throws Exception
-     */
-    public void replicate(SfConnection sourceInstance, SfConnection targetInstance, Connection localdb) throws Exception {
-
-        // Pull source schema down to local database
-        Exporter exporter = new Exporter();
-        List<Table> tables = exporter.createLocalSchema(sourceInstance, localdb);
-
-        /*
-        // Pull source data down to local machine
-        List<ExportCriteria> criteriaList = new ArrayList<ExportCriteria>();
-        for (Table table : tables) {
-            if (table.getType().equals("TABLE")) {
-                ExportCriteria criteria = new ExportCriteria();
-                criteria.tableName = table.getName();
-                criteria.whereClause = "limit 4";
-                criteriaList.add(criteria);
-            }
-        }
-        exporter.downloadData(sourceInstance, localdb, criteriaList);
-         */
-        // Copy metadata from source instance to target instance
-        File sourceSchemaDir = FileUtil.createTempDirectory("SourceInstance");
-
-        DeploymentEventListener del = new DeploymentEventListener() {
-            public void error(String message) {
-                System.out.println("ERROR: " + message);
-            }
-
-            public void message(String message) {
-                System.out.println(message);
-            }
-
-            public void setAsyncResult(AsyncResult asyncResult) {
-
-            }
-
-            public void progress(String message) {
-
-            }
-        };
-
-        Reconnector reconnector = new Reconnector(sourceInstance.getHelper());
-
-        Downloader sourceDownloader = new Downloader(reconnector, sourceSchemaDir, del, null);
-        for (Table table : tables) {
-            if (table.getType().equals("TABLE")) {
-                sourceDownloader.addPackage("CustomObject", table.getName());
-            }
-        }
-        File zipFile = sourceDownloader.download();
-
-        // Remove everything!
-        Deployer targetDeployer = deleteAllTables(targetInstance, del);
-
-
-        // Upload schema to destination instance
-        String deploymentId = targetDeployer.deployZip(zipFile, new HashSet<Deployer.DeploymentOptions>());
-        targetDeployer.checkDeploymentComplete(deploymentId, del);
-
-        // Insert all data from local machine to target instance
-        // map the inserted ids to the source ids
-
-        // Update all relationship references to the new ids
-
-
-        // sourceSchemaDir.delete();
-    }
-
-    public Deployer deleteAllTables(SfConnection targetInstance, DeploymentEventListener del) throws Exception {
-
-        // TODO: Insufficient to just delete tables. Must delete code, case escalation rules, EVERYTHING
-
-        // TODO: Document inability to delete "case assignment rules" and "case escalation rules"
-
-        List<String> metaDataToDelete = new ArrayList<String>();
-
-        metaDataToDelete.add("ApexClass");
-        metaDataToDelete.add("ApexComponent");
-        metaDataToDelete.add("ApexPage");
-        metaDataToDelete.add("ApexTrigger");
-
-        metaDataToDelete.add("FieldSet");
-        metaDataToDelete.add("RecordType");
-        metaDataToDelete.add("StaticResource");
-        metaDataToDelete.add("Layout");
-        metaDataToDelete.add("Workflow");
-
-
-        metaDataToDelete.add("ArticleType");
-        metaDataToDelete.add("CustomApplication");
-        metaDataToDelete.add("CustomLabels");
-//        metaDataToDelete.add("CustomObject"); (handled below)
-        metaDataToDelete.add("CustomObjectTranslation");
-        metaDataToDelete.add("CustomPageWebLink");
-        metaDataToDelete.add("CustomSite");
-        metaDataToDelete.add("CustomTab");
-        metaDataToDelete.add("DataCategoryGroup");
-        metaDataToDelete.add("EntitlementTemplate");
-        metaDataToDelete.add("HomePageComponent");
-        metaDataToDelete.add("HomePageLayout");
-        metaDataToDelete.add("Portal");                        // Can I even do this?
-        metaDataToDelete.add("Profile");
-        metaDataToDelete.add("RemoteSiteSetting");
-        metaDataToDelete.add("ReportType");
-        metaDataToDelete.add("Scontrol");
-        metaDataToDelete.add("Translations");
-
-
-// Decide what to remove
-
-//        MetadataConnection metadataConnection = targetInstance.getHelper().getMetadataConnection();
-        Reconnector reconnector = new Reconnector(targetInstance.getHelper());
-
-        Deployment undeploy = new Deployment(reconnector.getSfVersion());
-
-
-        List<ListMetadataQuery> queryList = new ArrayList<ListMetadataQuery>();
-        for (String m : metaDataToDelete) {
-            ListMetadataQuery mq = new ListMetadataQuery();
-            mq.setType(m);
-            queryList.add(mq);
-            // Salesforce only lets us call with 3 at a time. Thanks Salesforce!
-            if (queryList.size() == 3) {
-                addToUndeploymentList(reconnector, undeploy, queryList);
-            }
-        }
-
-
-        List<Table> tables = targetInstance.getMetaDataFactory().getTables();
-        for (Table table : tables) {
-            if (table.getType().equals("TABLE")) {
-                if (table.isCustom()) {
-                    undeploy.dropMember("CustomObject", table.getName());
-                } else {
-                    for (Column column : table.getColumns()) {
-                        if (column.isCustom()) {
-                            undeploy.dropMember("CustomField", table.getName() + "." + column.getName());
-                        }
-                    }
-                }
-            }
-        }
-
-        Deployer targetDeployer = new Deployer(reconnector);
-        targetDeployer.deploy(undeploy, del);
-
-        return targetDeployer;
-    }
-
-    private void addToUndeploymentList(Reconnector metadataConnection,
-                                       Deployment undeploy,
-                                       List<ListMetadataQuery> queryList) throws Exception {
-
-        ListMetadataQuery[] queries = new ListMetadataQuery[queryList.size()];
-        queryList.toArray(queries);
-
-        FileProperties[] props = metadataConnection.listMetadata(
-                queries,
-                metadataConnection.getSfVersion());
-
-        for (FileProperties prop : props) {
-            undeploy.addMember(prop.getType(), prop.getFullName(), null, null);
-        }
-    }
-
-    // TODO: restoreRequests does not honour the .sql property  -- thats ok? (need source and dest filtering?)
     public void restoreRows(SfConnection destination,
                             Connection localDb,
-                            List<MigrationCriteria> restoreRequests,
-                            List<MigrationCriteria> existingDataCriteriaList) throws SQLException {
+                            List<MigrationCriteria> restoreRequests, // TODO: restoreRequests does not honour the .sql property  -- thats ok? (need source and dest filtering?)
+                            List<MigrationCriteria> existingDataCriteriaList,
+                            String nameForMissingUser) throws SQLException {
 
         Set<String> processedTables = new HashSet<String>();
 
@@ -259,22 +87,21 @@ public class Migrator {
 
         mapRecordTypes(insertKeymap, destination, localDb, processedTables);
 
-        final String defaultUserId = getDefaultUser(destination);
+        final String defaultUserId = getDefaultUser(destination, nameForMissingUser);
 
         mapDataInDestination(insertKeymap, destination, localDb,
-                "select Id, Name from User where isActive = true",
+                "select Id, Name from @@@@ where isActive = true",
                 "User",
                 new SimpleKeyBuilder("Name"),
                 processedTables);
 
-        mapDataInDestination(insertKeymap, destination, localDb, "select Id, Name from UserRole",
+        mapDataInDestination(insertKeymap, destination, localDb, "select Id, Name from @@@@",
                 "UserRole",
                 new SimpleKeyBuilder("Name"), processedTables);
 
-
         for (MigrationCriteria migrationCriteria : existingDataCriteriaList) {
             mapDataInDestination(insertKeymap, destination, localDb,
-                    "select Id, " + migrationCriteria.keyBuilderColumns + " from " + migrationCriteria.tableName + "  " + migrationCriteria.sql,
+                    "select Id, " + migrationCriteria.keyBuilderColumns + " from @@@@ " + migrationCriteria.sql,
                     migrationCriteria.tableName,
                     migrationCriteria.keyBuilder,
                     processedTables);
@@ -283,8 +110,6 @@ public class Migrator {
 
         // Create fresh master-detail records
         final ResultSetFactory salesforceMetadata = destination.getMetaDataFactory();
-
-//        final List<Column> requiredColumns = new ArrayList<Column>();
 
         ResultSetCallback callback = new ResultSetCallback() {
             public void onRow(ResultSet rs) {
@@ -326,30 +151,20 @@ public class Migrator {
                     insertColumn = false;
                 }
 
-//                if (insertColumn && !column.isNillable()) {
-//                    requiredColumns.add(column);
-//                }
-
                 return insertColumn;
             }
 
             public Object alterValue(String tableName, String columnName, Object value) throws SQLException {
                 Table table = salesforceMetadata.getTable(tableName);
                 Column column = table.getColumn(columnName);
-                Object originalValue = value;
 
 //                System.out.print("KJS processing " + columnName + " " + column.getType() + "=" + value);
-                // TODO: This should be configurable! (example of mangling email addresses)
-                if (column.getType().equalsIgnoreCase("Email") && value != null) {
-                    value = value.toString() + ".example.com";
 
-                // TODO: This should be configurable! (example of mangling phone numbers)
-                } else if ((columnName.equalsIgnoreCase("Phone_Number__c") || column.getType().equalsIgnoreCase("Phone")) && value != null) {
-                    Double randomPhone = Math.random() * 1000;
-                    value = Long.toString(randomPhone.longValue());
-                }
-//                System.out.println(" now " + value);
-
+                // TODO: This is where we could include hooks for mangling of data -- eg: when migrating production data to a sandbox as a test environment
+                // you might want to mangle names/email addresses/phone numbers.
+//                if (column.getType().equalsIgnoreCase("Email") && value != null) {
+//                    value = value.toString() + ".example.com";
+//                }
 
                 if (column.getRelationshipType() != null && !column.isNillable()) {
                     getCorrectedIds.setObject(1, value);
@@ -361,10 +176,6 @@ public class Migrator {
                         // Handle inactive users -- a common problem
                         if (column.getReferencedTable().equalsIgnoreCase("User")) {
                             value = defaultUserId;
-
-//                            TODO: Softcode somehow!
-//                        } else if (!columnName.equalsIgnoreCase("Id") && (originalValue != null) && (originalValue instanceof String) && (originalValue.equals("a0z30000000onDeAAI"))) {
-//                            value = "a0zS0000000EIGtIAO";
 
                         } else {
                             System.out.println("KJS WARNING -- failed to make a value for " + columnName + " " + value);
@@ -383,7 +194,7 @@ public class Migrator {
             if (!tableContainsMasterDetail(salesforceMetadata.getTable(restoreRequest.tableName))) {
 
                 String fromTable = restoreRequest.tableName;
-                String sql = "select * from " + fromTable; //  + " " + restoreRequest.sql;
+                String sql = "select * from " + Exporter.localname(localDb, fromTable); //  + " " + restoreRequest.sql;
 
                 PreparedStatement sourceStmt = localDb.prepareStatement(sql);
                 ResultSet rs = sourceStmt.executeQuery();
@@ -451,11 +262,12 @@ public class Migrator {
         }
     }
 
-    private String getDefaultUser(SfConnection destination) throws SQLException {
+    // What user should we use when we can't find a given user in the destination environment?
+    private String getDefaultUser(SfConnection destination, String name) throws SQLException {
         String defaultUserId = null;
         PreparedStatement psStatement = destination.prepareStatement(
-                "select id from User where Name = 'Fronde Admin' limit 1");
-//                "select id from User where isActive = true and UserType = 'Standard' limit 1");
+                "select id from User where Name = ? limit 1");
+        psStatement.setString(1, name);
         ResultSet rs = psStatement.executeQuery();
         if (rs.next()) {
             defaultUserId = rs.getString("id");
@@ -467,7 +279,7 @@ public class Migrator {
 
     // Record type is a special case. Setup the mapping here
     private void mapRecordTypes(PreparedStatement insertKeymap, SfConnection destination, Connection localDb, Set<String> processedTables) throws SQLException {
-        String sql = "select Id, SobjectType, DeveloperName from RecordType where isActive = true";
+        String sql = "select Id, SobjectType, DeveloperName from @@@@ where isActive = true";
 
         KeyBuilder kb = new KeyBuilder() {
             public String buildKey(ResultSet rs) throws SQLException {
@@ -491,7 +303,7 @@ public class Migrator {
                                       Connection localDb, String sql, String tableName, KeyBuilder kb, Set<String> processedTables) throws SQLException {
         Map<String, String> oldIds = new HashMap<String, String>();
 
-        PreparedStatement stmt = localDb.prepareStatement(sql);
+        PreparedStatement stmt = localDb.prepareStatement(sql.replace("@@@@", Exporter.localname(localDb, tableName)));
         ResultSet rs = stmt.executeQuery();
         while (rs.next()) {
             oldIds.put(kb.buildKey(rs), rs.getString("Id"));
@@ -499,7 +311,7 @@ public class Migrator {
         rs.close();
         stmt.close();
 
-        stmt = destination.prepareStatement(sql);
+        stmt = destination.prepareStatement(sql.replace("@@@@", tableName));
         rs = stmt.executeQuery();
         while (rs.next()) {
             String key = kb.buildKey(rs);
@@ -518,8 +330,9 @@ public class Migrator {
     }
 
 
-    private void correctReferences(Connection destination, Statement stmt, Table table, ResultSetCallback callback) throws SQLException {
+    private void correctReferences(Connection destination, Statement localDbStatement, Table table, ResultSetCallback callback) throws SQLException {
         boolean hasMasterDetail = tableContainsMasterDetail(table);
+        String localTableName = Exporter.localname(localDbStatement.getConnection(),  table.getName());
 
         System.out.println("KJS " + table.getName() + " has master detail=" + hasMasterDetail);
 
@@ -529,15 +342,15 @@ public class Migrator {
 
         selectColumns.append("select ");
         selectJoins.append(" left join keyMap as new");
-        selectJoins.append(table.getName());
+        selectJoins.append(localTableName);
         selectJoins.append(" on new");
-        selectJoins.append(table.getName());
+        selectJoins.append(localTableName);
         selectJoins.append(".tableName = '");
         selectJoins.append(table.getName().toLowerCase());
         selectJoins.append("' and new");
-        selectJoins.append(table.getName());
+        selectJoins.append(localTableName);
         selectJoins.append(".oldId =");
-        selectJoins.append(table.getName());
+        selectJoins.append(localTableName);
         selectJoins.append(".Id");
 
         String updateRefs;
@@ -612,12 +425,12 @@ public class Migrator {
         PreparedStatement updateStmt = destination.prepareStatement(updateRefs);
 
         if (!hasMasterDetail) {
-            selectColumns.append(" new").append(table.getName()).append(".newId as Id");
+            selectColumns.append(" new").append(localTableName).append(".newId as Id");
         } else {
-            selectColumns.append(table.getName()).append(".Id as Id");
+            selectColumns.append(localTableName).append(".Id as Id");
         }
         selectColumns.append(" from ");
-        selectColumns.append(table.getName());
+        selectColumns.append(localTableName);
         selectColumns.append(selectJoins);
 
         if (colCount > 0) {
@@ -627,7 +440,7 @@ public class Migrator {
 
             System.out.println("KJS PULL FROM " + selectColumns.toString());
 
-            ResultSet rs = stmt.executeQuery(selectColumns.toString());
+            ResultSet rs = localDbStatement.executeQuery(selectColumns.toString());
 //            ResultSetMetaData metaData = rs.getMetaData();
 
             while (rs.next()) {
@@ -663,7 +476,7 @@ public class Migrator {
 
 
     /**
-     * Migrates all data specified in MigrationCriteria from
+     * Migrates all data (not schema) specified in MigrationCriteria from
      * the source salesforce instance to the destination saleforce instance.
      * <p/>
      * WARNING: All existing rows in the destination salesforce migration tables will be deleted,
@@ -679,7 +492,8 @@ public class Migrator {
      */
     public void migrateData(SfConnection sourceSalesforce, SfConnection destSalesforce, Connection h2Conn,
                             List<MigrationCriteria> migrationCriteriaList,
-                            List<MigrationCriteria> existingDataCriteriaList) throws Exception {
+                            List<MigrationCriteria> existingDataCriteriaList,
+                            String nameForMissingUser) throws Exception {
 
         Set<String> tableNames = correctTableNames(sourceSalesforce, migrationCriteriaList);
 
@@ -692,8 +506,9 @@ public class Migrator {
 
         File originalFile = downloadBackup(destSalesforce, tableNames, destinationConnector, del, srcSchemaDir);
         File restoreZip = createFileToRestore(srcSchemaDir);
-        File unenabledFile = createUnenabledFile(srcSchemaDir);
 
+        // Try to disable everything in the destination database
+        File unenabledFile = createUnenabledFile(srcSchemaDir);
         Deployer deployer = new Deployer(destinationConnector);
         HashSet<Deployer.DeploymentOptions> options = new HashSet<Deployer.DeploymentOptions>();
         options.add(Deployer.DeploymentOptions.IGNORE_WARNINGS);
@@ -710,26 +525,26 @@ public class Migrator {
             for (String table : tableNames) {
                 try {
                     System.out.println("Deleting records from " + table);
-                    destSalesforce.createStatement().execute("delete from " + table);
+
+                    ResultSet rs = destSalesforce.getMetaData().getTables(null, ResultSetFactory.schemaName, table, null);
+                    if (rs.next()) {
+                        destSalesforce.createStatement().execute("delete from " + table);
+                    }
                 } catch (SQLException e) {
                     System.out.println("KJS unable to delete from " + table + ": " + e.getMessage());
                 }
             }
 
             Exporter exporter = new Exporter();
-            exporter.createLocalSchema(sourceSalesforce, h2Conn);
-
-
+            exporter.createLocalSchema(sourceSalesforce, h2Conn, null);
 
             Set<String> processedTables = new HashSet<String>();
-
-
 
             // We always need these for mappings...
             migrationCriteriaList.add(new MigrationCriteria("RecordType"));
             migrationCriteriaList.add(new MigrationCriteria("User"));
             migrationCriteriaList.add(new MigrationCriteria("UserRole"));
-//            migrationCriteriaList.add(new MigrationCriteria("Group"));  -- TODO: Handle horrible table name!
+            migrationCriteriaList.add(new MigrationCriteria("Group"));
             exporter.downloadData(sourceSalesforce, h2Conn, migrationCriteriaList, processedTables);
 
             // Download data from source for use in id mapping only -- this is never loaded into destination
@@ -745,13 +560,13 @@ public class Migrator {
                 restoreCriteria.add(criteria);
             }
 
-            restoreRows(destSalesforce, h2Conn, restoreCriteria, existingDataCriteriaList);
+            restoreRows(destSalesforce, h2Conn, restoreCriteria, existingDataCriteriaList, nameForMissingUser);
 
         } finally {
- //           System.out.println("Restoring schema " + restoreZip.getAbsolutePath());
+            System.out.println("Restoring schema into target instance " + restoreZip.getAbsolutePath());
             String deployId = deployer.deployZip(restoreZip, options);
             deployer.checkDeploymentComplete(deployId, del);
-//            System.out.println("Restoring schema... done");
+            System.out.println("Restoring schema... done");
             if (errors.length() != 0) {
                 throw new Exception("Restore of schema in " + originalFile.getAbsolutePath() +
                         " failed " + errors.toString());
@@ -787,9 +602,6 @@ public class Migrator {
         Downloader destinationBackup = new Downloader(destinationConnector, sourceSchemaDir,
                 del, null);
 
-
-        // TODO: Why don't we do anyting with triggersToEnable???
-        List<String> triggersToEnable = new ArrayList<String>();
         PreparedStatement findTrigger = destSalesforce.prepareStatement(
                 "select Name from ApexTrigger " +
                         "where Status = 'Active' " +
@@ -805,7 +617,6 @@ public class Migrator {
             ResultSet rs = findTrigger.executeQuery();
             while (rs.next()) {
                 destinationBackup.addPackage("ApexTrigger", rs.getString("Name"));
-                triggersToEnable.add(rs.getString("Name"));
             }
         }
 
@@ -859,7 +670,6 @@ public class Migrator {
             }
             doc.normalize();
 
-//            StringWriter sw = new StringWriter();
             FileOutputStream sw = new FileOutputStream(objectFile);
             DOMSource source = new DOMSource(doc);
             StreamResult result = new StreamResult(sw);

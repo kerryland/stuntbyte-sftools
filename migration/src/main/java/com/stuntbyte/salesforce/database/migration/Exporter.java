@@ -46,10 +46,17 @@ import java.util.Set;
  */
 public class Exporter {
 
+    public static String localname(Connection connection, String name) {
+        if (connection instanceof SfConnection) {
+            return name;
+        }
+        return "__m_" + name;
+    }
+
     /**
      * Create a H2 schema based on the provided Salesforce instance
      */
-    public List<Table> createLocalSchema(SfConnection sfConnection, Connection localConnection) throws SQLException {
+    public List<Table> createLocalSchema(SfConnection sfConnection, final Connection localConnection, final String tablePattern) throws SQLException {
         final ResultSetFactory rsf = sfConnection.getMetaDataFactory();
 
         final Statement stmt = localConnection.createStatement();
@@ -57,27 +64,20 @@ public class Exporter {
 
         final List<Table> tables = new ArrayList<Table>();
 
-        rsf.getTables(ResultSetFactory.schemaName, null, new TableEvent() {
+        rsf.getTables(ResultSetFactory.schemaName, tablePattern, new TableEvent() {
             public void onTable(Table table) throws SQLException {
-                tables.add(table);
-
-                if (table.getType().equals("TABLE")
+                if ((table.getType().equals("TABLE") &&
+                        !table.getName().endsWith("__History") &&  // Can't deal with 'anytype'
+                        !table.getName().equalsIgnoreCase("ContentDocumentLink"))               // Implementation restriction: ContentDocumentLink requires a filter by a single Id on ContentDocumentId
                         || table.getName().equalsIgnoreCase("RecordType")
                         || table.getName().equalsIgnoreCase("User")
                         || table.getName().equalsIgnoreCase("UserRole")
-                        ) {
+                        )
+                {
                     StringBuilder sb = new StringBuilder();
 
                     String tableName = table.getName();
-//                if (!tableName.endsWith("__c")) {
-//                    tableName += "__s";   // Make sure we don't fail on the GROUP table...
-//                }
-                    if (tableName.equalsIgnoreCase("group")) {
-                        tableName = "groups";   // Make sure we don't fail on the GROUP table...
-                    }
-
-
-                    sb.append("create table " + tableName);
+                    sb.append("create table " +  localname(localConnection, tableName));
                     sb.append(" (");
 
 //                Dialect dialect = new SalesforceDialect();
@@ -85,10 +85,9 @@ public class Exporter {
 
 //                System.setProperty("h2.identifiersToUpper","false");
 
-
                     List<Column> cols = table.getColumns();
                     for (Column col : cols) {
-                        Integer jdbcType = rsf.lookupJdbcType(col.getType());
+                        Integer jdbcType = ResultSetFactory.lookupJdbcType(col.getType());
                         if (jdbcType != Types.OTHER) {
                             sb.append(col.getName());
 
@@ -98,11 +97,15 @@ public class Exporter {
                             sb.append(" ");
                             sb.append(typeName);
                             sb.append(",");
+                        } else {
+                            System.out.println("ARGH -- Don't know what to do with " + table.getName() + "." + col.getName() + " datatype " + col.getType());
                         }
                     }
                     sb.replace(sb.length(), sb.length(), ")");
 
                     stmt.execute(sb.toString());
+
+                    tables.add(table);
                 }
 
             }
@@ -123,11 +126,18 @@ public class Exporter {
         for (MigrationCriteria criteria : migrationCriteriaList) {
             String tableName = criteria.tableName;
             if (!tableName.equalsIgnoreCase("Attachment")) {
+                String sql = "select * from " + criteria.tableName + " " + criteria.sql;
+                System.out.println(sql);
                 PreparedStatement pstmt = sfConnection.prepareStatement(
-                        "select * from " + criteria.tableName + " " + criteria.sql);
-                ResultSet rs = pstmt.executeQuery();
+                        sql);
 
-                copyResultSetToTable(localConnection, tableName, rs, processedTables, null);
+                try {
+                    ResultSet rs = pstmt.executeQuery();
+
+                    copyResultSetToTable(localConnection, tableName, rs, processedTables, null);
+                } catch (java.sql.SQLException e) {
+                    System.out.println("Salesforce doesn't like to query " + criteria.tableName + ". " + e.getMessage());
+                }
             }
         }
     }
@@ -141,7 +151,7 @@ public class Exporter {
         System.out.println("Saving records to " + tableName);
         StringBuilder columns = new StringBuilder();
         StringBuilder values = new StringBuilder();
-        columns.append("insert into ").append(tableName).append(" (");
+        columns.append("insert into ").append(localname(destination, tableName)).append(" (");
         boolean first = true;
 
         Map<Integer, Integer> sourceToDestColumnMap = new HashMap<Integer, Integer>();
