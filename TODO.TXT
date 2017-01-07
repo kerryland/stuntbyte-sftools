@@ -1,4 +1,6 @@
 select * from user does not work in sqlworkbench explorer tab
+select * from group does not work in sqlworkbench explorer tab
+select * from lead does not work in sqlworkbench explorer tab
 
 - Soft-code test properties
 - Document 'includes', 'standard' and 'useLabels' parameters

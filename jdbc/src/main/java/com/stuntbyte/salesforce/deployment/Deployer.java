@@ -23,6 +23,7 @@
 package com.stuntbyte.salesforce.deployment;
 
 import com.sforce.soap.metadata.*;
+import com.stuntbyte.salesforce.misc.Downloader;
 import com.stuntbyte.salesforce.misc.FileUtil;
 import com.stuntbyte.salesforce.misc.Reconnector;
 
@@ -154,7 +155,12 @@ public class Deployer {
         deployOptions.setRollbackOnError(rollbackOnError);
         deployOptions.setAllowMissingFiles(deploymentOptions.contains(DeploymentOptions.ALLOW_MISSING_FILES));
 
-        deployOptions.setRunAllTests(deploymentOptions.contains(Deployer.DeploymentOptions.ALL_TESTS));
+        if (deploymentOptions.contains(Deployer.DeploymentOptions.ALL_TESTS)) {
+            deployOptions.setTestLevel(TestLevel.RunAllTestsInOrg);
+        }
+//
+//        deployOptions.setRunAllTests(deploymentOptions.contains(Deployer.DeploymentOptions.ALL_TESTS));
+
         deployOptions.setSinglePackage(true);
         deployOptions.setCheckOnly(deploymentOptions.contains(Deployer.DeploymentOptions.CHECK_ONLY));
 
@@ -232,12 +238,12 @@ public class Deployer {
                 throw new Exception("Request timed out. Check deployment state within Salesforce");
             }
 
-            AsyncResult[] asyncResults = reconnector.checkStatus(new String[]{deploymentId});
+//            AsyncResult[] asyncResults = reconnector.checkStatus(new String[]{deploymentId});
             deployResult = reconnector.checkDeployStatus(deploymentId);
 
             reportProgress(listener, deployResult);
 
-            String thisChangeValue = asyncResults[0].getMessage() +
+            String thisChangeValue =
                     deployResult.getStatus().name() +
                     deployResult.getNumberComponentsDeployed() + "|" +
                     deployResult.getNumberComponentErrors() + "|" +
@@ -356,11 +362,15 @@ public class Deployer {
         File resultsFile = File.createTempFile("SFDC", "DOWN");
 
         AsyncResult asyncResult = reconnector.retrieve(retrieveRequest);
+        RetrieveResult deployResult = null;
+        deployResult = reconnector.checkRetrieveStatus(asyncResult.getId());
+
         // Wait for the retrieve to complete
+//        boolean done= asyncResult.getDone();
 
         int poll = 0;
         long waitTimeMilliSecs = ONE_SECOND;
-        while (!asyncResult.isDone()) {
+        while (!deployResult.getDone()) {
             Thread.sleep(waitTimeMilliSecs);
             // double the wait time for the next iteration
 
@@ -368,8 +378,8 @@ public class Deployer {
             if (poll++ > MAX_NUM_POLL_REQUESTS) {
                 throw new Exception("Request timed out. Make or may not have completed successfully...");
             }
-            asyncResult = reconnector.checkStatus(
-                    new String[]{asyncResult.getId()})[0];
+            deployResult = reconnector.checkRetrieveStatus(asyncResult.getId());
+//            done = deployResult.getDone();
 //            System.out.println("Status is: " + asyncResult.getState());
         }
 
@@ -378,13 +388,19 @@ public class Deployer {
                     asyncResult.getMessage());
         }
 
-        RetrieveResult result = reconnector.checkRetrieveStatus(asyncResult.getId());
+        // TODO: Is deployResult.isSuccess() enough?
+        if (deployResult != null && deployResult.getStatus() != RetrieveStatus.Succeeded) {
+            throw new Exception(deployResult.getErrorStatusCode() + " msg: " +
+                    deployResult.getErrorMessage());
+        }
+
+//        RetrieveResult result = reconnector.checkRetrieveStatus(asyncResult.getId());
 
         // Print out any warning messages
 
         StringBuilder buf = new StringBuilder();
-        if (result.getMessages() != null) {
-            for (RetrieveMessage rm : result.getMessages()) {
+        if (deployResult.getMessages() != null) {
+            for (RetrieveMessage rm : deployResult.getMessages()) {
                 buf.append(rm.getFileName() + " - " + rm.getProblem());
             }
         }
@@ -395,7 +411,7 @@ public class Deployer {
         // Write the zip to the file system
 
 //        System.out.println("Writing results to zip file");
-        ByteArrayInputStream bais = new ByteArrayInputStream(result.getZipFile());
+        ByteArrayInputStream bais = new ByteArrayInputStream(deployResult.getZipFile());
         FileOutputStream os = new FileOutputStream(resultsFile);
         try {
             ReadableByteChannel src = Channels.newChannel(bais);

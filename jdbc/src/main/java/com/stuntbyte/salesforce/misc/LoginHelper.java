@@ -22,10 +22,10 @@
  */
 package com.stuntbyte.salesforce.misc;
 
+import com.sforce.soap.metadata.MetadataConnection;
 import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.stuntbyte.salesforce.jdbc.metaforce.WscService;
 import com.sforce.soap.apex.SoapConnection;
-import com.sforce.soap.metadata.MetadataConnection;
 import com.sforce.soap.partner.Connector;
 import com.sforce.soap.partner.LoginResult;
 import com.sforce.soap.partner.PartnerConnection;

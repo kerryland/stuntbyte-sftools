@@ -175,11 +175,16 @@ public class Downloader {
         File resultsFile = File.createTempFile("SFDC", "DOWN");
 
         AsyncResult asyncResult = reconnector.retrieve(retrieveRequest);
+        RetrieveResult deployResult = null;
+
+        deployResult = reconnector.checkRetrieveStatus(asyncResult.getId());
+
         // Wait for the retrieve to complete
+//        boolean done= asyncResult.getDone();
 
         int poll = 0;
         long waitTimeMilliSecs = ONE_SECOND;
-        while (!asyncResult.isDone()) {
+        while (!deployResult.getDone()) {
             Thread.sleep(waitTimeMilliSecs);
             // double the wait time for the next iteration
 
@@ -192,24 +197,31 @@ public class Downloader {
             if (poll++ > MAX_NUM_POLL_REQUESTS) {
                 throw new Exception("Request timed out. Make or may not have completed successfully...");
             }
-            asyncResult = reconnector.checkStatus(
-                    new String[]{asyncResult.getId()})[0];
+            deployResult = reconnector.checkRetrieveStatus(asyncResult.getId());
+//            done = deployResult.getDone();
 
-            listener.progress("Status is: " + asyncResult.getState());
+            listener.progress("Status is: " + deployResult.getStatus().name());
         }
 
-        if (asyncResult.getState() != AsyncRequestState.Completed) {
-            throw new Exception(asyncResult.getStatusCode() + " msg: " +
-                    asyncResult.getMessage());
+//        if (asyncResult.getState() != AsyncRequestState.Completed) {
+//            throw new Exception(asyncResult.getStatusCode() + " msg: " +
+//                    asyncResult.getMessage());
+//        }
+
+        // TODO: Is deployResult.isSuccess() enough?
+        if (deployResult != null && deployResult.getStatus() != RetrieveStatus.Succeeded) {
+            throw new Exception(deployResult.getErrorStatusCode() + " msg: " +
+                    deployResult.getErrorMessage());
         }
 
-        RetrieveResult result = reconnector.checkRetrieveStatus(asyncResult.getId());
+
+//        RetrieveResult result = reconnector.checkRetrieveStatus(asyncResult.getId());
 
         // Print out any warning messages
 
         StringBuilder buf = new StringBuilder();
-        if (result.getMessages() != null) {
-            for (RetrieveMessage rm : result.getMessages()) {
+        if (deployResult.getMessages() != null) {
+            for (RetrieveMessage rm : deployResult.getMessages()) {
                 buf.append(rm.getFileName() + " - " + rm.getProblem()+"\n");
             }
         }
@@ -220,7 +232,7 @@ public class Downloader {
         // Write the zip to the file system
 
 //        System.out.println("Writing results to zip file");
-        ByteArrayInputStream bais = new ByteArrayInputStream(result.getZipFile());
+        ByteArrayInputStream bais = new ByteArrayInputStream(deployResult.getZipFile());
         FileOutputStream os = new FileOutputStream(resultsFile);
         FileChannel dest = null;
         ReadableByteChannel src = null;

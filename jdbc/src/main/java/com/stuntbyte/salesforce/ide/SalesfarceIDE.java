@@ -22,25 +22,13 @@
  */
 package com.stuntbyte.salesforce.ide;
 
+import com.sforce.soap.apex.*;
 import com.stuntbyte.salesforce.deployment.Deployer;
 import com.stuntbyte.salesforce.deployment.DeploymentEventListener;
 import com.stuntbyte.salesforce.misc.Downloader;
 import com.stuntbyte.salesforce.misc.FileUtil;
 import com.stuntbyte.salesforce.misc.LoginHelper;
 import com.stuntbyte.salesforce.misc.Reconnector;
-import com.sforce.soap.apex.CodeCoverageResult;
-import com.sforce.soap.apex.CompileAndTestRequest;
-import com.sforce.soap.apex.CompileAndTestResult;
-import com.sforce.soap.apex.CompileClassResult;
-import com.sforce.soap.apex.CompileTriggerResult;
-import com.sforce.soap.apex.LogCategory;
-import com.sforce.soap.apex.LogCategoryLevel;
-import com.sforce.soap.apex.LogInfo;
-import com.sforce.soap.apex.LogType;
-import com.sforce.soap.apex.RunTestFailure;
-import com.sforce.soap.apex.RunTestsRequest;
-import com.sforce.soap.apex.RunTestsResult;
-import com.sforce.soap.apex.SoapConnection;
 import com.sforce.soap.metadata.AsyncResult;
 import com.sforce.soap.metadata.Package;
 import com.sforce.soap.metadata.PackageTypeMembers;
@@ -496,12 +484,12 @@ public class SalesfarceIDE {
                             compileClassResult.getProblem().replaceAll("\n", " "));
                 }
 
-                String[] warnings = compileClassResult.getWarnings();
-                for (String warning : warnings) {
+                CompileIssue[] warnings = compileClassResult.getWarnings();
+                for (CompileIssue warning : warnings) {
                     err(failname, compileClassResult.getLine(),
                             compileClassResult.getColumn(),
                             "W",
-                            warning.replaceAll("\n", " "));
+                            warning.getMessage().replaceAll("\n", " "));
                 }
             }
 

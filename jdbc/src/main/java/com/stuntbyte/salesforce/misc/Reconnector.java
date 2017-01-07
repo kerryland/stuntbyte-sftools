@@ -64,14 +64,6 @@ public class Reconnector {
         }
     }
 
-    public com.sforce.soap.metadata.AsyncResult[] checkStatus(java.lang.String[] asyncProcessId) throws com.sforce.ws.ConnectionException {
-        try {
-            return lh.getMetadataConnection().checkStatus(asyncProcessId);
-        } catch (ConnectionException e) {
-            lh.reconnect();
-            return lh.getMetadataConnection().checkStatus(asyncProcessId);
-        }
-    }
 
     public com.sforce.soap.metadata.DeployResult checkDeployStatus(java.lang.String asyncProcessId) throws com.sforce.ws.ConnectionException {
         try {
@@ -94,10 +86,10 @@ public class Reconnector {
 
     public com.sforce.soap.metadata.RetrieveResult checkRetrieveStatus(java.lang.String asyncProcessId) throws com.sforce.ws.ConnectionException {
         try {
-            return lh.getMetadataConnection().checkRetrieveStatus(asyncProcessId);
+            return lh.getMetadataConnection().checkRetrieveStatus(asyncProcessId, true);
         } catch (ConnectionException e) {
             lh.reconnect();
-            return lh.getMetadataConnection().checkRetrieveStatus(asyncProcessId);
+            return lh.getMetadataConnection().checkRetrieveStatus(asyncProcessId, true);
         }
     }
 

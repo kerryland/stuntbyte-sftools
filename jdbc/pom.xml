@@ -42,7 +42,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <force-api-version>29.0.0</force-api-version>
+
+        <force-api-version>38.0.0</force-api-version> <!-- Also update Version.java -->
         <!-- was using 22. Need to move to 31 -->
     </properties>
 
@@ -164,7 +165,7 @@
                 <configuration>
                     <finalName>stuntbyte-sfdc-jdbc-${project.version}</finalName>
 
-                    <minimizeJar>true</minimizeJar>
+                    <minimizeJar>false</minimizeJar>
                     <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"></transformer>
                     </transformers>
