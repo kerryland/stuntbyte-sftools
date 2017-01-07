@@ -35,20 +35,21 @@ public class ResultSetFactory {
     public static String catalogName = null;
 
     public static String getNiceName(String dataType) {
-        try {
-            return lookupTypeInfo(dataType).getNiceName();
-        } catch (SQLException e) {
+        TypeInfo typeInfo = lookupTypeInfo(dataType);
+        if (typeInfo == null) {
             return "unknown";
         }
+        return typeInfo.getNiceName();
     }
 
     public static String getSql92Name(String dataType) {
-        try {
-            return lookupTypeInfo(dataType).getSql92name();
-        } catch (SQLException e) {
+        TypeInfo typeInfo = lookupTypeInfo(dataType);
+        if (typeInfo == null) {
             return "unknown";
         }
+        return typeInfo.getSql92name();
     }
+
 
 
     private static class TypeInfo {
@@ -90,6 +91,10 @@ public class ResultSetFactory {
     }
 
     /*
+
+    https://developer.salesforce.com/docs/atlas.en-us.api.meta/api/primitive_data_types.htm
+    https://developer.salesforce.com/docs/atlas.en-us.api.meta/api/field_types.htm
+
 AutoNumber
 Lookup
 MasterDetail
@@ -122,6 +127,7 @@ Hierarchy
             new TypeInfo("varchar", "Text", "string", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
             new TypeInfo("varchar", "EncryptedText", "encryptedstring", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
             new TypeInfo("varchar", "Email", "email", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+            new TypeInfo("varchar", "Address", "address", Types.STRUCT, 0, 0, 0, 0),
             new TypeInfo("varchar", "Phone", "phone", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
             new TypeInfo("varchar", "Url", "url", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
             new TypeInfo("varchar", "TextArea", "textarea", Types.LONGVARCHAR, 0x7fffffff, 0, 0, 0),
@@ -379,7 +385,7 @@ Hierarchy
     }
 
 
-    static TypeInfo lookupTypeInfo(String forceTypeName) throws SQLException {
+    static TypeInfo lookupTypeInfo(String forceTypeName) {
         for (TypeInfo entry : TYPE_INFO_DATA) {
             if ((forceTypeName.equalsIgnoreCase(entry.typeName) ||
                     (forceTypeName.equalsIgnoreCase(entry.niceName))) ||
@@ -387,16 +393,16 @@ Hierarchy
                 return entry;
             }
         }
-        throw new SQLException("Unable to identify type for '" + forceTypeName + "'");
+        return null;
+//        throw new SQLException("Unable to identify type for '" + forceTypeName + "'");
     }
 
     public static Integer lookupJdbcType(String forceTypeName) throws SQLException {
-        Integer result = lookupTypeInfo(forceTypeName).sqlDataType;
-        return result;
-    }
-
-    public static String lookupExternalTypeName(String forceTypeName) throws SQLException {
-        return lookupTypeInfo(forceTypeName).niceName;
+        TypeInfo typeInfo = lookupTypeInfo(forceTypeName);
+        if (typeInfo == null) {
+            return Types.OTHER;
+        }
+        return typeInfo.sqlDataType;
     }
 
 

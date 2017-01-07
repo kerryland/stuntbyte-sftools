@@ -19,6 +19,6 @@ public class ResultSetFactoryTest {
         final ResultSetFactory rsf = conn.getMetaDataFactory();
         Table table = rsf.getTable("SF", "User");
         Column addressColumn = table.getColumn("address");
-        Assert.assertEquals("X", addressColumn.getType());
+        Assert.assertEquals("address", addressColumn.getType());
     }
 }

@@ -173,6 +173,28 @@ public class CreateTableTests {
 
         conn.createStatement().execute(sql);
 
+        SfConnection conn2 = testHelper.getTestConnection();
+
+        Assert.fail("Clean this up");
+        ResultSet wibble__c = conn.getMetaData().getTables(null, null, "wibble__c", null);
+        while(wibble__c.next()) {
+            System.out.println(wibble__c.getString("TABLE_NAME"));
+        }
+
+        wibble__c = conn2.getMetaData().getTables(null, null, "wibble__c", null);
+        while(wibble__c.next()) {
+            System.out.println(wibble__c.getString("TABLE_NAME"));
+            ResultSet cols = conn2.getMetaData().getColumns(null, null, wibble__c.getString("TABLE_NAME"), "*");
+
+            while(cols.next()) {
+                System.out.println("  COL " + cols.getString("COLUMN_NAME"));
+
+            }
+
+        }
+
+
+
         Statement stmt = conn.createStatement();
         stmt.execute("insert into wibble__c(name, custom_field__c) values ('aaa', 'Zeta')");
         stmt.execute("insert into wibble__c(name, custom_field__c) values ('bbb', 'Alpha')");

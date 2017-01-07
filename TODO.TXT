@@ -1,15 +1,15 @@
-select * from user does not work in sqlworkbench explorer tab
-select * from group does not work in sqlworkbench explorer tab
-select * from lead does not work in sqlworkbench explorer tab
-
 - Soft-code test properties
 - Document 'includes', 'standard' and 'useLabels' parameters
 
+- automatically populate aaa__c
+- Deal with StandardValueSet changes in API 38 https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/manifest_samples.htm
 - Update to API 31 and fix ExporterTest
 - Remove nanoc
 - Update stuntbyte.com to link to github
 
+- sqlworkbench: SELECT COUNT(ID) FROM null "Group"
 
+- update does not support schema!
 
 - union
 - SELECT ... INSERT INTO ...

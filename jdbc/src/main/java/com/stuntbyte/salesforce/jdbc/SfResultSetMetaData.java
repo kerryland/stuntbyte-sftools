@@ -292,7 +292,7 @@ public class SfResultSetMetaData implements ResultSetMetaData {
         if (col == null) {
             return true;
         }
-        return col.isCalculated();
+        return (col.isCalculated() || !col.isUpdateable());
     }
 
     public boolean isWritable(int column) throws SQLException {

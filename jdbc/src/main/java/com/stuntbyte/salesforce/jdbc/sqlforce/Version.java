@@ -15,7 +15,7 @@ import java.util.jar.Manifest;
 public class Version {
     public static int majorVersion;
     public static int minorVersion;
-    public static int sfdcVersion = 38; // Default if we can't access the manifest (eg: tests)
+    public static int sfdcVersion = 36; // Default if we can't access the manifest (eg: tests)
 
     static {
         InputStream stream = null;

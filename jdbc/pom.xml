@@ -43,7 +43,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <force-api-version>38.0.0</force-api-version> <!-- Also update Version.java -->
+        <force-api-version>36.0.0</force-api-version> <!-- Also update Version.java -->
         <!-- was using 22. Need to move to 31 -->
     </properties>
 
@@ -181,6 +181,10 @@
                         <relocation>
                             <pattern>org.</pattern>
                             <shadedPattern>hidden.org</shadedPattern>
+                            <excludes>
+                                <exclude>org.w3c.*</exclude>
+                            </excludes>
+
                         </relocation>
 
                     </relocations>

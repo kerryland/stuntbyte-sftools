@@ -373,7 +373,7 @@ public class CreateTable {
                 addElement(document, fields, "trackFeedHistory", "false");
                 addElement(document, fields, "trackHistory", "false");
 
-                String adjustedDataType = ResultSetFactory.lookupExternalTypeName(col.getType());
+                String adjustedDataType = ResultSetFactory.getNiceName(col.getType());
 
                 addElement(document, fields, "type", adjustedDataType);
                 if (col.getReferencedTable() != null) {
@@ -509,7 +509,7 @@ public class CreateTable {
 
             addElement(document, nameField, "label", nameColumn.getLabel());
 
-            String adjustedDataType = ResultSetFactory.lookupExternalTypeName(nameColumn.getType());
+            String adjustedDataType = ResultSetFactory.getNiceName(nameColumn.getType());
 
             addElement(document, nameField, "type", adjustedDataType);
 
