@@ -229,9 +229,10 @@ public class SfResultSetMetaData implements ResultSetMetaData {
 
     public int getColumnDisplaySize(int column) throws SQLException {
         Column col = getColumn(column);
-        if (col == null) {
+        if ((col == null)|| col.getLength() == 0)) {
             return 10;
         }
+
         return col.getLength();
     }
 

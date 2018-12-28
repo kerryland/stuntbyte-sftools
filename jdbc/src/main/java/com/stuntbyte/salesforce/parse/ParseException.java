@@ -20,36 +20,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.stuntbyte.salesforce.jdbc.ddl;
-
-import com.stuntbyte.salesforce.misc.BaseDeploymentEventListener;
+package com.stuntbyte.salesforce.parse;
 
 /**
- * Listen for deployments
+ * Something went wrong when parsing SQL
  */
-public class DdlDeploymentListener extends BaseDeploymentEventListener {
-
-    public StringBuilder errors;
-    public StringBuilder messages;
-
-    public DdlDeploymentListener(StringBuilder errors, StringBuilder messages) {
-        this.errors = errors;
-        this.messages = messages;
+public class ParseException  extends  Exception{
+    public ParseException(String message) {
+        super(message);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
-    public void error(String message) {
-        if (errors != null) {
-            errors.append(message).append("\n");
-        }
-    }
-
-    public void message(String message) {
-        if (messages != null) {
-            messages.append(message).append("\n");
-        }
-    }
-
-    public StringBuilder getErrors() {
-        return errors;
+    public ParseException(String message, Throwable cause) {
+        super(message, cause);    //To change body of overridden methods use File | Settings | File Templates.
     }
 }

@@ -5,10 +5,7 @@
 package com.stuntbyte.salesforce.jdbc.metaforce;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 public class Table {
@@ -16,7 +13,7 @@ public class Table {
     private String name;
     private String comments;
     private String type;
-    private List<Column> columns;
+    private Set<Column> columns;
     private Map<String, Column> columnMap = new HashMap<String, Column>();
 
     private String schema;
@@ -25,7 +22,7 @@ public class Table {
         this.name = name;
         this.comments = comments;
         this.type = type;
-        this.columns = new ArrayList<Column>();
+        this.columns = new HashSet<Column>();
     }
 
     public void addColumn(Column column) {
@@ -42,7 +39,7 @@ public class Table {
         return comments;
     }
 
-    public List<Column> getColumns() {
+    public Collection<Column> getColumns() {
         return columns;
     }
 
@@ -61,7 +58,8 @@ public class Table {
     }
 
     public void removeColumn(String columnName) {
-        columnMap.remove(columnName.toUpperCase());
+        Column column = columnMap.remove(columnName.toUpperCase());
+        columns.remove(column);
     }
 
     /**

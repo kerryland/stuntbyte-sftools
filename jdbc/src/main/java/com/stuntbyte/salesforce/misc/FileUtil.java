@@ -22,10 +22,14 @@
  */
 package com.stuntbyte.salesforce.misc;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.LineNumberReader;
+import org.w3c.dom.Document;
+
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.*;
 
 /**
  */
@@ -173,6 +177,16 @@ public class FileUtil {
         if (!file.delete()) {
             throw new IOException("Unable to delete " + file.getAbsolutePath());
         }
+    }
 
+    public static String docToXml(Document doc) throws TransformerException {
+        StringWriter sw = new StringWriter();
+        DOMSource source = new DOMSource(doc);
+        StreamResult result = new StreamResult(sw);
+
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+        transformer.transform(source, result);
+        return sw.toString();
     }
 }

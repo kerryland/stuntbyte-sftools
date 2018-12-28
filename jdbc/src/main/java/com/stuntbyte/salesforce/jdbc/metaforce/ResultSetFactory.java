@@ -37,7 +37,7 @@ public class ResultSetFactory {
     public static String getNiceName(String dataType) {
         TypeInfo typeInfo = lookupTypeInfo(dataType);
         if (typeInfo == null) {
-            return "unknown";
+            return "unknown '" + dataType + "'";
         }
         return typeInfo.getNiceName();
     }
@@ -45,7 +45,7 @@ public class ResultSetFactory {
     public static String getSql92Name(String dataType) {
         TypeInfo typeInfo = lookupTypeInfo(dataType);
         if (typeInfo == null) {
-            return "unknown";
+            return "unknown '" + dataType + "'";
         }
         return typeInfo.getSql92name();
     }
@@ -166,7 +166,7 @@ Hierarchy
     };
 
 
-    private List<Table> tables = new ArrayList<Table>();
+    private Set<Table> tables = new HashSet<>();
     private int counter;
 
     public void addTable(Table table) {
@@ -238,7 +238,7 @@ Hierarchy
     }
 
 
-    public List<Table> getTables() {
+    public Collection<Table> getTables() {
         return tables;
     }
 

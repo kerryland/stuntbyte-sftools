@@ -88,7 +88,6 @@ public class Insert {
                     throw new SQLException(sb.toString());
                 } else {
                     generatedId = saveResult.getId();
-//                System.out.println("KJS generated " + generatedId + " vs " + sObjects[row].getId());
                     sObjects[row++].setId(generatedId);
                 }
             }

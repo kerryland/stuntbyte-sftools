@@ -50,24 +50,21 @@ public class SimpleParser {
         return commandString;
     }
 
-    public void assertEquals(String expected, String value) throws SQLException {
+    public void assertEquals(String expected, String value) throws ParseException {
         if (!value.equalsIgnoreCase(expected)) {
-            throw new SQLException("Expected '" + expected + "' got '" + value + "' in :" +  commandString);
+            throw new ParseException("Expected '" + expected + "' got '" + value + "' in :" +  commandString);
         }
     }
 
-    public void read(String expected) throws SQLException {
-        LexicalToken token = al.getToken();
-        if (token == null) {
-            throw new SQLException("SOQL Command ended unexpected: " + commandString);
-        }
-        assertEquals(expected, token.getValue());
+    public void read(String expected) throws ParseException {
+        String value = readIf();
+        assertEquals(expected, value);
     }
 
-    public String readIf() throws SQLException {
+    public String readIf() throws ParseException {
         LexicalToken token = al.getToken();
         if (token == null) {
-            throw new SQLException("SOQL Command ended unexpected: " + commandString);
+            throw new ParseException("SOQL Command ended unexpectedly: " + commandString);
         }
         return token.getValue();
     }

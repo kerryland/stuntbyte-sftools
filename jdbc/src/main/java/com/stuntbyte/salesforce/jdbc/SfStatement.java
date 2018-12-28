@@ -28,6 +28,7 @@ import com.stuntbyte.salesforce.jdbc.dml.Delete;
 import com.stuntbyte.salesforce.jdbc.dml.Insert;
 import com.stuntbyte.salesforce.jdbc.dml.Select;
 import com.stuntbyte.salesforce.jdbc.dml.Update;
+import com.stuntbyte.salesforce.jdbc.metaforce.Column;
 import com.stuntbyte.salesforce.jdbc.metaforce.ColumnMap;
 import com.stuntbyte.salesforce.jdbc.metaforce.ForceResultSet;
 import com.stuntbyte.salesforce.jdbc.metaforce.Table;
@@ -46,9 +47,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  */
@@ -165,7 +164,7 @@ public class SfStatement implements java.sql.Statement {
 
                 if (batchMode) {
                     checkBatchMode(batchMode, DmlType.CREATE_TABLE);
-                    Table table = createTable.parse();                  //  What if 2nd CREATE TABLE refers to first...
+                    Table table = createTable.executeCreateBatch();                  //  What if 2nd CREATE TABLE refers to first...
                     batchDDL.add(table);
                 } else {
                     createTable.executeCreate();
@@ -422,10 +421,13 @@ public class SfStatement implements java.sql.Statement {
                 CreateTable createTable = new CreateTable(null, sfConnection.getMetaDataFactory(), reconnector);
 
                 List<Table> tables = new ArrayList<Table>();
+                Map<String, Collection<Column>> freshColumns = new ColumnMap<>();
                 for (Object table : batchDDL) {
-                    tables.add((Table) table);
+                    Table table1 = (Table) table;
+                    tables.add(table1);
+                    freshColumns.put(table1.getName().toUpperCase(), table1.getColumns());
                 }
-                createTable.createTables(tables);
+                createTable.createTables(tables, freshColumns);
 
             } else if (batchDmlType == null) {
                 // We never called 'addBatch'. That's an OK thing to do

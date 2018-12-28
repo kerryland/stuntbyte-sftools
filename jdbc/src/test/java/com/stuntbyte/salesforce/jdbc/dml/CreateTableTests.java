@@ -24,8 +24,9 @@ package com.stuntbyte.salesforce.jdbc.dml;
 
 import com.stuntbyte.salesforce.jdbc.SfConnection;
 import com.stuntbyte.salesforce.misc.TestHelper;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -33,9 +34,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -60,6 +59,7 @@ public class CreateTableTests {
 
 
     @Test
+    // TODO: Improve this test -- it does too much
     public void testCreateStatement() throws Exception {
         conn.createStatement().execute("drop table wibble__c if exists");
 
@@ -72,22 +72,21 @@ public class CreateTableTests {
                 ")";
         conn.createStatement().execute(sql);
 
-
         ResultSet rs = conn.getMetaData().getColumns(null, null, "wibble__c", "%");
 
-        Set<String> names = new HashSet<String>();
+        // Check we have meta-data for all these columns
+        Set<String> names = new HashSet<>();
         names.add("Namero__c");
         names.add("Spang__c");
         names.add("price__c");
         names.add("colour__c");
-//        names.add("Hoover__c");
-
         while (rs.next()) {
-            names.remove(rs.getString("COLUMN_NAME"));
+            String column_name = rs.getString("COLUMN_NAME");
+            names.remove(column_name);
         }
         Assert.assertEquals(0, names.size());
 
-
+        // Insert some data
         PreparedStatement pstmt = conn.prepareStatement("insert into wibble__c(Spang__c, Namero__c, price__c) values (?,?,?)");
         pstmt.setInt(1, 70);
         pstmt.setString(2, "Seventy");
@@ -95,41 +94,33 @@ public class CreateTableTests {
         pstmt.execute();
 
 
-        // TODO: Improve this test
-
+        // Change the table
         sql = "alter table wibble__c add Hoover__c int";
         conn.createStatement().execute(sql);
 
 
-        // TODO: This doesn't pass:
-
+        // Check getMetaData knows about the new 'hoover__c' column
         rs = conn.getMetaData().getColumns(null, null, "wibble__c", "%");
         names = new HashSet<String>();
-//        names.add("Namero__c");      // TODO: Make this pass
-//        names.add("Spang__c");       // TODO: Make this pass
-//        names.add("price__c");       // TODO: Make this pass
         names.add("Hoover__c");
-
         while (rs.next()) {
             names.remove(rs.getString("COLUMN_NAME"));
         }
         Assert.assertEquals(0, names.size());
 
+        // Change the table some more
         sql = "alter table wibble__c drop column spang__c";
 
         conn.createStatement().execute(sql);
 
-        createConnection();
+        // Make sure we don't know about the column we just removed
         rs = conn.getMetaData().getColumns(null, null, "wibble__c", "%");
-        names = new HashSet<String>();
-        names.add("Namero__c");
-        names.add("price__c");
-        names.add("Hoover__c");
-        names.add("colour__c");
+        names = new HashSet<>();
+        names.add("Spang__c");
         while (rs.next()) {
             names.remove(rs.getString("COLUMN_NAME"));
         }
-        Assert.assertEquals(0, names.size());
+        Assert.assertEquals(1, names.size());
 
         rs = conn.prepareStatement("select * from wibble__c").executeQuery();
         Assert.assertTrue(rs.next());
@@ -143,7 +134,7 @@ public class CreateTableTests {
         conn.createStatement().execute("drop table wibble__c if exists");
 
         String sql = "create table wibble__c(" +
-                "name autonumber, " +    // TODO: Handle case automatically if needed
+                "name autonumber, " +
                 "custom_field__c string(10) )";
 
         conn.createStatement().execute(sql);
@@ -172,28 +163,6 @@ public class CreateTableTests {
                 "custom_field__c string(10) )";
 
         conn.createStatement().execute(sql);
-
-        SfConnection conn2 = testHelper.getTestConnection();
-
-        Assert.fail("Clean this up");
-        ResultSet wibble__c = conn.getMetaData().getTables(null, null, "wibble__c", null);
-        while(wibble__c.next()) {
-            System.out.println(wibble__c.getString("TABLE_NAME"));
-        }
-
-        wibble__c = conn2.getMetaData().getTables(null, null, "wibble__c", null);
-        while(wibble__c.next()) {
-            System.out.println(wibble__c.getString("TABLE_NAME"));
-            ResultSet cols = conn2.getMetaData().getColumns(null, null, wibble__c.getString("TABLE_NAME"), "*");
-
-            while(cols.next()) {
-                System.out.println("  COL " + cols.getString("COLUMN_NAME"));
-
-            }
-
-        }
-
-
 
         Statement stmt = conn.createStatement();
         stmt.execute("insert into wibble__c(name, custom_field__c) values ('aaa', 'Zeta')");
@@ -235,7 +204,7 @@ public class CreateTableTests {
     }
 
 
-        @Test
+    @Test
     public void testCreateReference() throws Exception {
         Statement stmt = conn.createStatement();
         stmt.addBatch("drop table four__c if exists");

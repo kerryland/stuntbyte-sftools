@@ -32,7 +32,7 @@ import com.stuntbyte.salesforce.misc.FileUtil;
 import com.stuntbyte.salesforce.misc.LoginHelper;
 import com.stuntbyte.salesforce.misc.Reconnector;
 import com.stuntbyte.salesforce.misc.TestHelper;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

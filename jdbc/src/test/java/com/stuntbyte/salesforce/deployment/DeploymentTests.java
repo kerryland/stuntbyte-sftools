@@ -22,7 +22,7 @@
  */
 package com.stuntbyte.salesforce.deployment;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.LineNumberReader;

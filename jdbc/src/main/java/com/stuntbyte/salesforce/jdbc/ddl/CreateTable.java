@@ -27,28 +27,24 @@ import com.stuntbyte.salesforce.deployment.Deployment;
 import com.stuntbyte.salesforce.jdbc.metaforce.Column;
 import com.stuntbyte.salesforce.jdbc.metaforce.ResultSetFactory;
 import com.stuntbyte.salesforce.jdbc.metaforce.Table;
+import com.stuntbyte.salesforce.misc.FileUtil;
 import com.stuntbyte.salesforce.misc.Reconnector;
+import com.stuntbyte.salesforce.parse.ParseException;
 import com.stuntbyte.salesforce.parse.SimpleParser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.Text;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.StringWriter;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /**
  * CREATE TABLE <tableName> (
  * <columnName> <dataType>
- * [ DEFAULT <expression> ]
+ * [ DEFAULT <expression> ]     -- TODO?
  * [ NOT | NOT NULL ]
  * [ IDENTITY ]
  * [ COMMENT <expression> ]
@@ -71,35 +67,82 @@ public class CreateTable {
 
     public void executeCreate() throws Exception {
         String tableName = al.getToken().getValue();
-        alterMode = false;
-        execute(tableName);
-    }
+        Table table = new Table(tableName, null, "TABLE");
+        Collection<Column> freshColumns = parse(false);
 
+        createTables(Collections.singleton(table), Collections.singletonMap(table.getName().toUpperCase(), freshColumns));
+    }
 
     public void executeAlter(String tableName) throws Exception {
         alterMode = true;
-        execute(tableName);
+        Table table = metaDataFactory.getTable(tableName);
+        Collection<Column> freshColumns = parse(alterMode);
+
+        createTables(Collections.singleton(table), Collections.singletonMap(table.getName().toUpperCase(), freshColumns));
     }
 
-    public void createTables(List<Table> tables) throws SQLException {
+    public Table executeCreateBatch() throws Exception {
+        String tableName = al.getToken().getValue();
+        Table table = new Table(tableName, null, "TABLE");
+        List<Column> freshColumns = parse(false);
+
+        for (Column freshColumn : freshColumns) {
+            table.addColumn(freshColumn);
+        }
+
+        return table;
+    }
+
+    public void createTables(Collection<Table> tables, Map<String, Collection<Column>> freshColumnMap) throws SQLException {
         try {
             final StringBuilder deployError = new StringBuilder();
             Deployer deployer = new Deployer(reconnector);
             Deployment deployment = new Deployment(reconnector.getSfVersion());
 
+            boolean needProfile = false;
+
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder parser = factory.newDocumentBuilder();
+            Document doc = parser.newDocument();
+            Element profile = doc.createElementNS("http://soap.sforce.com/2006/04/metadata", "Profile");
+            doc.appendChild(profile);
+
             for (Table table : tables) {
-                String xml = createMetadataXml(table);
-                
+                Collection<Column> freshColumns = freshColumnMap.get(table.getName().toUpperCase());
+
+                String xml = createMetadataXml(table, freshColumns);
+
                 if (alterMode) {
-                    for (Column col : table.getColumns()) {
+                    metaDataFactory.removeTable(table.getName());  // We put it back later in this method
+
+                    for (Column col : freshColumns) {
                         if (!col.getName().equalsIgnoreCase("Id") && !col.getName().equalsIgnoreCase("Name")) {
                             deployment.addMember("CustomField", table.getName() + "." + col.getName(), null, null);
-                        } 
+                        }
                     }
+
                     deployment.addDeploymentResource("CustomObject", table.getName(), xml, null);
                 } else {
                     deployment.addMember("CustomObject", table.getName(), xml, null);
                 }
+
+                for (Column col : freshColumns) {
+                    if (col.isCustom()) {
+                        Node fieldPermissionsNode = profile.appendChild(doc.createElement("fieldPermissions"));
+
+                        addTextElement(doc, fieldPermissionsNode, "field", table.getName() + "." + col.getName());
+                        addTextElement(doc, fieldPermissionsNode, "editable", "true");
+                        addTextElement(doc, fieldPermissionsNode, "hidden", "false");
+                        addTextElement(doc, fieldPermissionsNode, "readable", "true");
+
+                        needProfile = true;
+                    }
+                }
+            }
+
+            if (needProfile) {
+                deployment.addMember("Profile", "Admin", FileUtil.docToXml(doc), null);
+                deployment.addMember("Profile", "Standard", FileUtil.docToXml(doc), null);
             }
 
             deployer.deploy(deployment, new DdlDeploymentListener(deployError, null));
@@ -108,22 +151,40 @@ public class CreateTable {
                 throw new SQLException(deployError.toString());
             }
 
+
+            boolean customName = false;
             for (Table table : tables) {
-                // Add some system generated columns to the metaDataFactory, so
-                // we can query them. But really we should reload completely from WscService
-                table.addColumn(new Column("Id", "Id", true));
-                table.addColumn(new Column("CreatedById", "string", true));
-                table.addColumn(new Column("CreatedDate", "dateTime", true));
-                table.addColumn(new Column("LastModifiedById", "string", true));
-                table.addColumn(new Column("LastModifiedDate", "dateTime", true));
-                table.addColumn(new Column("Name", "string", false));
-                //        table.addColumn(new Column("OwnerId", "Text", true)); // TODO: Some custom objects do have this?
-                table.addColumn(new Column("SystemModstamp", "dateTime", true));
-                table.setSchema(ResultSetFactory.schemaName);
+                Collection<Column> freshColumns = freshColumnMap.get(table.getName().toUpperCase());
+                List<Column> clone = new ArrayList<>();
+                for (Column freshColumn : freshColumns) {
+                    clone.add(freshColumn);
+                    if (freshColumn.getName().equalsIgnoreCase("name")) {
+                        customName = true;
+                    }
+                }
 
-//                patchDataTypes(table.getColumns());
+                for (Column freshColumn : clone) {
+                    table.removeColumn(freshColumn.getName());
+                    table.addColumn(freshColumn);
+                }
 
-                // TODO: Load table properly from WscService
+                if (!alterMode) {
+                    // Add some system generated columns to the metaDataFactory, so
+                    // we can query them. But really we should reload completely from WscService
+                    table.addColumn(new Column("Id", "Id", true));
+                    table.addColumn(new Column("CreatedById", "string", true));
+                    table.addColumn(new Column("CreatedDate", "dateTime", true));
+                    table.addColumn(new Column("LastModifiedById", "string", true));
+                    table.addColumn(new Column("LastModifiedDate", "dateTime", true));
+
+                    if (!customName) {
+                        table.addColumn(new Column("Name", "string", false));
+                    }
+                    //        table.addColumn(new Column("OwnerId", "Text", true)); // TODO: Some custom objects do have this?
+                    table.addColumn(new Column("SystemModstamp", "dateTime", true));
+                    table.setSchema(ResultSetFactory.schemaName);
+                }
+
                 metaDataFactory.addTable(table);
             }
 
@@ -132,150 +193,147 @@ public class CreateTable {
         }
     }
 
-
-    private void execute(String tableName) throws Exception {
-        Table table = parse(tableName, alterMode);
-        List<Table> tables = new ArrayList<Table>(1);
-        tables.add(table);
-        createTables(tables);
+    private Element addTextElement(Document doc, Node parent, String elementName, String value) {
+        Element memberElement = doc.createElement(elementName);
+        Text memberValue = doc.createTextNode(value);
+        memberElement.appendChild(memberValue);
+        parent.appendChild(memberElement);
+        return memberElement;
     }
 
-    public Table parse() throws Exception {
-        String tableName = al.getToken().getValue();
-        return parse(tableName, false);
-    }
-
-    private Table parse(String tableName, boolean alterMode) throws Exception {
+    private List<Column> parse(boolean alterMode) throws Exception {
         // TODO: IF NOT EXISTS
 
-        Table table = new Table(tableName, null, "TABLE");
+        List<Column> freshColumns = new ArrayList<>();
 
-        if (!alterMode) {
-            al.read("(");
-        }
+        try {
 
-        String columnName = al.readIf();
-        while (!(columnName == null)) {
-
-            String value;
-            if (columnName.equalsIgnoreCase("unique")) {
+            if (!alterMode) {
                 al.read("(");
-                al.getValue(); // TODO: Do I care?
-                al.read(")");
-                value = al.getValue();
+            }
 
-            } else if (columnName.equalsIgnoreCase("primary")) {
-                al.read("licence");
-                al.read("(");
-                al.getValue(); // TODO: Do I care?
-                al.read(")");
-                value = al.getValue();
+            String columnName = al.readIf();
+            while (!(columnName == null)) {
 
-            } else {
-
-                String dataType = al.readIf();
-
-                // Validate the datatype
-                ResultSetFactory.lookupJdbcType(dataType);
-
-                boolean autoGeneratedIdColumn = false;
-
-                Column col = new Column(columnName, dataType);
-                if (columnName.equalsIgnoreCase("Id")) {
-                    autoGeneratedIdColumn = true;
-                    value = throwAwaySizeDefinition();
-                }
-
-                if (dataType.equalsIgnoreCase("CURRENCY") ||
-                        dataType.equalsIgnoreCase("PERCENT") ||
-//                        dataType.equalsIgnoreCase("NUMBER") ||
-                        dataType.equalsIgnoreCase("DOUBLE") ||
-                        dataType.equalsIgnoreCase("_DOUBLE") ||
-                        dataType.equalsIgnoreCase("INT") ||
-                        dataType.equalsIgnoreCase("DECIMAL") ||
-                        dataType.equalsIgnoreCase("_INT")) {
-//                        dataType.equalsIgnoreCase("INTEGER")) {
-
-                    value = al.getValue();
-
-                    int precision = 18;
-                    int scale = 0;
-                    if (value != null && value.equals("(")) {
-                        precision = getInteger(al.getValue());
-
-                        value = al.getValue();
-                        if (value.equals(",")) {
-                            scale = getInteger(al.getValue());
-                        }
-                        al.read(")");
-                        value = al.getValue();
-                    }
-                    col.setPrecision(precision);
-                    col.setScale(scale);
-
-                } else if (dataType.equalsIgnoreCase("Picklist") ||
-                        dataType.equalsIgnoreCase("combobox") ||
-                        dataType.equalsIgnoreCase("multipicklist")) {
-                    //    colour__c picklist('green', 'blue' default, 'red') [ sorted ]
+                String value;
+                if (columnName.equalsIgnoreCase("unique")) {
                     al.read("(");
-                    do {
-                        value = al.getValue();
-                        String picklistValue = value;
-                        col.addPicklistValue(picklistValue);
-                        value = al.getValue();
-                        if (value == null) {
-                            throw new SQLException("Unexpected end of picklist definition");
-                        }
-                        if (value.equalsIgnoreCase("default")) {
-                            col.setDefaultPicklistValue(picklistValue);
-                            value = al.getValue();
-                        }
-                    } while (value.equals(","));
-                    assert (value.equals(")"));
-                    value = al.getValue();
-                    if (value.equalsIgnoreCase("sorted")) {
-                        col.pickListIsSorted(true);
-                        value = al.getValue();
-                    }
-
-                } else if (dataType.equalsIgnoreCase("Reference") || dataType.equalsIgnoreCase("MasterRecord")) {
-                    value = throwAwaySizeDefinition();
-
-                    if (value == null || !value.equalsIgnoreCase("references")) {
-                        throw new SQLException("Expected REFERENCES, not '" + value + "'");
-                    }
-
-                    al.read("(");
-                    col.setReferencedTable(al.getValue());
-                    col.setReferencedColumn("Id");
+                    al.getValue(); // TODO: Do I care?
                     al.read(")");
                     value = al.getValue();
 
-                } else if (dataType.equalsIgnoreCase("String") ||
-                        dataType.equalsIgnoreCase("TEXTAREA") ||
-                        dataType.equalsIgnoreCase("base64") ||
-                        dataType.equalsIgnoreCase("encryptedstring") ||
-                        dataType.equalsIgnoreCase("LongTextArea")) {
-
+                } else if (columnName.equalsIgnoreCase("primary")) {
+                    al.read("licence");
+                    al.read("(");
+                    al.getValue(); // TODO: Do I care?
+                    al.read(")");
                     value = al.getValue();
-                    if (value != null && value.equals("(")) {
-                        col.setLength(getInteger(al.getValue()));
+
+                } else {
+
+                    String dataType = al.readIf();
+
+                    // Validate the datatype
+                    ResultSetFactory.lookupJdbcType(dataType);
+
+                    boolean autoGeneratedIdColumn = false;
+
+                    Column col = new Column(columnName, dataType);
+                    if (columnName.equalsIgnoreCase("Id")) {
+                        autoGeneratedIdColumn = true;
+                        value = throwAwaySizeDefinition();
+                    }
+
+                    if (dataType.equalsIgnoreCase("CURRENCY") ||
+                            dataType.equalsIgnoreCase("PERCENT") ||
+//                        dataType.equalsIgnoreCase("NUMBER") ||
+                            dataType.equalsIgnoreCase("DOUBLE") ||
+                            dataType.equalsIgnoreCase("_DOUBLE") ||
+                            dataType.equalsIgnoreCase("INT") ||
+                            dataType.equalsIgnoreCase("DECIMAL") ||
+                            dataType.equalsIgnoreCase("_INT")) {
+//                        dataType.equalsIgnoreCase("INTEGER")) {
+
+                        value = al.getValue();
+
+                        int precision = 18;
+                        int scale = 0;
+                        if (value != null && value.equals("(")) {
+                            precision = getInteger(al.getValue());
+
+                            value = al.getValue();
+                            if (value.equals(",")) {
+                                scale = getInteger(al.getValue());
+                            }
+                            al.read(")");
+                            value = al.getValue();
+                        }
+                        col.setPrecision(precision);
+                        col.setScale(scale);
+
+                    } else if (dataType.equalsIgnoreCase("Picklist") ||
+                            dataType.equalsIgnoreCase("combobox") ||
+                            dataType.equalsIgnoreCase("multipicklist")) {
+                        //    colour__c picklist('green', 'blue' default, 'red') [ sorted ]
+                        al.read("(");
+                        do {
+                            value = al.getValue();
+                            String picklistValue = value;
+                            col.addPicklistValue(picklistValue);
+                            value = al.getValue();
+                            if (value == null) {
+                                throw new SQLException("Unexpected end of picklist definition");
+                            }
+                            if (value.equalsIgnoreCase("default")) {
+                                col.setDefaultPicklistValue(picklistValue);
+                                value = al.getValue();
+                            }
+                        } while (value.equals(","));
+                        assert (value.equals(")"));
+                        value = al.getValue();
+                        if (value.equalsIgnoreCase("sorted")) {
+                            col.pickListIsSorted(true);
+                            value = al.getValue();
+                        }
+
+                    } else if (dataType.equalsIgnoreCase("Reference") || dataType.equalsIgnoreCase("MasterRecord")) {
+                        value = throwAwaySizeDefinition();
+
+                        if (value == null || !value.equalsIgnoreCase("references")) {
+                            throw new SQLException("Expected REFERENCES, not '" + value + "'");
+                        }
+
+                        al.read("(");
+                        col.setReferencedTable(al.getValue());
+                        col.setReferencedColumn("Id");
                         al.read(")");
+                        value = al.getValue();
+
+                    } else if (dataType.equalsIgnoreCase("String") ||
+                            dataType.equalsIgnoreCase("TEXTAREA") ||
+                            dataType.equalsIgnoreCase("base64") ||
+                            dataType.equalsIgnoreCase("encryptedstring") ||
+                            dataType.equalsIgnoreCase("LongTextArea")) {
+
+                        value = al.getValue();
+                        if (value != null && value.equals("(")) {
+                            col.setLength(getInteger(al.getValue()));
+                            al.read(")");
+                            value = al.getValue();
+                        }
+
+                    } else {
                         value = al.getValue();
                     }
 
-                } else {
-                    value = al.getValue();
-                }
+                    if (value != null && value.equalsIgnoreCase("null")) {
+                        col.setNillable(true);
+                        value = al.getValue();
 
-                if (value != null && value.equalsIgnoreCase("null")) {
-                    col.setNillable(true);
-                    value = al.getValue();
-
-                } else if (value != null && value.equalsIgnoreCase("not")) {
-                    al.getToken("null");
-                    col.setNillable(true);
-                    value = al.getValue();
+                    } else if (value != null && value.equalsIgnoreCase("not")) {
+                        al.getToken("null");
+                        col.setNillable(true);
+                        value = al.getValue();
 
 //                } else if (value.equalsIgnoreCase("generated")) {
 //                    al.getToken("by");
@@ -287,33 +345,40 @@ public class CreateTable {
 //                    autoGeneratedIdColumn = true;
 
 
-                } else if ((value != null) && value.equalsIgnoreCase("with")) {
-                    al.getToken("(");
-                    do {
-                        col.addExtraProperty(al.getValue(), al.getValue());
-                        value = al.getValue();
-                    } while (value.equals(","));
+                    } else if ((value != null) && value.equalsIgnoreCase("with")) {
+                        al.getToken("(");
+                        do {
+                            col.addExtraProperty(al.getValue(), al.getValue());
+                            value = al.getValue();
+                        } while (value.equals(","));
 
-                    assert (value.equals(")"));
-                    value = al.getValue();
+                        assert (value.equals(")"));
+                        value = al.getValue();
+                    }
+
+                    if (!autoGeneratedIdColumn) {
+                        freshColumns.add(col);
+                    }
                 }
 
-                if (!autoGeneratedIdColumn) {
-                    table.addColumn(col);
+                if (alterMode) {
+                    columnName = null;
+                } else {
+                    if (value == null || (!value.equals(",") && !value.equals(")"))) {
+                        throw new ParseException("Expected ',' or ')' -- not '" + value + "' at or after " + columnName);
+                    }
+                    columnName = al.getValue();
                 }
             }
-
-            if (alterMode) {
-                columnName = null;
+        } catch (ParseException e) {
+            if (freshColumns.size() > 0) {
+                throw new ParseException("Error after column " + freshColumns.get(freshColumns.size() - 1).getName() + ": " + e.getMessage(), e);
             } else {
-                if (value == null || (!value.equals(",") && !value.equals(")"))) {
-                    throw new SQLException("Expected ',' or ')' -- not '" + value + "'");
-                }
-                columnName = al.getValue();
+                throw e;
             }
         }
 
-        return table;
+        return freshColumns;
     }
 
     private String throwAwaySizeDefinition() throws Exception {
@@ -332,7 +397,7 @@ public class CreateTable {
         return Integer.valueOf(value);
     }
 
-    public String createMetadataXml(Table table) throws Exception {
+    public String createMetadataXml(Table table, Collection<Column> freshColumns) throws Exception {
         DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
 
@@ -352,10 +417,10 @@ public class CreateTable {
             rootElement.appendChild(nameField);
 
             // Handle auto number namefields! (and length != 15 :-)
-            defineNameField(document, nameField, table);
+            defineNameField(document, nameField, freshColumns);
         }
 
-        List<Column> cols = table.getColumns();
+        Collection<Column> cols = freshColumns;
         for (Column col : cols) {
             if (!col.getName().equalsIgnoreCase("Id") && !col.getName().equalsIgnoreCase("Name")) {
                 Element fieldsX = document.createElement("fields");
@@ -386,9 +451,7 @@ public class CreateTable {
                     addElement(document, fields, "precision", "" + col.getPrecision());
                     addElement(document, fields, "scale", "" + col.getScale());
                 }
-//                if (col.getScale() != 0) {
-//
-//                }
+
                 // Formula fields can't have a length defined
                 if ((col.getLength() != 0) && (!col.getExtraProperties().containsKey("formula"))) {
                     addElement(document, fields, "length", "" + col.getLength());
@@ -400,19 +463,21 @@ public class CreateTable {
 
                 // TODO: Handle CONTROLLING FIELD
                 if (col.getPicklistValues().size() > 0) {
-                    Element picklist = document.createElement("picklist");
+                    Element valueSet = document.createElement("valueSet");
+                    Element valueSetDefinition = addElement(document, valueSet, "valueSetDefinition");
                     for (String val : col.getPicklistValues()) {
-                        Element picklistValues = document.createElement("picklistValues");
+                        Element picklistValues = document.createElement("value");
                         addElement(document, picklistValues, "fullName", val);
+                        addElement(document, picklistValues, "label", val);
                         addElement(document, picklistValues, "default",
                                 val.equalsIgnoreCase(col.getDefaultPicklistValue()) ? "true" : "false");
 
-                        picklist.appendChild(picklistValues);
+                        valueSetDefinition.appendChild(picklistValues);
                     }
-                    fieldsX.appendChild(picklist);
+                    fieldsX.appendChild(valueSet);
 
                     if (col.isPicklistIsSorted()) {
-                        addElement(document, picklist, "sorted", "true");
+                        addElement(document, valueSetDefinition, "sorted", "true");
                     }
                 }
 
@@ -443,36 +508,11 @@ public class CreateTable {
         <type>Checkbox</type>
     </fields>
     */
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
-        DOMSource source = new DOMSource(document);
-
-        StringWriter sw = new StringWriter();
-        StreamResult result = new StreamResult(sw);
-        transformer.transform(source, result);
-
-        // package.xml
-        /*
-        document = documentBuilder.newDocument();
-        rootElement = document.createElementNS("http://soap.sforce.com/2006/04/metadata", "Package");
-        document.appendChild(rootElement);
-        Element types = document.createElement("types");
-        rootElement.appendChild(types);
-
-        addElement(document, types, "members", table.getName());
-        addElement(document, types, "name", "CustomObject");
-        addElement(document, rootElement, "version", "20.0");
-
-        source = new DOMSource(document);
-        result = new StreamResult(System.out);
-        transformer.transform(source, result);
-        */
-        return sw.toString();
-
+        return FileUtil.docToXml(document);
     }
 
-    private void defineNameField(Document document, Element nameField, Table table) throws SQLException {
-        List<Column> cols = table.getColumns();
+    private void defineNameField(Document document, Element nameField, Collection<Column> freshColumns) throws SQLException {
+        Collection<Column> cols = freshColumns;
 
         Column nameColumn = null;
 
@@ -537,17 +577,21 @@ public class CreateTable {
 
     }
 
+    private Element addElement(Document document, Element field, String name) {
+        Element em = document.createElement(name);
+        field.appendChild(em);
+        return em;
+    }
+
     private Element addElement(Document document, Element field, String name, String value) {
-        Element em;
-        em = document.createElement(name);
+        Element em = document.createElement(name);
         em.appendChild(document.createTextNode(value));
         field.appendChild(em);
         return em;
     }
 
     private Element addElement(Document document, List<Element> fields, String name, String value) {
-        Element em;
-        em = document.createElement(name);
+        Element em = document.createElement(name);
         em.appendChild(document.createTextNode(value));
         fields.add(em);
         return em;

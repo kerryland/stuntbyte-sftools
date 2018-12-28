@@ -22,6 +22,7 @@
  */
 package com.stuntbyte.salesforce.jdbc;
 
+import com.sforce.ws.ConnectionException;
 import com.stuntbyte.salesforce.core.metadata.MetadataService;
 import com.stuntbyte.salesforce.core.metadata.MetadataServiceImpl;
 import com.stuntbyte.salesforce.jdbc.metaforce.Column;
@@ -69,16 +70,22 @@ public class SfConnection implements java.sql.Connection {
         try {
             helper.authenticate();
 
-            metaDataFactory = helper.createResultSetFactory(info, true);
             metadataService = new MetadataServiceImpl(new Reconnector(helper));
+            refreshMetaData();
 
-            if (info == null || "true".equals(info.getProperty("deployable"))) {
-                populateWithDeployableTables(metaDataFactory, metadataService);
-            }
             closed = false;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void refreshMetaData() throws ConnectionException {
+        ResultSetFactory nextMetaDataFactory = helper.createResultSetFactory(info.getProperty("datatypes"), true);
+        if (info.isEmpty() || "true".equals(info.getProperty("deployable"))) {
+            populateWithDeployableTables(nextMetaDataFactory, metadataService);
+        }
+
+        metaDataFactory = nextMetaDataFactory;
     }
 
     private void populateWithDeployableTables(ResultSetFactory metaDataFactory, MetadataService metadataService) {

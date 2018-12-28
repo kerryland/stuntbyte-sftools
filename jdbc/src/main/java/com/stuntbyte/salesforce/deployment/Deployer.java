@@ -23,7 +23,6 @@
 package com.stuntbyte.salesforce.deployment;
 
 import com.sforce.soap.metadata.*;
-import com.stuntbyte.salesforce.misc.Downloader;
 import com.stuntbyte.salesforce.misc.FileUtil;
 import com.stuntbyte.salesforce.misc.Reconnector;
 
@@ -82,12 +81,18 @@ public class Deployer {
         FileOutputStream fos = new FileOutputStream(deploymentFile);
         ZipOutputStream out = new ZipOutputStream(fos);
 
-        out.putNextEntry(new ZipEntry("package.xml"));
+        String prefix = ""; // "unpackaged/";
+
+        if (prefix != "") {
+            out.putNextEntry(new ZipEntry(prefix));
+        }
+
+        out.putNextEntry(new ZipEntry(prefix + "package.xml"));
         out.write(deployment.getPackageXml().getBytes());
         out.closeEntry();
 
         if (deployment.hasDestructiveChanges()) {
-            out.putNextEntry(new ZipEntry("destructiveChanges.xml"));
+            out.putNextEntry(new ZipEntry(prefix + "destructiveChanges.xml"));
             out.write(deployment.getDestructiveChangesXml().getBytes());
             out.closeEntry();
         }
@@ -99,7 +104,7 @@ public class Deployer {
                 ByteArrayInputStream meta = new ByteArrayInputStream(metaData.getBytes());
 
                 int bytes = meta.read();
-                out.putNextEntry(new ZipEntry(resource.getFilepath() + "-meta.xml"));
+                out.putNextEntry(new ZipEntry(prefix + resource.getFilepath() + "-meta.xml"));
                 while (bytes != -1) {
                     out.write(bytes);
                     bytes = meta.read();
@@ -108,7 +113,7 @@ public class Deployer {
             }
 
             if (resource.getCode() != null) {
-                out.putNextEntry(new ZipEntry(resource.getFilepath()));
+                out.putNextEntry(new ZipEntry(prefix + resource.getFilepath()));
                 out.write(resource.getCode().getBytes());
                 out.closeEntry();
             }
@@ -209,7 +214,7 @@ public class Deployer {
     }
 
 
-    public DeployResult checkDeploymentComplete(String deploymentId, DeploymentEventListener listener) throws Exception {
+    public DeployResult checkDeploymentComplete(String deploymentId, final DeploymentEventListener listener) throws Exception {
         // Wait for the deploy to complete
         listener.progress("Awaiting deployment of id=" + deploymentId + "\n");
 
@@ -258,15 +263,41 @@ public class Deployer {
             finished = deployResult.isDone() && !deployResult.getStatus().equals(DeployStatus.InProgress); // Sometimes (API 29 at least) DeployResult.isDone is not enough.
         }
 
-        dumpErrors(listener, deployResult);
+        // TODO: Be a less over-engineered
+        final StringBuilder bang = new StringBuilder();
+        DeploymentEventListener localListener = new DeploymentEventListener(){
+            @Override
+            public void progress(String message) throws IOException {
+                listener.progress(message);
+            }
+
+            @Override
+            public void error(String message) throws Exception {
+                listener.error(message);
+                bang.append(message).append("\n");
+            }
+
+            @Override
+            public void message(String message) throws IOException {
+                listener.message(message);
+            }
+        };
+
+        dumpErrors(localListener, deployResult);
 
         if (!deployResult.getStatus().equals(DeployStatus.Succeeded) && !deployResult.getStatus().equals(DeployStatus.SucceededPartial)) {
             // Sometimes Salesforce isn't very helpful, eg: this bug; https://success.salesforce.com/issues_view?id=a1p30000000T5S8AAK
-            String msg = "Deployment " + deployResult.getStatus() + "; " +
+
+            String msg;
+            if (bang.length() != 0) {
+                msg = "Deployment " + deployResult.getStatus() + "; failed "  + bang.toString();
+
+            }  else {
+                msg = "Deployment " + deployResult.getStatus() + "; " +
                     (( deployResult.getErrorMessage() == null && deployResult.getStateDetail() == null) ?
                     "For Mysterious reasons -- check Salesforce deployment log online" :
                      deployResult.getStateDetail() + ". " +  deployResult.getErrorMessage());
-
+            }
             throw new Exception(msg);
         }
 

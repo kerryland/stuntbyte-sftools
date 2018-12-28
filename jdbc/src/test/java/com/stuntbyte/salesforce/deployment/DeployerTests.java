@@ -24,7 +24,7 @@ package com.stuntbyte.salesforce.deployment;
 
 import com.stuntbyte.salesforce.misc.LoginHelper;
 import com.stuntbyte.salesforce.misc.TestHelper;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.HashSet;

@@ -108,15 +108,9 @@ public class Deployment {
 
 
     private String assemble(Map<String, Set<String>> types) throws ParserConfigurationException, TransformerException {
-        TransformerFactory transfac = TransformerFactory.newInstance();
-        Transformer trans = transfac.newTransformer();
-        trans.setOutputProperty(OutputKeys.INDENT, "yes");
-
-        Document doc;
-
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder parser = factory.newDocumentBuilder();
-        doc = parser.newDocument();
+        Document doc = parser.newDocument();
         Element packge = doc.createElementNS("http://soap.sforce.com/2006/04/metadata", "Package");
         doc.appendChild(packge);
 
@@ -132,11 +126,7 @@ public class Deployment {
         }
         addTextElement(doc, packge, "version", "" + sfVersion);
 
-        StringWriter sw = new StringWriter();
-        StreamResult result = new StreamResult(sw);
-        DOMSource source = new DOMSource(doc);
-        trans.transform(source, result);
-        return sw.toString();
+        return FileUtil.docToXml(doc);
     }
 
     private Element addTextElement(Document doc, Node parent, String elementName, String value) {

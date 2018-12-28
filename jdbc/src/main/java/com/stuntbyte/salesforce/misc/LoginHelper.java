@@ -138,9 +138,9 @@ public class LoginHelper {
         return partnerConnection;
     }
 
-    public ResultSetFactory createResultSetFactory(Properties info, boolean includeTables) throws ConnectionException {
+    public ResultSetFactory createResultSetFactory(String dataTypes, boolean includeTables) throws ConnectionException {
         WscService svc = new WscService(getPartnerConnection());
-        return svc.createResultSetFactory(info, includeTables);
+        return svc.createResultSetFactory(dataTypes, includeTables);
     }
 
 

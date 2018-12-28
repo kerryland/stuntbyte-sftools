@@ -211,15 +211,12 @@ public class Grant {
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 
-
         File child = new File(sourceSchemaDir, "profiles");
         File[] profileFiles = child.listFiles();
         for (File profileFile : profileFiles) {
             profileProcessor.processProfileXml(dBuilder.parse(profileFile), profileFile);
         }
-
     }
-
 
     private void deployProfiles(final StringBuilder errors, Deployment dep) throws Exception {
         Deployer deployer = new Deployer(reconnector);
@@ -232,15 +229,9 @@ public class Grant {
     }
 
     private void generateProfileXml(Deployment dep, File profileFile, Document doc) throws Exception {
-        StringWriter sw = new StringWriter();
-        DOMSource source = new DOMSource(doc);
-        StreamResult result = new StreamResult(sw);
+        String xml = FileUtil.docToXml(doc);
 
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
-        transformer.transform(source, result);
-
-        dep.addMember("Profile", profileFile.getName(), sw.toString(), null);
+        dep.addMember("Profile", profileFile.getName(), xml, null);
     }
 
 

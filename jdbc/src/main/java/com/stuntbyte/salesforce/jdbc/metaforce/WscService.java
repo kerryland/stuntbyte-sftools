@@ -41,17 +41,14 @@ public class WscService {
 
     /**
      * Grab the describe data and return it wrapped in a factory.
-     * @param info
-     * @param includeTables
      */
-    public ResultSetFactory createResultSetFactory(Properties info, boolean includeTables) throws ConnectionException {
+    public ResultSetFactory createResultSetFactory(String dataTypes, boolean includeTables) throws ConnectionException {
 
         // Map a table to a map of columns and their related lookup object(s!)
         Map<String, Map<String, List<String>>> relationshipMap = new HashMap<String, Map<String, List<String>>>();
 
         int dataTypeMode = ResultSetFactory.DATATYPES_SALESFORCE_API;
         
-        String dataTypes = info.getProperty("datatypes");
         if (dataTypes != null) {
             if (dataTypes.equalsIgnoreCase("SQL92")) {
                 dataTypeMode = ResultSetFactory.DATATYPES_SQL92;

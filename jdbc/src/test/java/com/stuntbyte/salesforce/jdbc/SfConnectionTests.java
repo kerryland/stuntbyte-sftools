@@ -23,7 +23,7 @@
 package com.stuntbyte.salesforce.jdbc;
 
 import com.stuntbyte.salesforce.misc.TestHelper;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.PrintWriter;

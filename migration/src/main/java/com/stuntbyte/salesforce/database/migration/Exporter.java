@@ -32,11 +32,7 @@ import org.hibernate.dialect.Dialect;
 import org.hibernate.dialect.H2Dialect;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 
 /**
@@ -85,7 +81,7 @@ public class Exporter {
 
 //                System.setProperty("h2.identifiersToUpper","false");
 
-                    List<Column> cols = table.getColumns();
+                    Collection<Column> cols = table.getColumns();
                     for (Column col : cols) {
                         Integer jdbcType = ResultSetFactory.lookupJdbcType(col.getType());
                         if (jdbcType != Types.OTHER) {

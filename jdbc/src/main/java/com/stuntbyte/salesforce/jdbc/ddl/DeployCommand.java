@@ -472,15 +472,7 @@ public class DeployCommand {
             }
         }
 
-        StringWriter sw = new StringWriter();
-        DOMSource sourceDom = new DOMSource(doc);
-        StreamResult resultStream = new StreamResult(sw);
-
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
-        transformer.transform(sourceDom, resultStream);
-
-        return sw.toString();
+        return FileUtil.docToXml(doc);
     }
 
     private void adjustChildNodes(Node n, String original, String replacement) {

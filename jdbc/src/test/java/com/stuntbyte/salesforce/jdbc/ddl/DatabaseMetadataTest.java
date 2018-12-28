@@ -24,7 +24,7 @@ package com.stuntbyte.salesforce.jdbc.ddl;
 
 import com.stuntbyte.salesforce.jdbc.SfConnection;
 import com.stuntbyte.salesforce.misc.TestHelper;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

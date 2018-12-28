@@ -67,10 +67,10 @@ public class Reconnector {
 
     public com.sforce.soap.metadata.DeployResult checkDeployStatus(java.lang.String asyncProcessId) throws com.sforce.ws.ConnectionException {
         try {
-            return lh.getMetadataConnection().checkDeployStatus(asyncProcessId, false);
+            return lh.getMetadataConnection().checkDeployStatus(asyncProcessId, true);
         } catch (ConnectionException e) {
             lh.reconnect();
-            return lh.getMetadataConnection().checkDeployStatus(asyncProcessId, false);
+            return lh.getMetadataConnection().checkDeployStatus(asyncProcessId, true);
         }
     }
 

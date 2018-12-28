@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -15,7 +13,7 @@ import java.util.jar.Manifest;
 public class Version {
     public static int majorVersion;
     public static int minorVersion;
-    public static int sfdcVersion = 36; // Default if we can't access the manifest (eg: tests)
+    public static int sfdcVersion = 39; // Default if we can't access the manifest (eg: tests)
 
     static {
         InputStream stream = null;
