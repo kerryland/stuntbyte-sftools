@@ -201,6 +201,7 @@ public class Deployer {
             String[] testFileArray = new String[testFiles.size()];
             testFiles.toArray(testFileArray);
             deployOptions.setRunTests(testFileArray);
+            deployOptions.setTestLevel(TestLevel.RunSpecifiedTests);
         }
 
 
@@ -283,25 +284,8 @@ public class Deployer {
             }
         };
 
-        dumpErrors(localListener, deployResult);
+        dumpCompilationErrors(localListener, deployResult);
 
-        if (!deployResult.getStatus().equals(DeployStatus.Succeeded) && !deployResult.getStatus().equals(DeployStatus.SucceededPartial)) {
-            // Sometimes Salesforce isn't very helpful, eg: this bug; https://success.salesforce.com/issues_view?id=a1p30000000T5S8AAK
-
-            String msg;
-            if (bang.length() != 0) {
-                msg = "Deployment " + deployResult.getStatus() + "; failed "  + bang.toString();
-
-            }  else {
-                msg = "Deployment " + deployResult.getStatus() + "; " +
-                    (( deployResult.getErrorMessage() == null && deployResult.getStateDetail() == null) ?
-                    "For Mysterious reasons -- check Salesforce deployment log online" :
-                     deployResult.getStateDetail() + ". " +  deployResult.getErrorMessage());
-            }
-            throw new Exception(msg);
-        }
-
-//        if (deploymentOptions.contains(DeploymentOptions.UNPACKAGED_TESTS)) {
         com.sforce.soap.metadata.RunTestsResult res = deployResult.getDetails().getRunTestResult();
         if (res != null) {
             listener.message("Number of tests: " + res.getNumTestsRun() + "\n");
@@ -322,11 +306,14 @@ public class Deployer {
             for (CodeCoverageWarning coverageWarning : coverageWarnings) {
                 listener.message("Coverage warning " + coverageWarning.getName() + " " + coverageWarning.getMessage());
             }
+        }
 
-//            CodeCoverageResult[] coverage = res.getCodeCoverage();
-//            for (CodeCoverageResult codeCoverageResult : coverage) {
-//                codeCoverageResult.get
-//            }
+        if (!deployResult.getStatus().equals(DeployStatus.Succeeded) && !deployResult.getStatus().equals(DeployStatus.SucceededPartial) && bang.length() == 0) {
+            // Sometimes Salesforce isn't very helpful, eg: this bug; https://success.salesforce.com/issues_view?id=a1p30000000T5S8AAK
+            listener.error( "Deployment " + deployResult.getStatus() + "; " +
+                    (( deployResult.getErrorMessage() == null && deployResult.getStateDetail() == null) ?
+                            "For Mysterious reasons -- check Salesforce deployment log online" :
+                            deployResult.getStateDetail() + ". " +  deployResult.getErrorMessage()));
         }
 
         return deployResult;
@@ -348,7 +335,7 @@ public class Deployer {
         listener.progress(msg);
     }
 
-    private DeployResult dumpErrors(DeploymentEventListener listener, DeployResult result) throws Exception {
+    private DeployResult dumpCompilationErrors(DeploymentEventListener listener, DeployResult result) throws Exception {
 //        if (!result.isSuccess()) {   -- This, tragically, is not a good indicator of success!
             DeployMessage[] errors = result.getDetails().getComponentFailures();
 
