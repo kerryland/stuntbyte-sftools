@@ -1,0 +1,8 @@
+# Or https://test.salesforce.com for a test environment
+loginUrl=https://login.salesforce.com
+username=admin@example.com
+password=<password><securitytoken>
+
+# A user who can't change permissions
+plebUsername=lowpermissionuser@example.com
+plebPassword==<password><securitytoken>
