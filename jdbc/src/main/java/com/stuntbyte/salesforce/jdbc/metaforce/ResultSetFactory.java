@@ -166,7 +166,12 @@ Hierarchy
     };
 
 
-    private Set<Table> tables = new HashSet<>();
+    private Set<Table> tables = new TreeSet<>(new Comparator<Table>() {
+        @Override
+        public int compare(Table table, Table t1) {
+            return (table.getSchema() + table.getName()).compareTo(t1.getSchema() + t1.getName());
+        }
+    });
     private int counter;
 
     public void addTable(Table table) {
@@ -259,7 +264,6 @@ Hierarchy
 
         List<ColumnMap<String, Object>> maps = new ArrayList<ColumnMap<String, Object>>();
         for (Table table : tables) {
-
             if ((types == null) || (typeSet.contains(table.getType().toUpperCase()))) {
                 if (include(schemaPattern, table.getSchema()) && (include(tableNamePattern, table.getName()))) {
                     ColumnMap<String, Object> map = new ColumnMap<String, Object>();

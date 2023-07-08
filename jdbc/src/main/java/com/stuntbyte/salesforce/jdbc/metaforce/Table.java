@@ -22,7 +22,15 @@ public class Table {
         this.name = name;
         this.comments = comments;
         this.type = type;
-        this.columns = new HashSet<Column>();
+        this.columns = new TreeSet<>(new Comparator<Column>() {
+            @Override
+            public int compare(Column c1, Column c2) {
+                if (c1 == null) {
+                    return -1;
+                }
+                return c1.getName().toUpperCase().compareTo(c2.getName().toUpperCase());
+            }
+        });
     }
 
     public void addColumn(Column column) {
