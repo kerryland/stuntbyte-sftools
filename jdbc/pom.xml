@@ -43,7 +43,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <force-api-version>39.0.0</force-api-version> <!-- Also update Version.java -->
+        <force-api-version>58.0.0</force-api-version> <!-- Also update Version.java -->
         <!-- was using 22. Need to move to 31  was 36.0.0-->
     </properties>
 
@@ -141,7 +141,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.3</version>
+                <version>3.5.0</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -164,7 +164,6 @@
                 </executions>
                 <configuration>
                     <finalName>stuntbyte-sfdc-jdbc-${project.version}</finalName>
-
                     <minimizeJar>false</minimizeJar>
                     <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"></transformer>
@@ -174,15 +173,15 @@
                             <pattern>com.</pattern>
                             <shadedPattern>hidden.com</shadedPattern>
                             <excludes>
-                                <exclude>com.stuntbyte.*</exclude>
-                                <exclude>com.sforce.*</exclude>
+                                <exclude>com/stuntbyte/**</exclude>
+                                <exclude>com/sforce/**</exclude>
                             </excludes>
                         </relocation>
                         <relocation>
                             <pattern>org.</pattern>
                             <shadedPattern>hidden.org</shadedPattern>
                             <excludes>
-                                <exclude>org.w3c.*</exclude>
+                                <exclude>org/w3c/**</exclude>
                             </excludes>
 
                         </relocation>

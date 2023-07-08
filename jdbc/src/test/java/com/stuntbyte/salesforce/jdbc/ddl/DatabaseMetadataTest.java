@@ -51,11 +51,11 @@ public class DatabaseMetadataTest {
     public void testDatabaseMetaDataRecordTypeRemarks() throws Exception {
         DatabaseMetaData metadata = conn.getMetaData();
 
-        ResultSet resultSet = metadata.getColumns(null, null, "Campaign", "RecordTypeId");
+        ResultSet resultSet = metadata.getColumns(null, null, "Campaign", "Type");
         Assert.assertTrue(resultSet.next());
 
-        Assert.assertEquals("RecordTypeId", resultSet.getString("COLUMN_NAME"));
-        Assert.assertTrue(resultSet.getString("REMARKS").startsWith("RecordTypes"));
+        Assert.assertEquals("Type", resultSet.getString("COLUMN_NAME"));
+        Assert.assertTrue(resultSet.getString("REMARKS").startsWith("Picklist:"));
     }
 
 

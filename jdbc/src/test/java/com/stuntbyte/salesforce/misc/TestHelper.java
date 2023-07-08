@@ -24,6 +24,7 @@ package com.stuntbyte.salesforce.misc;
 
 import com.stuntbyte.salesforce.jdbc.SfConnection;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.DriverManager;
@@ -40,7 +41,21 @@ public class TestHelper {
     public TestHelper() {
         try {
             prop = new Properties();
-            InputStream stream = getClass().getResourceAsStream( "/test.properties" );
+            InputStream stream;
+
+            String testpropertiesfile = System.getProperty("test.properties");
+            if (testpropertiesfile == null)
+            {
+                stream = getClass().getResourceAsStream( "/test.properties" );
+            }
+            else
+            {
+                stream = new FileInputStream(testpropertiesfile);
+            }
+            if (stream == null)
+            {
+                throw new RuntimeException("Unable to find test.properties via -Dtest.properties or on classpath");
+            }
             prop.load( stream );
         } catch (IOException e) {
             e.printStackTrace();
