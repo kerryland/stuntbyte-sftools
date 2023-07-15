@@ -103,7 +103,6 @@ public class DeploymentSchemaTests {
                 } else if (e.getMessage().matches(".*Cannot use.*in this organization")) {
                     continue; // fine. likely will work in another organisation
                 } else {
-                    // GlobalPicklistValue throws UNKNOWN_EXCEPTION: An unexpected error occurred. -- Good on ya Salesforce!
                     System.out.println("Unexpected error encountered when querying " + metadataType + ": " + e.getMessage());
                     continue;
                 }
