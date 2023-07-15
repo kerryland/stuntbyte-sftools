@@ -55,7 +55,7 @@ dep upload package from 'c:/tmp/my-deployment.zip' to 'c:/tmp/deploy.log';
 
 The log file is where deployment logs are written, which can be useful when tracking down the deployment problems that are so common with Salesforce deployments -- no matter what tool you use.
 
-Monitor the deployment by examining the log file you defined, or from within Salesforce by viewing the Setup | Deployment | Monitor Deployments page.
+Monitor the deployment by examining the log file you defined, or from within Salesforce by viewing the `Setup | Deployment | Monitor Deployments` page.
 
 The deploy "upload" command actually takes an optional parameter, not shown above, that can be placed before the "from" keyword. It has the following values
 
@@ -118,7 +118,7 @@ dep upload...
 
 ## How do I know what types of components can be deployed?
 
-The types of components supported are defined [here](http://www.salesforce.com/us/developer/docs/api_meta/Content/meta_types_list.htm)
+The types of components supported are defined [here](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_types_list.htm)
 
 You can also use your SQL tool to browse the "deployment" schema.
 
