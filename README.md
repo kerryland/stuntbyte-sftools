@@ -16,8 +16,8 @@ More information about the tools here:
 *   **[JDBC (Introduction)](jdbc/README.md)** - Use decent database query and update tools to work with Salesforce Databases.
     * [Configuration](jdbc/docs/jdbc-configuration.md)
     * [Supported SQL](jdbc/docs/sql.md)
-*   **[Deploy](docs/deployment-tool.md)** - A deployment tool for Salesforce. It takes away much of the pain of Salesforce deployments.
-*   **[IDE](docs/ide.md)** - A replacement for the "Force IDE". It lets developers use quality editors like Sublime Text 2 and VIM to compile, test, and navigate Salesforce Apex code.
+*   **[Deploy](deployment/README.md)** - A deployment tool for Salesforce. It takes away much of the pain of Salesforce deployments.
+*   **[IDE](editors/README.md)** - A replacement for the "Force IDE". It lets developers use quality editors like Sublime Text 2 and VIM to compile, test, and navigate Salesforce Apex code.
 *   **[Migration/Export/Grails](migration/README.md)** - When you have a JDBC driver and a deployment tool you can do fun things with Salesforce Instances.
 
 https://groups.google.com/forum/#!forum/stuntbyte
