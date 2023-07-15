@@ -1,3 +1,13 @@
 .idea/
 .classes/
+*.iml
+**/target/**
+
+go.cmd
+dependency-reduced-pom.xml
 local.build.properties
+test.properties
+ide.properties
+
+build.md
+
