@@ -98,7 +98,6 @@ public class MetadataServiceImpl implements MetadataService {
         metaDataTypes.add("Flow");
         metaDataTypes.add("FlowDefinition");
         metaDataTypes.add("GlobalValueSetTranslation");
-        metaDataTypes.add("GlobalPicklistValue");
         metaDataTypes.add("Group");
         metaDataTypes.add("HomePageComponent");
         metaDataTypes.add("HomePageLayout");
