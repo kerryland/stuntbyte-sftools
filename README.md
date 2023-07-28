@@ -20,12 +20,12 @@ More information about the tools here:
 *   **[IDE](editors/README.md)** - A replacement for the "Force IDE". It lets developers use quality editors like Sublime Text 2 and VIM to compile, test, and navigate Salesforce Apex code.
 *   **[Migration/Export/Grails](migration/README.md)** - When you have a JDBC driver and a deployment tool you can do fun things with Salesforce Instances.
 
-https://groups.google.com/forum/#!forum/stuntbyte
+All tools make use of the [stuntbyte-sfdc-jdbc-1.5.jar](stuntbyte-sfdc-jdbc-1.5.jar) file.
 
 Early in development of the JDBC driver I found two projects that I thought I could just bolt together, and magic would
 happen. The reality was different, and I actually ended up only swiping small amounts of code, but they deserve to be highlighted.
 
-I've grabbed:
+I was inspired by the following:
 
 * Lexical parsing code from Gregory Smith (gsmithfarmer@gmail.com)'s "SQLForce" code
 via https://github.com/abhidotnet/sqlforce (repurposed as com.stuntbyte.salesforce.jdbc.sqlforce).
@@ -35,5 +35,3 @@ Released under the Eclipse Public Licence 1.0. You might like to look at http://
 via https://code.google.com/archive/p/force-metadata-jdbc-driver/ (repurposed as com.stuntbyte.salesforce.jdbc.metaforce).
 Released under the "New BSD Licence" (aka BSD 3)
 
-Random dev notes:
-* ```mvn license:format``` will add MIT headers
